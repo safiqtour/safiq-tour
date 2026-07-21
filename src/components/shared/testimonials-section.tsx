@@ -81,39 +81,41 @@ function TestimonialsSection() {
   const pausedRef = useRef(false)
 
   useEffect(() => {
-    const track = trackRef.current
-    if (!track) return
-
     let x = 0
 
     function animate() {
+      const el = trackRef.current
+      if (!el) return
       if (!pausedRef.current) {
         const speed = window.innerWidth < 768 ? 1.5 : 0.3
         x -= speed
-        const trackWidth = track.scrollWidth / 2
+        const trackWidth = el.scrollWidth / 2
         if (Math.abs(x) >= trackWidth) {
           x += trackWidth
         }
-        track.style.transform = `translateX(${x}px)`
+        el.style.transform = `translateX(${x}px)`
       }
       requestAnimationFrame(animate)
     }
 
     const frame = requestAnimationFrame(animate)
 
+    const el = trackRef.current
+    if (!el) return
+
     const onEnter = () => { pausedRef.current = true }
     const onLeave = () => { pausedRef.current = false }
-    track.addEventListener("mouseenter", onEnter)
-    track.addEventListener("mouseleave", onLeave)
-    track.addEventListener("touchstart", onEnter, { passive: true })
-    track.addEventListener("touchend", onLeave, { passive: true })
+    el.addEventListener("mouseenter", onEnter)
+    el.addEventListener("mouseleave", onLeave)
+    el.addEventListener("touchstart", onEnter, { passive: true })
+    el.addEventListener("touchend", onLeave, { passive: true })
 
     return () => {
       cancelAnimationFrame(frame)
-      track.removeEventListener("mouseenter", onEnter)
-      track.removeEventListener("mouseleave", onLeave)
-      track.removeEventListener("touchstart", onEnter)
-      track.removeEventListener("touchend", onLeave)
+      el.removeEventListener("mouseenter", onEnter)
+      el.removeEventListener("mouseleave", onLeave)
+      el.removeEventListener("touchstart", onEnter)
+      el.removeEventListener("touchend", onLeave)
     }
   }, [])
 
