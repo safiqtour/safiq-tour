@@ -1,0 +1,621 @@
+# 03-ROUTES_AND_API.md
+
+# Safiq Tour
+
+Routes & API Documentation
+
+Version : 1.0
+
+Framework : Next.js 15 App Router
+
+---
+
+# Principles
+
+- RESTful API
+- JSON Response
+- Typed Response
+- Zod Validation
+- Repository Pattern
+- No Direct Database Access from Frontend
+
+---
+
+# Application Routes
+
+## Public
+
+/
+
+Landing Page
+
+---
+
+/about
+
+About Safiq Tour
+
+---
+
+/packages
+
+Package List
+
+---
+
+/packages/[id]
+
+Package Detail
+
+---
+
+/gallery
+
+Gallery
+
+---
+
+/contact
+
+Contact
+
+---
+
+## Admin
+
+/admin/login
+
+Login
+
+---
+
+/admin
+
+Dashboard
+
+---
+
+/admin/packages
+
+Package List
+
+---
+
+/admin/packages/new
+
+Create Package
+
+---
+
+/admin/packages/[id]
+
+Edit Package
+
+---
+
+/admin/gallery
+
+Gallery
+
+---
+
+/admin/report
+
+Report
+
+---
+
+# API Structure
+
+/api
+
+/auth
+
+/packages
+
+/gallery
+
+/upload
+
+/report
+
+---
+
+# Authentication
+
+POST
+
+/api/auth/login
+
+Description
+
+Administrator Login
+
+Request
+
+```json
+{
+  "email": "admin@safiqtour.com",
+  "password": "password"
+}
+```
+
+Success
+
+```json
+{
+  "success": true
+}
+```
+
+Failure
+
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+---
+
+POST
+
+/api/auth/logout
+
+Destroy Session
+
+Response
+
+```json
+{
+  "success": true
+}
+```
+
+---
+
+GET
+
+/api/auth/session
+
+Return Current Session
+
+---
+
+# Packages API
+
+GET
+
+/api/packages
+
+Description
+
+Return all packages.
+
+Response
+
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+---
+
+GET
+
+/api/packages/:id
+
+Return package detail.
+
+---
+
+POST
+
+/api/packages
+
+Create package.
+
+Request
+
+```json
+{
+  "name": "",
+  "price": 0,
+  "airline": "",
+  "makkahHotel": "",
+  "madinahHotel": "",
+  "departureDate": "",
+  "thumbnailUrl": ""
+}
+```
+
+Response
+
+```json
+{
+  "success": true
+}
+```
+
+---
+
+PUT
+
+/api/packages/:id
+
+Update package.
+
+---
+
+DELETE
+
+/api/packages/:id
+
+Delete package.
+
+---
+
+# Gallery API
+
+GET
+
+/api/gallery
+
+Return gallery list.
+
+---
+
+POST
+
+/api/gallery
+
+Upload gallery metadata.
+
+Request
+
+```json
+{
+  "packageId": "",
+  "imageUrl": ""
+}
+```
+
+---
+
+DELETE
+
+/api/gallery/:id
+
+Delete gallery.
+
+---
+
+# Upload API
+
+POST
+
+/api/upload
+
+Purpose
+
+Upload image to storage.
+
+Flow
+
+Browser
+
+↓
+
+API
+
+↓
+
+Storage
+
+↓
+
+Return URL
+
+Request
+
+multipart/form-data
+
+Response
+
+```json
+{
+  "success": true,
+  "url": "https://storage/image.webp"
+}
+```
+
+---
+
+# Report API
+
+GET
+
+/api/report
+
+Dashboard Summary
+
+Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "packageCount": 15,
+    "galleryCount": 120
+  }
+}
+```
+
+---
+
+# Registration Flow
+
+Visitor
+
+↓
+
+Open Package
+
+↓
+
+Fill Form
+
+↓
+
+Generate WhatsApp Message
+
+↓
+
+window.open()
+
+↓
+
+WhatsApp
+
+No backend request.
+
+No database insert.
+
+---
+
+# Form Registration
+
+Fields
+
+Name
+
+Phone
+
+City
+
+Package
+
+Message
+
+Validation
+
+Name
+
+Required
+
+Phone
+
+Required
+
+Package
+
+Required
+
+---
+
+# Middleware
+
+Protect
+
+/admin/*
+
+Allow
+
+/
+
+/about
+
+/packages
+
+/gallery
+
+/contact
+
+---
+
+# Response Standard
+
+Success
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+Error
+
+```json
+{
+  "success": false,
+  "message": "",
+  "errors": []
+}
+```
+
+---
+
+# HTTP Status
+
+200
+
+OK
+
+201
+
+Created
+
+400
+
+Validation Error
+
+401
+
+Unauthorized
+
+403
+
+Forbidden
+
+404
+
+Not Found
+
+409
+
+Conflict
+
+422
+
+Unprocessable Entity
+
+500
+
+Internal Server Error
+
+---
+
+# Validation
+
+Use Zod
+
+Never trust frontend.
+
+Every endpoint validates input.
+
+---
+
+# Authorization
+
+Current
+
+Admin
+
+Future
+
+Super Admin
+
+Marketing
+
+Finance
+
+Owner
+
+---
+
+# Upload Rules
+
+Allowed
+
+jpg
+
+jpeg
+
+png
+
+webp
+
+Maximum Size
+
+5 MB
+
+Store
+
+Object Storage
+
+Database
+
+URL only
+
+---
+
+# Pagination
+
+GET /api/packages
+
+Query
+
+?page=1
+
+&limit=10
+
+Example
+
+/api/packages?page=1&limit=10
+
+Response
+
+```json
+{
+  "success": true,
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "totalPages": 10
+  }
+}
+```
+
+---
+
+# Search
+
+/api/packages?search=ramadhan
+
+---
+
+# Sort
+
+/api/packages?sort=departureDate
+
+---
+
+# Order
+
+/api/packages?order=asc
+
+/api/packages?order=desc
+
+---
+
+# Future APIs
+
+/api/jamaahs
+
+/api/payments
+
+/api/documents
+
+/api/passports
+
+/api/visas
+
+/api/notifications
+
+Do not implement in Phase 1.

@@ -1,0 +1,540 @@
+# 02-DATABASE.md
+
+# Safiq Tour
+
+Database Documentation
+
+Version : 1.0
+
+Database : PostgreSQL
+
+ORM : Prisma ORM
+
+---
+
+# Database Principles
+
+- PostgreSQL
+- UUID Primary Key
+- UTC Timestamp
+- Soft Delete Ready
+- Prisma ORM
+- Normalized Database
+- No Binary Storage
+- Anti Vendor Lock-in
+
+---
+
+# Naming Convention
+
+Table
+
+snake_case
+
+Column
+
+snake_case
+
+Prisma Model
+
+PascalCase
+
+Property
+
+camelCase
+
+---
+
+# Current Database Scope (Phase 1)
+
+Tables
+
+- users
+- packages
+- galleries
+
+Future Tables
+
+- jamaahs
+- payments
+- documents
+- visas
+- passports
+- manifests
+- schedules
+
+Do NOT create future tables yet.
+
+---
+
+# Entity Relationship
+
+User
+
+↓
+
+Package
+
+↓
+
+Gallery
+
+Gallery belongs to Package
+
+User creates Package
+
+---
+
+# Prisma Schema
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(ADMIN)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  packages      Package[]
+
+  @@map("users")
+}
+
+model Package {
+
+  id              String   @id @default(uuid())
+
+  name            String
+
+  price           Decimal
+
+  airline         String
+
+  makkahHotel     String
+
+  madinahHotel    String
+
+  departureDate   DateTime
+
+  thumbnailUrl    String
+
+  createdBy       String
+
+  createdAt       DateTime @default(now())
+
+  updatedAt       DateTime @updatedAt
+
+  creator         User @relation(fields: [createdBy], references: [id])
+
+  galleries       Gallery[]
+
+  @@map("packages")
+
+}
+
+model Gallery {
+
+  id          String   @id @default(uuid())
+
+  packageId   String
+
+  imageUrl    String
+
+  createdAt   DateTime @default(now())
+
+  package      Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("galleries")
+
+}
+```
+
+---
+
+# Relationship
+
+User
+
+1
+
+↓
+
+Many
+
+Package
+
+Package
+
+1
+
+↓
+
+Many
+
+Gallery
+
+---
+
+# Storage Policy
+
+Database stores
+
+image_url
+
+thumbnail_url
+
+Storage stores
+
+PNG
+
+JPG
+
+WEBP
+
+Future PDF
+
+Never store binary.
+
+---
+
+# Users Table
+
+Purpose
+
+Administrator authentication.
+
+Columns
+
+id
+
+UUID
+
+Primary Key
+
+name
+
+Administrator Name
+
+email
+
+Unique
+
+password_hash
+
+Hashed Password
+
+role
+
+ADMIN
+
+created_at
+
+updated_at
+
+---
+
+# Packages Table
+
+Purpose
+
+Master data paket umroh.
+
+Columns
+
+id
+
+UUID
+
+name
+
+Package Name
+
+price
+
+Package Price
+
+airline
+
+Maskapai
+
+makkah_hotel
+
+Hotel Mekkah
+
+madinah_hotel
+
+Hotel Madinah
+
+departure_date
+
+Tanggal Berangkat
+
+thumbnail_url
+
+Image URL
+
+created_by
+
+FK User
+
+created_at
+
+updated_at
+
+---
+
+# Galleries Table
+
+Purpose
+
+Multiple images for package.
+
+Columns
+
+id
+
+UUID
+
+package_id
+
+FK Package
+
+image_url
+
+Storage URL
+
+created_at
+
+---
+
+# Primary Keys
+
+All tables
+
+UUID
+
+---
+
+# Foreign Keys
+
+packages.created_by
+
+↓
+
+users.id
+
+galleries.package_id
+
+↓
+
+packages.id
+
+---
+
+# Index Recommendation
+
+users
+
+email UNIQUE
+
+packages
+
+departure_date
+
+packages
+
+name
+
+galleries
+
+package_id
+
+---
+
+# Soft Delete
+
+Not implemented in Phase 1.
+
+Future
+
+deleted_at
+
+---
+
+# Audit
+
+Current
+
+created_at
+
+updated_at
+
+Future
+
+created_by
+
+updated_by
+
+deleted_by
+
+---
+
+# Decimal Policy
+
+Price
+
+Decimal
+
+Never Float
+
+---
+
+# Date Policy
+
+All dates
+
+UTC
+
+Frontend converts timezone.
+
+---
+
+# Migration Policy
+
+Every schema change
+
+↓
+
+Prisma Migration
+
+↓
+
+Review
+
+↓
+
+Deploy
+
+Never modify production schema manually.
+
+---
+
+# Validation Rules
+
+User
+
+Email Unique
+
+Password Hashed
+
+Role Required
+
+Package
+
+Name Required
+
+Price > 0
+
+Airline Required
+
+Hotel Required
+
+Departure Date Required
+
+Thumbnail Required
+
+Gallery
+
+Image URL Required
+
+Package Required
+
+---
+
+# Data Integrity
+
+Cannot delete User if still referenced.
+
+Deleting Package
+
+↓
+
+Cascade Gallery
+
+---
+
+# Anti Vendor Lock-in
+
+Storage URL only.
+
+Never store provider-specific metadata.
+
+Repository must not depend on Cloudflare.
+
+Repository must not depend on AWS.
+
+Storage abstraction required.
+
+---
+
+# Phase 2 Expansion
+
+Additional Tables
+
+jamaahs
+
+payments
+
+payment_histories
+
+documents
+
+visas
+
+passports
+
+manasik
+
+notifications
+
+audit_logs
+
+No existing table should require redesign.
+
+Only additive migrations allowed.
+
+---
+
+# Final Principles
+
+Use UUID
+
+Use Prisma
+
+Use PostgreSQL
+
+Keep schema normalized
+
+No binary storage
+
+No duplicated data
+
+No direct SQL inside UI
+
+Database independent from Storage Provider

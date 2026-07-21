@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Large binary files
+*.ai
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
