@@ -44,10 +44,10 @@ function PackageGrid({ packages, maxItems, className }: PackageGridProps) {
       {displayed.map((pkg, index) => (
         <div
           key={pkg.id}
-          className="animate-[fade-up_0.6s_ease-out_forwards] opacity-0"
+          className="flex animate-[fade-up_0.6s_ease-out_forwards] opacity-0"
           style={{ animationDelay: `${index * 0.1}s` }}
         >
-          <PackageCard pkg={pkg} />
+          <PackageCard pkg={pkg} className="flex-1" />
         </div>
       ))}
     </div>

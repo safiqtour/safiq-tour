@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { Section } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
 import { PackagesSection } from "@/components/shared/packages-section"
@@ -55,10 +56,12 @@ export default function Home() {
             <div className="relative">
               <div className="rounded-2xl border-2 border-[#D4AF37]/30 p-2 shadow-lg">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                  <img
+                  <Image
                     src="/images/Pelayanan-Ramah-Responsif-01.jpg"
                     alt="Pelayanan Ramah dan Responsif Safiq Tour"
-                    className="absolute inset-0 h-full w-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
                   />
                 </div>
               </div>

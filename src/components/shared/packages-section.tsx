@@ -68,7 +68,7 @@ function PackagesSection({
     }
 
     return result
-  }, [filter, search, sort])
+  }, [filter, search, sort, allowedCategories])
 
   return (
     <Section variant="muted">

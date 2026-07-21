@@ -17,7 +17,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
   return (
     <div
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[32px] border border-white/20 bg-white/70 shadow-lg shadow-black/5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#D4AF37]/50 hover:shadow-xl hover:shadow-[#D4AF37]/10",
+        "group relative flex flex-1 flex-col overflow-hidden rounded-[32px] border border-white/20 bg-white/70 shadow-lg shadow-black/5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#D4AF37]/50 hover:shadow-xl hover:shadow-[#D4AF37]/10",
         pkg.featured && "ring-2 ring-[#D4AF37] ring-offset-2",
         className
       )}
@@ -40,7 +40,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1">
             <h3 className="text-xl font-bold text-[#0F2D5C]">{pkg.title}</h3>
