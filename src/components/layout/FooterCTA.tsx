@@ -63,7 +63,7 @@ function FooterCTA() {
             </Link>
 
             <Link
-              href="https://wa.me/6281234567890"
+              href="https://wa.me/6282211624747"
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex h-12 items-center gap-2 rounded-full border border-white/20 px-8 text-sm font-semibold text-white transition-all duration-300 hover:border-[#D4AF37]/50 hover:bg-white/5"

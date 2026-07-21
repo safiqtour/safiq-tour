@@ -70,7 +70,7 @@ export function HeroContent() {
         </Link>
 
         <Link
-          href="https://wa.me/6281234567890"
+          href="https://wa.me/6282211624747"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Konsultasi via WhatsApp"
