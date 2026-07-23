@@ -57,7 +57,7 @@ export function HeroStats() {
         return (
           <div
             key={stat.label}
-            className="group rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-md transition-all duration-300 hover:border-[#C79A3B]/30 hover:bg-white/10 hover:shadow-lg hover:shadow-[#C79A3B]/5 md:p-6"
+            className="group rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-md transition-all duration-300 hover:border-[#C79A3B]/30 hover:bg-white/10 hover:shadow-lg hover:shadow-[#C79A3B]/5 md:flex md:h-full md:flex-col md:items-center md:justify-center md:p-6"
           >
             <Icon className="mx-auto mb-2 size-5 text-[#E8C874] md:size-6" />
             <p className="font-heading text-xl font-bold text-white md:text-2xl">

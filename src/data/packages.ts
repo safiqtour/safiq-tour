@@ -95,7 +95,7 @@ export const packages: Package[] = [
     priceLabel: "Mulai dari",
     badge: "Popular",
     badgeVariant: "default",
-    image: "/images/Paket-Umroh-thaibah-deluxe-Ekspress-12h.jpg",
+    image: "/images/Paket-Umroh-thaibah-Executive-Ekspress-12h.jpg",
     features: [
       "Hotel Bintang 3/4 setaraf",
       "Tiket Pesawat PP",
@@ -143,7 +143,7 @@ export const packages: Package[] = [
     priceLabel: "Mulai dari",
     badge: "Luxury",
     badgeVariant: "default",
-    image: "/images/Paket-Umroh-Rawdah-VIP-12h.jpg",
+    image: "/images/Paket-Umroh-Rawdah-Luxury-12h.jpg",
     features: [
       "Hotel Bintang 4/5",
       "Tiket Pesawat PP",

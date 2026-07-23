@@ -40,7 +40,7 @@ export function HeroContent() {
 
       <motion.h1
         variants={itemVariants}
-        className="font-heading text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl"
+        className="font-heading text-xl font-bold leading-tight text-white md:text-3xl lg:text-4xl"
       >
         Wujudkan Perjalanan Suci{" "}
         <span className="text-[#E8C874]">Menuju Baitullah</span>

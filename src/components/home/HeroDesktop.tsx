@@ -41,7 +41,7 @@ export function HeroDesktop() {
             <HeroStats />
           </div>
 
-          <div className="hidden justify-self-end md:flex">
+          <div className="hidden self-end justify-self-end md:flex">
             <HeroFloatingCard />
           </div>
         </div>

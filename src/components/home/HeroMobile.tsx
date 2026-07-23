@@ -100,7 +100,7 @@ export function HeroMobile() {
 
         <motion.h1
           variants={fadeUp}
-          className="font-heading text-[42px] font-bold leading-[1.1] text-white"
+          className="font-heading text-[28px] font-bold leading-[1.1] text-white"
         >
           Wujudkan Perjalanan Suci{" "}
           <span className="text-[#E8C874]">Menuju Baitullah</span>
@@ -141,13 +141,6 @@ export function HeroMobile() {
 
         <motion.div
           variants={fadeUp}
-          className="mt-6"
-        >
-          <MobileRatingCard />
-        </motion.div>
-
-        <motion.div
-          variants={fadeUp}
           className="mt-8 grid grid-cols-3 gap-2"
         >
           {stats.map((stat) => {
@@ -167,6 +160,13 @@ export function HeroMobile() {
               </div>
             )
           })}
+        </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          className="mt-6"
+        >
+          <MobileRatingCard />
         </motion.div>
       </motion.div>
     </div>
