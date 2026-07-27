@@ -67,12 +67,11 @@ function makeItinerary(days: number): DayItinerary[] {
 }
 
 const commonExcluded = [
-  "Paspor",
-  "Laundry",
-  "Pengeluaran Pribadi",
-  "Upgrade Kamar",
-  "Oleh-oleh",
-  "Visa tambahan",
+  "Biaya Vaksin Meningitis",
+  "Pembuatan Paspor",
+  "Biaya Pengiriman Perlengkapan",
+  "Biaya Pribadi Selama Umroh",
+  "Biaya Bagasi Ekstra",
 ]
 
 const airlinesList: AirlineInfo[] = [
