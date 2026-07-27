@@ -1,12 +1,9 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { type Package } from "@/data/packages"
-import { PackageBadge } from "./package-badge"
-import { PackagePrice } from "./package-price"
-import { PackageFeatures } from "./package-features"
-import { PackageCTA } from "./package-cta"
+import { type Package, formatPrice } from "@/data/packages"
 
 type PackageCardProps = {
   pkg: Package
@@ -23,57 +20,84 @@ function PackageCard({ pkg, className }: PackageCardProps) {
       )}
     >
       {pkg.image && (
-        <div className="relative h-48 w-full shrink-0 overflow-hidden">
+        <div className="relative h-auto w-full shrink-0">
           <Image
             src={pkg.image}
             alt={pkg.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            width={800}
+            height={450}
+            className="h-auto w-full object-contain transition-transform duration-500 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        </div>
-      )}
-
-      {pkg.featured && (
-        <div className="absolute right-6 top-6 z-10">
-          <PackageBadge label={pkg.badge} />
         </div>
       )}
 
       <div className="flex flex-1 flex-col gap-4 p-6">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <h3 className="text-xl font-bold text-[#0F2D5C]">{pkg.title}</h3>
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-4 text-[#D4AF37]"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              {pkg.duration}
-            </p>
-          </div>
-          {!pkg.featured && <PackageBadge label={pkg.badge} />}
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold text-[#0F2D5C]">{pkg.title}</h3>
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4 text-[#D4AF37]"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            {pkg.duration}
+          </p>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
+        <div className="space-y-0.5">
+          {pkg.priceLabel && (
+            <p className="text-xs text-muted-foreground">{pkg.priceLabel}</p>
+          )}
+          <p className="text-2xl font-bold tracking-tight text-[#0F2D5C]">
+            {formatPrice(pkg.price)}
+          </p>
+        </div>
 
-        <PackagePrice price={pkg.price} label={pkg.priceLabel} />
-
-        <div className="h-px bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
-
-        <PackageFeatures features={pkg.features} />
+        <div className="grid grid-cols-1 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-[#D4AF37]">
+              <path d="M2 22V12l9-7 9 7v10" />
+              <path d="M2 22h20" />
+              <path d="M7 22V2h10v20" />
+            </svg>
+            <span className="text-muted-foreground">Hotel Mekah:</span>
+            <span className="font-medium text-[#0F2D5C]">{pkg.hotelMekah}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-[#D4AF37]">
+              <path d="M2 22V12l9-7 9 7v10" />
+              <path d="M2 22h20" />
+              <path d="M7 22V2h10v20" />
+            </svg>
+            <span className="text-muted-foreground">Hotel Madinah:</span>
+            <span className="font-medium text-[#0F2D5C]">{pkg.hotelMadinah}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-[#D4AF37]">
+              <path d="M22 12h-8v-4l6-2v8" />
+              <path d="M2 12h8V8L4 6v8" />
+              <path d="M12 22V2" />
+            </svg>
+            <span className="text-muted-foreground">Maskapai:</span>
+            <span className="font-medium text-[#0F2D5C]">{pkg.maskapai}</span>
+          </div>
+        </div>
 
         <div className="mt-auto pt-2">
-          <PackageCTA />
+          <Link
+            href={`/packages/${pkg.slug}`}
+            className="flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#0F2D5C] px-4 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#1a3d7a] hover:shadow-lg hover:shadow-[#0F2D5C]/20 active:scale-[0.98]"
+          >
+            Lihat Detail
+          </Link>
         </div>
       </div>
     </div>

@@ -1,5 +1,9 @@
+"use client"
+
+import Image from "next/image"
 import { Section } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
+import { HeroFloatingCard } from "@/components/home/HeroFloatingCard"
 
 const KEUNGGULAN = [
   {
@@ -39,16 +43,44 @@ const KEUNGGULAN = [
 export default function AboutPage() {
   return (
     <>
+      <section className="relative h-[60vh] min-h-[400px] -mt-20 flex items-center overflow-hidden">
+        <Image
+          src="/images/Hero-Nabawi-Abaut-us-Safiq-Tour.webp"
+          alt="Tentang Safiq Tour"
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[rgba(6,23,53,0.55)] to-[rgba(6,23,53,0.15)] md:from-[rgba(6,23,53,0.5)] md:to-[rgba(6,23,53,0.1)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,23,53,0.4)] via-transparent to-transparent" />
+        <div className="absolute inset-0" style={{ boxShadow: "inset 0 0 150px rgba(0,0,0,0.4)" }} />
+        <div className="relative z-10 mx-auto w-full max-w-(--container-max) px-3 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
+            <div className="flex flex-col gap-6">
+              <h1 className="text-4xl font-bold text-white drop-shadow-lg md:text-5xl">
+                Tentang Safiq Tour
+              </h1>
+              <p className="text-lg text-white/80 md:text-xl">
+                Mengantarkan Langkah Suci Menuju Baitullah
+              </p>
+              <div className="inline-flex w-fit items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur-xl">
+                <span className="text-xs text-white/50 md:text-sm">Nomor Izin PPIU :</span>
+                <span className="text-sm font-semibold tracking-wider text-white/90 md:text-base">
+                  91202132200280002
+                </span>
+              </div>
+            </div>
+            <div className="hidden justify-self-end md:flex">
+              <HeroFloatingCard simple />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Section>
         <Container>
           <div className="space-y-6 leading-relaxed">
-            <h1 className="text-4xl font-bold tracking-tight text-[#D4AF37] md:text-5xl">
-              Tentang Safiq Tour
-            </h1>
-            <h2 className="text-xl font-semibold text-muted-foreground md:text-2xl">
-              Mengantarkan Langkah Suci Menuju Baitullah
-            </h2>
-
             <p className="text-base leading-relaxed text-foreground/80 md:text-lg">
               Sejak berdiri pada tahun 2019, PT. Safiq Oto Mandiri (Safiq Tour) berkomitmen menjadi sahabat perjalanan
               ibadah yang amanah, profesional, dan dekat dengan jamaah. Kami percaya bahwa ibadah Umroh bukan sekadar

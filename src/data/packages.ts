@@ -11,6 +11,9 @@ export interface Package {
   featured?: boolean
   image?: string
   features: string[]
+  hotelMekah: string
+  hotelMadinah: string
+  maskapai: string
 }
 
 export const packages: Package[] = [
@@ -25,7 +28,10 @@ export const packages: Package[] = [
     badge: "Best Seller",
     badgeVariant: "secondary",
     featured: true,
-    image: "/images/Paket-Umroh-Zam-zam-Ekspress-9h.jpg",
+    image: "/images/Paket-Umroh-Zam-zam-Ekspress-9h.webp",
+    hotelMekah: "Fajr Al Badea 4 /setaraf",
+    hotelMadinah: "Al Baraka Karim /Setaraf",
+    maskapai: "Qatar, Emirates",
     features: [
       "Hotel Bintang 3/setaraf",
       "Tiket Pesawat PP",
@@ -48,7 +54,10 @@ export const packages: Package[] = [
     priceLabel: "Mulai dari",
     badge: "Popular",
     badgeVariant: "default",
-    image: "/images/Paket-Umroh-Zam-zam-Ekspress-12h.jpg",
+    image: "/images/Paket-Umroh-Zam-zam-Reguler-12h.webp",
+    hotelMekah: "Fajr Al Badea 4 /setaraf",
+    hotelMadinah: "Al Baraka Karim /Setaraf",
+    maskapai: "Qatar, Emirates",
     features: [
       "Hotel Bintang 3 setaraf",
       "Tiket Pesawat PP",
@@ -72,6 +81,9 @@ export const packages: Package[] = [
     badge: "Recommended",
     badgeVariant: "outline",
     image: "/images/Paket-Umroh-thaibah-deluxe-Ekspress-9h.jpg",
+    hotelMekah: "Hotel Dar Al Eiman / setaraf",
+    hotelMadinah: "Hotel Al Mukhtarah / setaraf",
+    maskapai: "Saudi Airlines / Garuda Indonesia",
     features: [
       "Hotel Bintang 3/4 setaraf",
       "Tiket Pesawat PP",
@@ -96,6 +108,9 @@ export const packages: Package[] = [
     badge: "Popular",
     badgeVariant: "default",
     image: "/images/Paket-Umroh-thaibah-Executive-Ekspress-12h.jpg",
+    hotelMekah: "Hotel Dar Al Eiman / setaraf",
+    hotelMadinah: "Hotel Al Mukhtarah / setaraf",
+    maskapai: "Saudi Airlines / Garuda Indonesia",
     features: [
       "Hotel Bintang 3/4 setaraf",
       "Tiket Pesawat PP",
@@ -120,6 +135,9 @@ export const packages: Package[] = [
     badge: "VIP",
     badgeVariant: "default",
     image: "/images/Paket-Umroh-Rawdah-VIP-9h.jpg",
+    hotelMekah: "Al Safwah Tower 3 / Setaraf",
+    hotelMadinah: "Maysan Al Harithia /Setaraf",
+    maskapai: "Saudi Airlines",
     features: [
       "Tiket Pesawat PP",
       "Bus PP",
@@ -144,6 +162,9 @@ export const packages: Package[] = [
     badge: "Luxury",
     badgeVariant: "default",
     image: "/images/Paket-Umroh-Rawdah-Luxury-12h.jpg",
+    hotelMekah: "Al Safwah Tower 3 / Setaraf",
+    hotelMadinah: "Maysan Al Harithia /Setaraf",
+    maskapai: "Saudi Airlines",
     features: [
       "Hotel Bintang 4/5",
       "Tiket Pesawat PP",
@@ -168,6 +189,9 @@ export const packages: Package[] = [
     badge: "Popular",
     badgeVariant: "default",
     image: "/images/Paket-Firdaus-Umroh-Plus-Turki-16h.png",
+    hotelMekah: "Hotel Pullman / setaraf",
+    hotelMadinah: "Hotel Oberoi / setaraf",
+    maskapai: "Emirates / Turkish Airlines",
     features: [
       "Hotel Bintang 3/4/5",
       "Tiket Pesawat PP",
@@ -193,6 +217,9 @@ export const packages: Package[] = [
     badge: "Popular",
     badgeVariant: "default",
     image: "/images/Paket-Firdaus-Umroh-Plus-Mesir-15h.png",
+    hotelMekah: "Hotel Pullman / setaraf",
+    hotelMadinah: "Hotel Oberoi / setaraf",
+    maskapai: "Emirates / Turkish Airlines",
     features: [
       "Hotel Bintang 3/4/5",
       "Tiket Pesawat PP",
@@ -218,6 +245,9 @@ export const packages: Package[] = [
     badge: "Special",
     badgeVariant: "destructive",
     image: "/images/Paket-Ramadhan-Awal-Ramadhan-12-h.jpg",
+    hotelMekah: "Hotel Dar Al Tawhid / setaraf",
+    hotelMadinah: "Hotel Al Ansar / setaraf",
+    maskapai: "Saudi Airlines / Garuda Indonesia",
     features: [
       "Hotel Bintang 3/4",
       "Tiket Pesawat PP",
@@ -243,6 +273,9 @@ export const packages: Package[] = [
     badge: "Special",
     badgeVariant: "destructive",
     image: "/images/Paket-Ramadhan-Full-Ramadhan-30-h.jpg",
+    hotelMekah: "Hotel Dar Al Tawhid / setaraf",
+    hotelMadinah: "Hotel Al Ansar / setaraf",
+    maskapai: "Saudi Airlines / Garuda Indonesia",
     features: [
       "Hotel Bintang 3/4",
       "Tiket Pesawat PP",
@@ -268,6 +301,9 @@ export const packages: Package[] = [
     badge: "Special",
     badgeVariant: "destructive",
     image: "/images/Paket-Ramadhan-Akhir-Ramadhan-15-h.jpg",
+    hotelMekah: "Hotel Dar Al Tawhid / setaraf",
+    hotelMadinah: "Hotel Al Ansar / setaraf",
+    maskapai: "Saudi Airlines / Garuda Indonesia",
     features: [
       "Hotel Bintang 3/4",
       "Tiket Pesawat PP",
