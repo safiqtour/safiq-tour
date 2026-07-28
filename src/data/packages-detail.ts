@@ -4,7 +4,7 @@ export interface HotelInfo {
   stars: number
   distance: string
   desc: string
-  image: string
+  images: string[]
 }
 
 export interface AirlineInfo {
@@ -83,19 +83,64 @@ const airlinesList: AirlineInfo[] = [
 ]
 
 const hotelMekahMap: Record<string, HotelInfo> = {
-  zamzam: { city: "Mekkah", name: "Fajr Al Badea 4 / Setaraf", stars: 3, distance: "150 Meter", desc: "Hotel nyaman dengan lokasi strategis dekat Masjidil Haram.", image: "/images/Diar-Al-Manasik-International.png" },
-  thaibah: { city: "Mekkah", name: "Hotel Dar Al Eiman / Setaraf", stars: 4, distance: "100 Meter", desc: "Hotel modern dengan akses cepat ke Masjidil Haram.", image: "/images/Rawahel-Al-Mashaer-co.png" },
-  rawdah: { city: "Mekkah", name: "Al Safwah Tower 3 / Setaraf", stars: 5, distance: "50 Meter", desc: "Hotel bintang lima dengan pemandangan langsung Masjidil Haram.", image: "/images/Diar-Al-Manasik-International.png" },
-  firdaus: { city: "Mekkah", name: "Hotel Pullman / Setaraf", stars: 5, distance: "100 Meter", desc: "Hotel mewah bintang lima dengan fasilitas premium.", image: "/images/Ayuberga.png" },
-  ramadhan: { city: "Mekkah", name: "Hotel Dar Al Tawhid / Setaraf", stars: 4, distance: "100 Meter", desc: "Hotel nyaman dengan layanan istimewa selama Ramadhan.", image: "/images/Rawahel-Al-Mashaer-co.png" },
+  zamzam: { city: "Mekkah", name: "Fajr Al Badea 4 / Setaraf", stars: 3, distance: "150 Meter", desc: "Hotel nyaman dengan lokasi strategis dekat Masjidil Haram.", images: [
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-01.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-02.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-03.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-04.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-05.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-06.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-07.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-08.webp",
+    "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-09.webp",
+  ] },
+  thaibah: { city: "Mekkah", name: "Hotel Dar Al Eiman / Setaraf", stars: 4, distance: "100 Meter", desc: "Hotel modern dengan akses cepat ke Masjidil Haram.", images: [
+    "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-01.webp",
+    "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-02.webp",
+    "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-03.webp",
+    "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-04.webp",
+  ] },
+  rawdah: { city: "Mekkah", name: "Al Safwah Tower 3 / Setaraf", stars: 5, distance: "50 Meter", desc: "Hotel bintang lima dengan pemandangan langsung Masjidil Haram.", images: [
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-01.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-02.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-03.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-04.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-05.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-06.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-07.webp",
+    "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-08.webp",
+  ] },
+  firdaus: { city: "Mekkah", name: "Hotel Pullman / Setaraf", stars: 5, distance: "100 Meter", desc: "Hotel mewah bintang lima dengan fasilitas premium.", images: ["/images/Ayuberga.png"] },
+  ramadhan: { city: "Mekkah", name: "Hotel Dar Al Tawhid / Setaraf", stars: 4, distance: "100 Meter", desc: "Hotel nyaman dengan layanan istimewa selama Ramadhan.", images: ["/images/Rawahel-Al-Mashaer-co.png"] },
 }
 
 const hotelMadinahMap: Record<string, HotelInfo> = {
-  zamzam: { city: "Madinah", name: "Al Baraka Karim / Setaraf", stars: 3, distance: "120 Meter", desc: "Hotel modern dengan akses mudah ke Masjid Nabawi.", image: "/images/Maysan.png" },
-  thaibah: { city: "Madinah", name: "Hotel Al Mukhtarah / Setaraf", stars: 4, distance: "80 Meter", desc: "Hotel elegan dekat Masjid Nabawi dengan pelayanan prima.", image: "/images/Maysan.png" },
-  rawdah: { city: "Madinah", name: "Maysan Al Harithia / Setaraf", stars: 5, distance: "50 Meter", desc: "Hotel bintang lima dengan fasilitas eksklusif di pusat Madinah.", image: "/images/Maysan.png" },
-  firdaus: { city: "Madinah", name: "Hotel Oberoi / Setaraf", stars: 5, distance: "100 Meter", desc: "Hotel mewah dengan pemandangan indah Masjid Nabawi.", image: "/images/Maysan.png" },
-  ramadhan: { city: "Madinah", name: "Hotel Al Ansar / Setaraf", stars: 4, distance: "80 Meter", desc: "Hotel strategis untuk ibadah dengan suasana Ramadhan.", image: "/images/Maysan.png" },
+  zamzam: { city: "Madinah", name: "Al Baraka Karim / Setaraf", stars: 3, distance: "120 Meter", desc: "Hotel modern dengan akses mudah ke Masjid Nabawi.", images: [
+    "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-01.webp",
+    "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-02.webp",
+    "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-03.webp",
+    "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-04.webp",
+  ] },
+  thaibah: { city: "Madinah", name: "Hotel Al Mukhtarah / Setaraf", stars: 4, distance: "80 Meter", desc: "Hotel elegan dekat Masjid Nabawi dengan pelayanan prima.", images: [
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-01.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-02.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-03.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-04.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-05.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-06.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-07.webp",
+    "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-08.webp",
+  ] },
+  rawdah: { city: "Madinah", name: "Maysan Al Harithia / Setaraf", stars: 5, distance: "50 Meter", desc: "Hotel bintang lima dengan fasilitas eksklusif di pusat Madinah.", images: [
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-01.webp",
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-02.webp",
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-03.webp",
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-04.webp",
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-06.webp",
+    "/images/Hotel/Maysan-Al-Harithia/Maysan-Al-Harithia-07.webp",
+  ] },
+  firdaus: { city: "Madinah", name: "Hotel Oberoi / Setaraf", stars: 5, distance: "100 Meter", desc: "Hotel mewah dengan pemandangan indah Masjid Nabawi.", images: ["/images/Maysan.png"] },
+  ramadhan: { city: "Madinah", name: "Hotel Al Ansar / Setaraf", stars: 4, distance: "80 Meter", desc: "Hotel strategis untuk ibadah dengan suasana Ramadhan.", images: ["/images/Maysan.png"] },
 }
 
 function getCategory(slug: string): string {

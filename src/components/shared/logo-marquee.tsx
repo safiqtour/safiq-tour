@@ -19,6 +19,16 @@ const logos = [
   { src: "/images/Fly-DBA.png", alt: "Fly DBA" },
   { src: "/images/Ayuberga.png", alt: "AyuBerga" },
   { src: "/images/Haramain-High-Speed.png", alt: "Harmain High Speed Railway" },
+  { src: "/images/Logo-Kemenhaj.png", alt: "Kemenhaj" },
+  { src: "/images/Logo-Departemen-Agama.png", alt: "Departemen Agama" },
+  { src: "/images/Logo-Nusuk.png", alt: "Nusuk" },
+  { src: "/images/Logo-Siskopatuh.png", alt: "Siskopatuh" },
+  { src: "/images/Logo-Sapuhi.png", alt: "Sapuhi" },
+  { src: "/images/Logo-KAN.png", alt: "KAN" },
+  { src: "/images/Logo-BSI.png", alt: "BSI" },
+  { src: "/images/Logo-DKM-Al-Hidayah.png", alt: "DKM Al-Hidayah" },
+  { src: "/images/Logo-Pesantren-Daarul-Karomah.png", alt: "Pesantren Daarul Karomah" },
+  { src: "/images/Logo-At-Taslim-Ula.png", alt: "At-Taslim Ula" },
 ]
 
 function splitIntoRows<T>(items: T[], cols: number): T[][] {

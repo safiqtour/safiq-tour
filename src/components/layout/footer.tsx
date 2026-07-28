@@ -1,6 +1,5 @@
 import { FooterCTA } from "./FooterCTA"
 import { FooterLinks } from "./FooterLinks"
-import { FooterPartners } from "./FooterPartners"
 import { FooterBottom } from "./FooterBottom"
 
 function Footer() {
@@ -11,7 +10,6 @@ function Footer() {
         <div className="py-14">
           <FooterLinks />
         </div>
-        <FooterPartners />
         <FooterBottom />
       </div>
     </footer>
