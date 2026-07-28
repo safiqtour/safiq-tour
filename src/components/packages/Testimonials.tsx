@@ -68,7 +68,7 @@ export function Testimonials() {
           >
             Kata Mereka
           </h2>
-          <p className="mt-3 text-base text-[#1E293B]/60 md:text-lg">
+          <p className="mt-3 text-center text-base text-[#1E293B]/60 md:text-lg">
             Pengalaman jamaah setelah bergabung bersama Safiq Tour
           </p>
         </motion.div>

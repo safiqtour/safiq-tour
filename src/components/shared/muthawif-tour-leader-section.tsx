@@ -101,7 +101,7 @@ function MuthawifTourLeaderSection() {
           <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
             Muthawif / Tour Leader
           </h2>
-          <p className="text-base text-muted-foreground md:text-lg">
+          <p className="text-center text-base text-muted-foreground md:text-lg">
             Didampingi oleh Muthawif dan Tour Leader yang berkompeten dan berpengalaman
           </p>
         </div>

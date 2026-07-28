@@ -36,7 +36,7 @@ export function Airlines({ airlines }: AirlinesProps) {
           >
             Penerbangan Premium
           </h2>
-          <p className="mt-3 text-base text-white/60 md:text-lg">
+          <p className="mt-3 text-center text-base text-white/60 md:text-lg">
             Maskapai terbaik untuk kenyamanan perjalanan ibadah Anda
           </p>
         </motion.div>

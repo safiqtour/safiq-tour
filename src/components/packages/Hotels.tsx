@@ -30,7 +30,7 @@ export function Hotels({ hotels }: HotelsProps) {
           >
             Hotel Pilihan
           </h2>
-          <p className="mt-3 text-base text-[#1E293B]/60 md:text-lg">
+          <p className="mt-3 text-center text-base text-[#1E293B]/60 md:text-lg">
             Kenyamanan ibadah dengan hotel terbaik dan lokasi strategis
           </p>
         </motion.div>

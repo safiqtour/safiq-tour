@@ -205,6 +205,6 @@
     @apply font-heading text-balance;
   }
   p {
-    @apply text-pretty;
+    @apply text-justify;
   }
 }

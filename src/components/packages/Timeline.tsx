@@ -46,7 +46,7 @@ export function Timeline({ days, durationLabel }: TimelineProps) {
           >
             Rencana Perjalanan
           </h2>
-          <p className="mt-3 text-base text-[#1E293B]/60 md:text-lg">
+          <p className="mt-3 text-center text-base text-[#1E293B]/60 md:text-lg">
             Perjalanan ibadah {durationLabel.toLowerCase()} yang penuh keberkahan
           </p>
         </motion.div>

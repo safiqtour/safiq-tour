@@ -80,7 +80,7 @@ function PembimbingSection() {
             <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
               Tim Pembimbing Ibadah
             </h2>
-            <p className="text-base text-muted-foreground md:text-lg">
+            <p className="text-center text-base text-muted-foreground md:text-lg">
               Didampingi oleh para ahli ibadah yang berkompeten dan berpengalaman
             </p>
           </div>
