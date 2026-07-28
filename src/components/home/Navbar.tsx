@@ -34,7 +34,7 @@ export function Navbar() {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        "fixed top-0 left-0 right-0 z-50 h-20 transition-[background-color,box-shadow] duration-500",
         scrolled
           ? "bg-white shadow-lg shadow-black/5"
           : "bg-transparent"
