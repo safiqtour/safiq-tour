@@ -54,7 +54,7 @@ export function GalleryGrid({ filter }: GalleryGridProps) {
 
   return (
     <section id="gallery" className="py-16 md:py-20 bg-[#F8F6F2]">
-      <div className="mx-auto max-w-(--container-wide) px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-(--container-max) px-3 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
