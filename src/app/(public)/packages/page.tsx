@@ -28,7 +28,7 @@ export default function PackagesPage() {
         <div className="relative z-10 mx-auto w-full max-w-(--container-max) px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
             <div className="flex flex-col gap-4 md:gap-6">
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg md:text-5xl">
+              <h1 className="text-base font-bold text-white drop-shadow-lg md:text-2xl">
                 Pilih Paket Umroh Terbaik
               </h1>
               <p className="text-base text-white/80 md:text-xl">

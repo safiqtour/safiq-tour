@@ -51,8 +51,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-              className="font-playfair text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-6xl lg:text-7xl"
-              style={{ fontFamily: "var(--font-playfair)" }}
+              className="font-heading text-2xl font-bold leading-tight text-white drop-shadow-lg md:text-3xl lg:text-4xl"
             >
               {pkg.title.replace(/ \d+ Hari$/, "")}
             </motion.h1>
@@ -103,26 +102,26 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 80 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-            className="hidden justify-self-end md:flex"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+            className="flex justify-self-center md:justify-self-end mx-1 md:mx-0"
           >
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#D4AF37]/10">
-              <div className="space-y-5">
-                <div>
+            <div className="w-full md:max-w-sm rounded-[28px] md:rounded-3xl border border-white/15 bg-white/8 p-6 md:p-8 backdrop-blur-md shadow-2xl shadow-black/15 transition-all duration-500 md:hover:-translate-y-2 md:hover:shadow-2xl md:hover:shadow-[#D4AF37]/10">
+              <div className="flex flex-col">
+                <div className="mb-5">
                   <p className="text-xs font-medium tracking-wider text-white/50 uppercase">
                     Harga Spesial
                   </p>
-                  <p className="mt-1 font-playfair text-3xl font-bold text-[#D4AF37]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  <p className="mt-1 font-playfair text-5xl md:text-3xl font-bold text-[#D4AF37] leading-[1.1]" style={{ fontFamily: "var(--font-playfair)" }}>
                     {formatPrice(pkg.price)}
                   </p>
-                  <p className="text-xs text-white/40">/per orang</p>
+                  <p className="text-lg md:text-xs text-white/40">/per orang</p>
                 </div>
 
                 <div className="h-px bg-white/10" />
 
-                <div className="space-y-3">
+                <div className="flex flex-col gap-4 py-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-white/60">Durasi</span>
                     <span className="text-sm font-semibold text-white">{pkg.duration}</span>
@@ -147,7 +146,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
 
                 <Link
                   href="#cta"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
+                  className="mt-6 flex h-14 md:h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
                 >
                   Daftar Sekarang
                   <ArrowRight className="size-4" />
