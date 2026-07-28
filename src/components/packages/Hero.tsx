@@ -16,7 +16,7 @@ type HeroProps = {
 
 export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
   return (
-    <section className="relative -mt-20 flex min-h-[650px] items-center overflow-hidden">
+    <section className="relative z-10 -mt-20 flex min-h-0 md:min-h-[650px] items-start md:items-center overflow-hidden pb-24 md:pb-24">
       <Image
         src={heroImage}
         alt={`Paket Umroh ${pkg.title}`}
@@ -82,11 +82,11 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}
-              className="flex flex-row items-center gap-3"
+              className="relative z-20 mt-8 mb-12 md:mb-0 flex flex-col md:flex-row items-center gap-4"
             >
               <Link
                 href="#cta"
-                className="group inline-flex h-10 md:h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-xs font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25 sm:px-7 sm:text-sm"
+                className="group inline-flex w-full md:flex-1 min-h-14 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-xs font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25 sm:px-7 sm:text-sm"
               >
                 Daftar Sekarang
                 <ArrowRight className="size-3.5 sm:size-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -94,7 +94,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
 
               <Link
                 href="#"
-                className="group inline-flex h-10 md:h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 text-xs font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-[#D4AF37]/50 hover:bg-white/10 sm:px-7 sm:text-sm"
+                className="group inline-flex w-full md:flex-1 min-h-14 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 text-xs font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-[#D4AF37]/50 hover:bg-white/10 sm:px-7 sm:text-sm"
               >
                 <Download className="size-4 text-[#D4AF37]" />
                 Download Brosur

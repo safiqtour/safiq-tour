@@ -35,20 +35,20 @@ export function QuickInfo({ duration, maskapai, hotelLabel }: QuickInfoProps) {
   }
 
   return (
-    <section className="relative z-20 -mt-16 pb-12">
+    <section className="relative z-10 -mt-16 pb-12">
       <div className="mx-auto max-w-(--container-max) px-3 sm:px-6 lg:px-8">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
         >
           {items.map((item) => (
             <motion.div
               key={item.label}
               variants={itemVariants}
-              className="group rounded-2xl border border-[#0B2D5C]/10 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/30 hover:shadow-lg hover:shadow-[#D4AF37]/5"
+              className="group rounded-3xl border border-[#0B2D5C]/10 bg-white p-5 shadow transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/30 hover:shadow-lg hover:shadow-[#D4AF37]/5"
             >
               <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-[#0B2D5C]/5 text-[#0B2D5C] transition-colors duration-300 group-hover:bg-[#D4AF37]/10 group-hover:text-[#D4AF37]">
                 <item.icon className="size-5" />

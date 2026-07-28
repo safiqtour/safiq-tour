@@ -13,7 +13,7 @@ export default function PackagesPage() {
 
   return (
     <>
-      <section className="relative min-h-[320px] md:min-h-[400px] h-[55vh] md:h-[60vh] -mt-20 flex items-center overflow-hidden">
+      <section className="relative min-h-[420px] md:min-h-[520px] -mt-20 flex items-center overflow-hidden">
         <Image
           src="/images/Hero-Nabawi-paket-Safiq-Tour-01.webp"
           alt="Paket Umroh Safiq Tour"
