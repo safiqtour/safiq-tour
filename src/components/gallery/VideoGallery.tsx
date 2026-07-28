@@ -6,10 +6,10 @@ import { Play, X, Clock, MapPin } from "lucide-react"
 import Image from "next/image"
 
 const videos = [
-  { id: "vid1", thumbnail: "/images/Galery/Image-Galery-Safiq-Tour-01.webp", title: "Keberangkatan Jamaah Safiq Tour", location: "Bandara Soekarno-Hatta", duration: "3:24" },
-  { id: "vid2", thumbnail: "/images/Galery/Image-Galery-Safiq-Tour-03.webp", title: "Suasana Ibadah di Masjid Nabawi", location: "Madinah", duration: "2:51" },
-  { id: "vid3", thumbnail: "/images/Galery/Image-Galery-Safiq-Tour-05.webp", title: "City Tour Madinah", location: "Madinah", duration: "4:12" },
-  { id: "vid4", thumbnail: "/images/Galery/Image-Galery-Safiq-Tour-07.webp", title: "Testimoni Jamaah Safiq Tour", location: "Mekkah", duration: "1:58" },
+  { id: "fDSV15dPXqk", title: "Meraih Berkah Syawal di Tanah Suci: Umroh Plus Turki 1447H", location: "Mekkah & Madinah", duration: "2:30" },
+  { id: "yxnvxYkqNFg", title: "Berangkat Bersama Safiq Tour, Insha Alloh Aman & Nyaman", location: "Bandara Soekarno-Hatta", duration: "1:25" },
+  { id: "NajKXlTZcIM", title: "Yu Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:10" },
+  { id: "fhVGbInBvAU", title: "Ayo Wujudkan Mimpi Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:02" },
 ]
 
 export function VideoGallery() {
@@ -42,11 +42,12 @@ export function VideoGallery() {
               aria-label={`Putar video: ${video.title}`}
             >
               <Image
-                src={video.thumbnail}
+                src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
                 alt={video.title}
                 fill
                 className="object-cover transition-all duration-700 group-hover:scale-110"
                 sizes="(max-width: 640px) 100vw, 50vw"
+                unoptimized
               />
               <div className="absolute inset-0 bg-[#0F2343]/30 transition-all duration-500 group-hover:bg-[#0F2343]/50" />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -91,9 +92,13 @@ export function VideoGallery() {
               className="relative aspect-video w-full max-w-4xl overflow-hidden rounded-2xl bg-black"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-white/50">Video Player</p>
-              </div>
+              <iframe
+                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1&rel=0`}
+                title="Video Safiq Tour"
+                className="absolute inset-0 h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             </motion.div>
           </motion.div>
         )}
