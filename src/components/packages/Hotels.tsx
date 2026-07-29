@@ -134,7 +134,7 @@ export function Hotels({ hotels }: HotelsProps) {
 
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-[#1E293B]/50">
                   <MapPin className="size-3.5 text-[#D4AF37]" />
-                  <span>{hotel.distance} dari Masjid</span>
+                  <span>{hotel.distance} ke Masjid</span>
                 </div>
 
                 <p className="mt-2 text-sm leading-relaxed text-[#1E293B]/60">{hotel.desc}</p>

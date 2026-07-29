@@ -83,7 +83,7 @@ const airlinesList: AirlineInfo[] = [
 ]
 
 const hotelMekahMap: Record<string, HotelInfo> = {
-  zamzam: { city: "Mekkah", name: "Fajr Al Badea 4 / Setaraf", stars: 3, distance: "150 Meter", desc: "Hotel nyaman dengan lokasi strategis dekat Masjidil Haram.", images: [
+  zamzam: { city: "Mekkah", name: "Fajr Al Badea 4 / Setaraf", stars: 3, distance: "500 Meter", desc: "Hotel nyaman dengan lokasi strategis dekat Masjidil Haram.", images: [
     "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-01.webp",
     "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-02.webp",
     "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-03.webp",
@@ -115,7 +115,7 @@ const hotelMekahMap: Record<string, HotelInfo> = {
 }
 
 const hotelMadinahMap: Record<string, HotelInfo> = {
-  zamzam: { city: "Madinah", name: "Al Baraka Karim / Setaraf", stars: 3, distance: "120 Meter", desc: "Hotel modern dengan akses mudah ke Masjid Nabawi.", images: [
+  zamzam: { city: "Madinah", name: "Al Baraka Karim / Setaraf", stars: 3, distance: "200 Meter", desc: "Hotel modern dengan akses mudah ke Masjid Nabawi.", images: [
     "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-01.webp",
     "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-02.webp",
     "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-03.webp",
