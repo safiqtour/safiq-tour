@@ -180,6 +180,20 @@
   }
 }
 
+.prose-content p {
+  @apply text-justify;
+}
+
+@media print {
+  nav, footer, .no-print {
+    display: none !important;
+  }
+  .prose-content {
+    font-size: 12pt;
+    line-height: 1.8;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

@@ -20,7 +20,7 @@ function ArticleCard({ article, className }: ArticleCardProps) {
               src={article.image}
               alt={article.title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-fill transition-transform duration-500 group-hover:scale-105"
             />
           </div>
         )}

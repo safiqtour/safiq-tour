@@ -94,13 +94,13 @@ const hotelMekahMap: Record<string, HotelInfo> = {
     "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-08.webp",
     "/images/Hotel/Fajr-Al-Badea-4/Fajr-Al-Badea-4-Safiq-tour-09.webp",
   ] },
-  thaibah: { city: "Mekkah", name: "Hotel Dar Al Eiman / Setaraf", stars: 4, distance: "100 Meter", desc: "Hotel modern dengan akses cepat ke Masjidil Haram.", images: [
+  thaibah: { city: "Mekkah", name: "Hotel Dar Al Eiman / Setaraf", stars: 4, distance: "750 Meter", desc: "Hotel modern dengan akses cepat ke Masjidil Haram.", images: [
     "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-01.webp",
     "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-02.webp",
     "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-03.webp",
     "/images/Hotel/Hotel-Dar-Al-Eiman/Hotel-Dar-Al-Eiman-04.webp",
   ] },
-  rawdah: { city: "Mekkah", name: "Al Safwah Tower 3 / Setaraf", stars: 5, distance: "50 Meter", desc: "Hotel bintang lima dengan pemandangan langsung Masjidil Haram.", images: [
+  rawdah: { city: "Mekkah", name: "Al Safwah Tower 3 / Setaraf", stars: 5, distance: "200 Meter", desc: "Hotel bintang lima dengan pemandangan langsung Masjidil Haram.", images: [
     "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-01.webp",
     "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-02.webp",
     "/images/Hotel/Al-Safwah-Tower-3/Al-Safwah-Tower-3-03.webp",
@@ -121,7 +121,7 @@ const hotelMadinahMap: Record<string, HotelInfo> = {
     "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-03.webp",
     "/images/Hotel/Al-Baraka-Karim/Al-Baraka-Karim-safiq-tour-04.webp",
   ] },
-  thaibah: { city: "Madinah", name: "Hotel Al Mukhtarah / Setaraf", stars: 4, distance: "80 Meter", desc: "Hotel elegan dekat Masjid Nabawi dengan pelayanan prima.", images: [
+  thaibah: { city: "Madinah", name: "Hotel Al Mukhtarah / Setaraf", stars: 4, distance: "200 Meter", desc: "Hotel elegan dekat Masjid Nabawi dengan pelayanan prima.", images: [
     "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-01.webp",
     "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-02.webp",
     "/images/Hotel/Hotel-Al-Mukhtarah/Hotel-Al-Mukhtarah-03.webp",
