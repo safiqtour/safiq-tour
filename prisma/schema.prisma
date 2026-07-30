@@ -1,0 +1,871 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String?
+  email     String    @unique
+  password  String
+  roleId    String?
+  role      Role?     @relation(fields: [roleId], references: [id])
+  image     String?
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  sessions        Session[]
+  accounts        Account[]
+  activityLogs    ActivityLog[]
+  createdPackages Package[]    @relation("CreatedByUser")
+  uploadedMedia   Media[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String             @id @default(uuid())
+  name        String
+  slug        String             @unique
+  description String?
+  level       Int                @default(0)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String             @id @default(uuid())
+  name        String
+  resource    String
+  action      String
+  description String?
+  createdAt   DateTime           @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  isAllowed    Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  resource   String
+  resourceId String?
+  metadata   String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource, action])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  type        String   @default("STRING")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Country {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  code      String    @unique
+  phoneCode String    @default("")
+  flag      String    @default("")
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  regions       Region[]
+  cities        City[]
+  destinations  Destination[]
+  hotels        Hotel[]
+  airlines      Airline[]
+  visas         Visa[]
+  currencies    Currency[]
+
+  @@index([name])
+  @@index([code])
+  @@index([isActive])
+  @@map("countries")
+}
+
+model Region {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String
+  countryId String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  country       Country       @relation(fields: [countryId], references: [id])
+  cities        City[]
+  destinations  Destination[]
+  hotels        Hotel[]
+
+  @@unique([slug, countryId])
+  @@index([name])
+  @@index([countryId])
+  @@index([isActive])
+  @@map("regions")
+}
+
+model City {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String
+  countryId String
+  regionId  String?
+  timezone  String    @default("")
+  latitude  Float?
+  longitude Float?
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  country       Country       @relation(fields: [countryId], references: [id])
+  region        Region?       @relation(fields: [regionId], references: [id])
+  destinations  Destination[]
+  hotels        Hotel[]
+
+  @@unique([slug, countryId])
+  @@index([name])
+  @@index([countryId])
+  @@index([regionId])
+  @@index([isActive])
+  @@map("cities")
+}
+
+model DestinationType {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  destinations Destination[]
+
+  @@index([slug])
+  @@map("destination_types")
+}
+
+model Destination {
+  id              String          @id @default(uuid())
+  name            String
+  slug            String
+  description     String          @default("")
+  seoTitle        String          @default("")
+  seoDescription  String          @default("")
+  featuredImage   String          @default("")
+  sortOrder       Int             @default(0)
+  destinationTypeId String?
+  countryId       String
+  regionId        String?
+  cityId          String
+  isActive        Boolean         @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  destinationType DestinationType? @relation(fields: [destinationTypeId], references: [id])
+  country         Country         @relation(fields: [countryId], references: [id])
+  region          Region?         @relation(fields: [regionId], references: [id])
+  city            City            @relation(fields: [cityId], references: [id])
+  media           DestinationMedia[]
+  hotels          Hotel[]
+
+  @@unique([slug, countryId])
+  @@index([name])
+  @@index([countryId])
+  @@index([regionId])
+  @@index([cityId])
+  @@index([destinationTypeId])
+  @@index([isActive])
+  @@map("destinations")
+}
+
+model DestinationMedia {
+  id            String      @id @default(uuid())
+  destinationId String
+  mediaId       String
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  media       Media       @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([destinationId, mediaId])
+  @@index([destinationId])
+  @@index([mediaId])
+  @@map("destination_media")
+}
+
+model MediaFolder {
+  id        String        @id @default(uuid())
+  name      String
+  slug      String
+  parentId  String?
+  parent    MediaFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  MediaFolder[] @relation("FolderHierarchy")
+  media     Media[]
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([slug, parentId])
+  @@index([parentId])
+  @@map("media_folders")
+}
+
+model MediaTag {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  slug      String      @unique
+  createdAt DateTime    @default(now())
+
+  media     MediaTagOnMedia[]
+
+  @@map("media_tags")
+}
+
+model MediaTagOnMedia {
+  id      String    @id @default(uuid())
+  mediaId String
+  tagId   String
+  media   Media     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  tag     MediaTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, tagId])
+  @@map("media_tag_on_media")
+}
+
+model MediaUsage {
+  id        String   @id @default(uuid())
+  mediaId   String
+  entity    String
+  entityId  String
+  field     String   @default("")
+  createdAt DateTime @default(now())
+
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([entity, entityId])
+  @@index([mediaId])
+  @@map("media_usage")
+}
+
+model Media {
+  id              String          @id @default(uuid())
+  filename        String
+  originalName    String          @default("")
+  extension       String          @default("")
+  mimeType        String
+  size            Int
+  width           Int?
+  height          Int?
+  alt             String?
+  caption         String          @default("")
+  description     String          @default("")
+  dominantColor   String          @default("")
+  blurHash        String          @default("")
+  storageProvider String          @default("local")
+  storagePath     String          @default("")
+  url             String
+  thumbnailUrl    String?
+  isPublic        Boolean         @default(true)
+  folderId        String?
+  folder          MediaFolder?    @relation(fields: [folderId], references: [id])
+  uploadedById    String?
+  uploadedBy      User?           @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  tags            MediaTagOnMedia[]
+  usage           MediaUsage[]
+  destinationMedia DestinationMedia[]
+  hotelMedia       HotelMedia[]
+  hotelFeatured    Hotel[]          @relation("HotelFeatured")
+  airlineLogos     Airline[]         @relation("AirlineLogo")
+  transportMedia   Transportation[]  @relation("TransportMedia")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  @@index([folderId])
+  @@index([uploadedById])
+  @@index([mimeType])
+  @@index([deletedAt])
+  @@map("media")
+}
+
+model Package {
+  id              String            @id @default(uuid())
+  title           String
+  slug            String            @unique
+  excerpt         String
+  description     String            @default("")
+  category        String            @default("REGULAR")
+  country         String            @default("")
+  city            String            @default("")
+  duration        Int               @default(0)
+  price           Int               @default(0)
+  promoPrice      Int?
+  discount        Int               @default(0)
+  currency        String            @default("IDR")
+  airline         String            @default("")
+  quota           Int               @default(0)
+  seatFilled      Int               @default(0)
+  status          String            @default("DRAFT")
+  featured        Boolean           @default(false)
+  badge           String?
+  thumbnail       String            @default("")
+  heroImage       String            @default("")
+  metaTitle       String            @default("")
+  metaDescription String            @default("")
+  keywords        String            @default("")
+  publishedAt     DateTime?
+  createdById     String?
+  createdBy       User?             @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  hotels      PackageHotel[]
+  schedules   PackageSchedule[]
+  facilities  PackageFacility[]
+  itineraries PackageItinerary[]
+  galleries   PackageGallery[]
+
+  @@map("packages")
+}
+
+model PackageHotel {
+  id        String  @id @default(uuid())
+  packageId String
+  hotelId   String?
+  type      String  @default("MEKKAH")
+  name      String  @default("")
+  stars     Int     @default(0)
+  distance  String  @default("")
+  mapsUrl   String  @default("")
+  image     String  @default("")
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  hotel     Hotel?  @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+
+  @@map("package_hotels")
+}
+
+model PackageSchedule {
+  id            String   @id @default(uuid())
+  packageId     String
+  departureDate DateTime
+  returnDate    DateTime?
+  meetingPoint  String   @default("")
+  seat          Int      @default(0)
+  seatFilled    Int      @default(0)
+  package       Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_schedules")
+}
+
+model PackageFacility {
+  id        String  @id @default(uuid())
+  packageId String
+  name      String  @default("")
+  icon      String  @default("")
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_facilities")
+}
+
+model PackageItinerary {
+  id          String  @id @default(uuid())
+  packageId   String
+  day         Int
+  title       String  @default("")
+  description String  @default("")
+  image       String  @default("")
+  package     Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_itineraries")
+}
+
+model PackageGallery {
+  id        String  @id @default(uuid())
+  packageId String
+  url       String  @default("")
+  alt       String  @default("")
+  sortOrder Int     @default(0)
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_galleries")
+}
+
+model Hotel {
+  id              String    @id @default(uuid())
+  name            String
+  slug            String    @unique
+  countryId       String
+  regionId        String?
+  cityId          String?
+  destinationId   String?
+  starRating      Int       @default(3)
+  distanceToHaram String    @default("")
+  distanceToNabawi String   @default("")
+  latitude        String    @default("")
+  longitude       String    @default("")
+  address         String    @default("")
+  mapsUrl         String    @default("")
+  phone           String    @default("")
+  email           String    @default("")
+  website         String    @default("")
+  checkIn         String    @default("14:00")
+  checkOut        String    @default("12:00")
+  shortDescription String   @default("")
+  description     String    @default("")
+  featuredMediaId String?
+  status          String    @default("ACTIVE")
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  country         Country?       @relation(fields: [countryId], references: [id])
+  region          Region?        @relation(fields: [regionId], references: [id])
+  city            City?          @relation(fields: [cityId], references: [id])
+  destination     Destination?   @relation(fields: [destinationId], references: [id])
+  featuredMedia   Media?          @relation("HotelFeatured", fields: [featuredMediaId], references: [id], onDelete: SetNull)
+  media           HotelMedia[]
+  hotelAmenities  HotelAmenityOnHotel[]
+  roomTypes       HotelRoomType[]
+  contacts        HotelContact[]
+  policies        HotelPolicy[]
+  packages        PackageHotel[]
+
+  @@index([countryId])
+  @@index([cityId])
+  @@index([starRating])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("hotels")
+}
+
+model HotelAmenity {
+  id        String         @id @default(uuid())
+  name      String
+  icon      String         @default("")
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+
+  hotels    HotelAmenityOnHotel[]
+
+  @@map("hotel_amenities")
+}
+
+model HotelAmenityOnHotel {
+  id        String      @id @default(uuid())
+  hotelId   String
+  amenityId String
+  hotel     Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  amenity   HotelAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, amenityId])
+  @@map("hotel_amenity_on_hotel")
+}
+
+model HotelMedia {
+  id        String @id @default(uuid())
+  hotelId   String
+  mediaId   String
+  type      String @default("GALLERY")
+  sortOrder Int    @default(0)
+  createdAt DateTime @default(now())
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, mediaId, type])
+  @@index([hotelId])
+  @@map("hotel_media")
+}
+
+model HotelRoomType {
+  id          String  @id @default(uuid())
+  hotelId     String
+  name        String
+  description String  @default("")
+  price       Int     @default(0)
+  capacity    Int     @default(2)
+  sortOrder   Int     @default(0)
+  createdAt   DateTime @default(now())
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("hotel_room_types")
+}
+
+model HotelContact {
+  id        String  @id @default(uuid())
+  hotelId   String
+  type      String
+  value     String
+  sortOrder Int     @default(0)
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("hotel_contacts")
+}
+
+model HotelPolicy {
+  id        String   @id @default(uuid())
+  hotelId   String
+  type      String
+  content   String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("hotel_policies")
+}
+
+model Airline {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  iataCode    String?   @unique
+  icaoCode    String?
+  countryId   String?
+  logoMediaId String?
+  website     String    @default("")
+  callCenter  String    @default("")
+  status      String    @default("ACTIVE")
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  country    Country? @relation(fields: [countryId], references: [id])
+  logoMedia  Media?   @relation("AirlineLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("airlines")
+}
+
+model Transportation {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  type        String    @default("BUS")
+  capacity    Int       @default(0)
+  status      String    @default("ACTIVE")
+  description String    @default("")
+  mediaId     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  media Media? @relation("TransportMedia", fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("transportations")
+}
+
+model Facility {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  slug        String    @unique
+  name        String
+  icon        String    @default("")
+  category    String    @default("Other")
+  description String    @default("")
+  sortOrder   Int       @default(0)
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([category])
+  @@index([sortOrder])
+  @@index([deletedAt])
+  @@map("facilities")
+}
+
+model Visa {
+  id               String    @id @default(uuid())
+  code             String    @unique
+  slug             String    @unique
+  name             String
+  countryId        String
+  country          Country   @relation(fields: [countryId], references: [id])
+  visaType         String    @default("UMRAH")
+  entryType        String    @default("SINGLE")
+  processingDays   Int       @default(0)
+  validityDays     Int       @default(0)
+  stayDurationDays Int       @default(0)
+  requirement      String    @default("")
+  notes            String    @default("")
+  isElectronic     Boolean   @default(false)
+  sortOrder        Int       @default(0)
+  status           String    @default("ACTIVE")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([countryId])
+  @@index([visaType])
+  @@index([entryType])
+  @@index([sortOrder])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("visas")
+
+  packageTypes PackageType[]
+}
+
+model Currency {
+  id                 String    @id @default(uuid())
+  code               String    @unique
+  slug               String    @unique
+  name               String
+  isoCode            String    @unique
+  symbol             String    @default("")
+  symbolPosition     String    @default("PREFIX")
+  decimalDigits      Int       @default(2)
+  thousandSeparator  String    @default(",")
+  decimalSeparator   String    @default(".")
+  exchangeRate       Float     @default(1.0)
+  isBaseCurrency     Boolean   @default(false)
+  countryId          String?
+  country            Country?  @relation(fields: [countryId], references: [id])
+  sortOrder          Int       @default(0)
+  status             String    @default("ACTIVE")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  @@index([countryId])
+  @@index([sortOrder])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("currencies")
+}
+
+model PackageCategory {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  slug        String    @unique
+  name        String    @unique
+  shortName   String    @unique
+  description String    @default("")
+  displayOrder Int      @default(0)
+  icon        String    @default("LayoutGrid")
+  color       String    @default("blue")
+  isFeatured  Boolean   @default(false)
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([displayOrder])
+  @@index([isFeatured])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("package_categories")
+
+  packageTypes PackageType[]
+}
+
+model PackageType {
+  id                  String    @id @default(uuid())
+  code                String    @unique
+  slug                String    @unique
+  name                String    @unique
+  shortName           String    @unique
+  description         String    @default("")
+  defaultDurationDays Int       @default(0)
+  defaultVisaId       String?
+  defaultCategoryId   String?
+  icon                String    @default("Plane")
+  color               String    @default("blue")
+  displayOrder        Int       @default(0)
+  isFeatured          Boolean   @default(false)
+  status              String    @default("ACTIVE")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  defaultVisa       Visa?            @relation(fields: [defaultVisaId], references: [id])
+  defaultCategory   PackageCategory? @relation(fields: [defaultCategoryId], references: [id])
+
+  @@index([displayOrder])
+  @@index([isFeatured])
+  @@index([defaultVisaId])
+  @@index([defaultCategoryId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("package_types")
+}
+
+model Promotion {
+  id                    String    @id @default(uuid())
+  code                  String    @unique
+  slug                  String    @unique
+  name                  String
+  description           String    @default("")
+  promotionType         String    @default("CUSTOM")
+  discountType          String    @default("PERCENTAGE")
+  discountValue         Float     @default(0)
+  minimumPurchaseAmount Float     @default(0)
+  maximumDiscountAmount Float     @default(0)
+  startDate             DateTime
+  endDate               DateTime
+  usageLimit            Int       @default(0)
+  usedCount             Int       @default(0)
+  isPublic              Boolean   @default(true)
+  isAutoApply           Boolean   @default(false)
+  priority              Int       @default(0)
+  status                String    @default("ACTIVE")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  @@index([promotionType])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("promotions")
+}
+
+model Tag {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  slug        String    @unique
+  name        String    @unique
+  shortName   String    @unique
+  description String    @default("")
+  color       String    @default("blue")
+  icon        String    @default("Tag")
+  displayOrder Int      @default(0)
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([displayOrder])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("tags")
+}
+
+model BusinessSetting {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  group       String    @default("GENERAL")
+  value       String    @default("")
+  valueType   String    @default("STRING")
+  label       String
+  description String    @default("")
+  isPublic    Boolean   @default(false)
+  isReadonly  Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  updatedBy   String    @default("")
+  deletedAt   DateTime?
+
+  @@index([group])
+  @@index([status])
+  @@index([sortOrder])
+  @@index([deletedAt])
+  @@map("business_settings")
+}

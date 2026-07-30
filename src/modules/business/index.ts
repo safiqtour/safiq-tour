@@ -1,0 +1,5 @@
+export { BaseRepository } from "./repositories/base.repository"
+export { BaseService } from "./services/base.service"
+export { requirePermission, checkPermission } from "./lib/permission"
+export { generateCode, generateNumericCode, generateSequentialCode } from "./utils/code"
+export type { BusinessModuleAction, BusinessModuleConfig } from "./types/base.types"
