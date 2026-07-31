@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { packageTypeService } from "../services/package-type.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/package-type.schema"
 
 export async function getPackageTypes(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.package-type:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.package-type:read")) throw new Error("Forbidden")
 
   const query = packageTypeQuerySchema.parse(params)
   return packageTypeService.findAll(query as never)
 }
 
 export async function getPackageType(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.package-type:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.package-type:read")) throw new Error("Forbidden")
 
   return packageTypeService.findById(id)
 }

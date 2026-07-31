@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { businessSettingService } from "../services/business-setting.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/business-setting.schema"
 
 export async function getBusinessSettings(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
 
   const query = businessSettingQuerySchema.parse(params)
   return businessSettingService.findAll(query as never)
 }
 
 export async function getBusinessSetting(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
 
   return businessSettingService.findById(id)
 }

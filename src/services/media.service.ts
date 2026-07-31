@@ -2,7 +2,7 @@ import { mediaRepository } from "@/repositories/media.repository"
 import { mediaFolderRepository } from "@/repositories/media-folder.repository"
 import { mediaTagRepository } from "@/repositories/media-tag.repository"
 import { logActivity } from "@/services/audit.service"
-import { storage } from "@/lib/storage"
+import { storageService } from "@/services/storage.service"
 import slugify from "slugify"
 
 export const mediaService = {
@@ -18,7 +18,7 @@ export const mediaService = {
     const ext = file.name.split(".").pop() ?? ""
     const baseName = file.name.replace(/\.[^.]+$/, "")
     const storagePath = `${folderId ?? "root"}/${Date.now()}_${slugify(baseName, { lower: true, strict: true })}`
-    const result = await storage.upload(file, storagePath)
+    const result = await storageService.upload(file, storagePath)
 
     const media = await mediaRepository.create({
       filename: file.name,
@@ -97,7 +97,7 @@ export const mediaService = {
   async hardDelete(id: string) {
     const media = await mediaRepository.findById(id)
     if (!media) throw new Error("Media not found")
-    await storage.delete(media.storagePath)
+    await storageService.delete(media.storagePath)
     await mediaRepository.hardDelete(id)
   },
 

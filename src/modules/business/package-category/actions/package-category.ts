@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { packageCategoryService } from "../services/package-category.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/package-category.schema"
 
 export async function getPackageCategories(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.package-category:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.package-category:read")) throw new Error("Forbidden")
 
   const query = packageCategoryQuerySchema.parse(params)
   return packageCategoryService.findAll(query as never)
 }
 
 export async function getPackageCategory(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.package-category:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.package-category:read")) throw new Error("Forbidden")
 
   return packageCategoryService.findById(id)
 }

@@ -32,40 +32,41 @@ import {
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { matchesPermission } from "@/providers/auth/resolvers/permission.resolver"
 
 const menuItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" },
   {
     label: "Master Data",
     icon: Globe,
     children: [
-      { href: "/admin/geography/countries", label: "Country", icon: Flag },
-      { href: "/admin/geography/regions", label: "Region", icon: MapPin },
-      { href: "/admin/geography/cities", label: "City", icon: Building2 },
-      { href: "/admin/geography/destinations", label: "Destination", icon: Globe },
-      { href: "/admin/hospitality/hotels", label: "Hotel", icon: Hotel },
-      { href: "/admin/hospitality/airlines", label: "Airline", icon: Plane },
-      { href: "/admin/hospitality/transportation", label: "Transportation", icon: Bus },
-      { href: "/admin/master/facilities", label: "Facility", icon: List },
-      { href: "/admin/master/visas", label: "Visa", icon: Globe },
-      { href: "/admin/master/currencies", label: "Currency", icon: Coins },
-      { href: "/admin/master/promotions", label: "Promotion", icon: Tag },
-      { href: "/admin/master/package-categories", label: "Package Category", icon: LayoutGrid },
-      { href: "/admin/master/package-types", label: "Package Type", icon: Plane },
-      { href: "/admin/master/tags", label: "Tags", icon: Tag },
-      { href: "/admin/master/business-settings", label: "Business Settings", icon: Settings },
+      { href: "/admin/geography/countries", label: "Country", icon: Flag, permission: "master.country:read" },
+      { href: "/admin/geography/regions", label: "Region", icon: MapPin, permission: "master.region:read" },
+      { href: "/admin/geography/cities", label: "City", icon: Building2, permission: "master.city:read" },
+      { href: "/admin/geography/destinations", label: "Destination", icon: Globe, permission: "master.destination:read" },
+      { href: "/admin/hospitality/hotels", label: "Hotel", icon: Hotel, permission: "master.hotel:read" },
+      { href: "/admin/hospitality/airlines", label: "Airline", icon: Plane, permission: "master.airline:read" },
+      { href: "/admin/hospitality/transportation", label: "Transportation", icon: Bus, permission: "master.transportation:read" },
+      { href: "/admin/master/facilities", label: "Facility", icon: List, permission: "master.facility:read" },
+      { href: "/admin/master/visas", label: "Visa", icon: Globe, permission: "master.visa:read" },
+      { href: "/admin/master/currencies", label: "Currency", icon: Coins, permission: "master.currency:read" },
+      { href: "/admin/master/promotions", label: "Promotion", icon: Tag, permission: "master.promotion:read" },
+      { href: "/admin/master/package-categories", label: "Package Category", icon: LayoutGrid, permission: "master.package-category:read" },
+      { href: "/admin/master/package-types", label: "Package Type", icon: Plane, permission: "master.package-type:read" },
+      { href: "/admin/master/tags", label: "Tags", icon: Tag, permission: "master.tag:read" },
+      { href: "/admin/master/business-settings", label: "Business Settings", icon: Settings, permission: "master.business-setting:read" },
     ],
   },
-  { href: "/admin/media", label: "Media Library", icon: Image },
-  { href: "/admin/packages", label: "Paket Umroh", icon: Package },
-  { href: "/admin/articles", label: "Artikel", icon: FileText },
-  { href: "/admin/gallery", label: "Gallery", icon: Image },
-  { href: "/admin/schedule", label: "Jadwal", icon: Calendar },
-  { href: "/admin/promo", label: "Promo", icon: Megaphone },
-  { href: "/admin/testimonials", label: "Testimoni", icon: MessageSquare },
-  { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/media", label: "Media Library", icon: Image, permission: "media:read" },
+  { href: "/admin/packages", label: "Paket Umroh", icon: Package, permission: "package:read" },
+  { href: "/admin/articles", label: "Artikel", icon: FileText, permission: "cms:read" },
+  { href: "/admin/gallery", label: "Gallery", icon: Image, permission: "media:read" },
+  { href: "/admin/schedule", label: "Jadwal", icon: Calendar, permission: "booking:read" },
+  { href: "/admin/promo", label: "Promo", icon: Megaphone, permission: "marketing:read" },
+  { href: "/admin/testimonials", label: "Testimoni", icon: MessageSquare, permission: "cms:read" },
+  { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "cms:read" },
+  { href: "/admin/users", label: "Users", icon: Users, permission: "user:read" },
+  { href: "/admin/settings", label: "Settings", icon: Settings, permission: "setting:read" },
 ]
 
 interface SidebarProps {
@@ -73,10 +74,13 @@ interface SidebarProps {
   onToggle: () => void
   mobileOpen: boolean
   onMobileClose: () => void
+  permissions?: string[]
 }
 
-export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, permissions = [] }: SidebarProps) {
   const pathname = usePathname()
+  const canSee = (permission?: string) =>
+    permission ? matchesPermission(permission, permissions) : true
   const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
     return menuItems.filter((item) => "children" in item && item.children?.some((c) => pathname.startsWith(c.href))).map((item) => item.label)
   })
@@ -127,11 +131,17 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide">
-        {menuItems.map((item) => {
+        {menuItems.filter((item) => {
+          if ("children" in item) {
+            return item.children?.some((c) => canSee(c.permission))
+          }
+          return canSee(item.permission)
+        }).map((item) => {
           if ("children" in item) {
             const Icon = item.icon
             const isExpanded = expandedMenus.includes(item.label)
             const anyChildActive = item.children?.some((c) => pathname.startsWith(c.href))
+            const visibleChildren = item.children?.filter((c) => canSee(c.permission)) ?? []
             return (
               <div key={item.label}>
                 <button
@@ -159,7 +169,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                 </button>
                 {!collapsed && isExpanded && (
                   <div className="ml-4 mt-1 space-y-0.5 border-l border-white/10 pl-2">
-                    {item.children?.map((child) => {
+                    {visibleChildren.map((child) => {
                       const ChildIcon = child.icon
                       const isChildActive = pathname === child.href || pathname.startsWith(child.href + "/")
                       return (

@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { tagService } from "../services/tag.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/tag.schema"
 
 export async function getTags(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.tag:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.tag:read")) throw new Error("Forbidden")
 
   const query = tagQuerySchema.parse(params)
   return tagService.findAll(query as never)
 }
 
 export async function getTag(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.tag:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.tag:read")) throw new Error("Forbidden")
 
   return tagService.findById(id)
 }

@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { promotionService } from "../services/promotion.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/promotion.schema"
 
 export async function getPromotions(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.promotion:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.promotion:read")) throw new Error("Forbidden")
 
   const query = promotionQuerySchema.parse(params)
   return promotionService.findAll(query as never)
 }
 
 export async function getPromotion(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.promotion:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.promotion:read")) throw new Error("Forbidden")
 
   return promotionService.findById(id)
 }

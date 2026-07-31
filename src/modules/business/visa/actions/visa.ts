@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { visaService } from "../services/visa.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/visa.schema"
 
 export async function getVisas(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.visa:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.visa:read")) throw new Error("Forbidden")
 
   const query = visaQuerySchema.parse(params)
   return visaService.findAll(query as never)
 }
 
 export async function getVisa(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.visa:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.visa:read")) throw new Error("Forbidden")
 
   return visaService.findById(id)
 }

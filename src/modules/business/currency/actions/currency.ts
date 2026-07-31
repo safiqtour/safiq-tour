@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { currencyService } from "../services/currency.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/currency.schema"
 
 export async function getCurrencies(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.currency:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.currency:read")) throw new Error("Forbidden")
 
   const query = currencyQuerySchema.parse(params)
   return currencyService.findAll(query as never)
 }
 
 export async function getCurrency(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.currency:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.currency:read")) throw new Error("Forbidden")
 
   return currencyService.findById(id)
 }

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth/auth"
+import { getSession } from "@/services/auth.integration.service"
 import { findUserById, verifyPassword, changePassword } from "@/services/auth.service"
 
 export async function PUT(req: Request) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

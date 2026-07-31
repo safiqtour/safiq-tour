@@ -1,7 +1,7 @@
 "use server"
 
-import { auth } from "@/lib/auth/auth"
-import { hasPermission } from "@/services/auth.service"
+import { getSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { facilityService } from "../services/facility.service"
 import {
@@ -11,18 +11,18 @@ import {
 } from "../validations/facility.schema"
 
 export async function getFacilities(params: unknown) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.facility:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.facility:read")) throw new Error("Forbidden")
 
   const query = facilityQuerySchema.parse(params)
   return facilityService.findAll(query as never)
 }
 
 export async function getFacility(id: string) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
-  if (!hasPermission(session.user.role, "master.facility:read")) throw new Error("Forbidden")
+  if (!can(session.user.role, "master.facility:read")) throw new Error("Forbidden")
 
   return facilityService.findById(id)
 }

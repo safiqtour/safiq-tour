@@ -14,7 +14,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { logoutAction } from "@/actions/auth"
-import { useSession } from "next-auth/react"
+import type { AppUser } from "@/services/auth.integration.service"
 
 const breadcrumbMap: Record<string, string> = {
   dashboard: "Dashboard",
@@ -31,11 +31,11 @@ const breadcrumbMap: Record<string, string> = {
 
 interface TopbarProps {
   onMenuClick: () => void
+  user: AppUser | null
 }
 
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar({ onMenuClick, user }: TopbarProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
   const [searchOpen, setSearchOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -108,13 +108,13 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-[#F8FAFC] transition-colors"
             >
               <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B3C6D] to-[#C89B3C] text-xs font-bold text-white">
-                {session?.user?.name?.charAt(0)?.toUpperCase() ?? "A"}
+                {user?.name?.charAt(0)?.toUpperCase() ?? "A"}
               </div>
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-medium text-[#0B3C6D] leading-tight">
-                  {session?.user?.name ?? "Admin"}
+                  {user?.name ?? "Admin"}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">{session?.user?.role?.name ?? "Admin"}</p>
+                <p className="text-xs text-[#9CA3AF]">{user?.role?.name ?? "Admin"}</p>
               </div>
               <ChevronDown className="hidden size-4 text-[#9CA3AF] lg:block" />
             </button>

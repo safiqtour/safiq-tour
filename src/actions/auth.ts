@@ -1,28 +1,29 @@
 "use server"
 
-import { signIn, signOut } from "@/lib/auth/auth"
-import { AuthError } from "next-auth"
+import { redirect } from "next/navigation"
+import { signIn, signOut } from "@/services/auth.integration.service"
 
 export async function loginAction(formData: FormData) {
+  const email = formData.get("email")
+  const password = formData.get("password")
+
+  if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
+    return { error: "Email atau password salah" }
+  }
+
   try {
-    await signIn("credentials", {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      redirectTo: "/admin/dashboard",
-    })
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return { error: "Email atau password salah" }
-        default:
-          return { error: "Terjadi kesalahan. Silakan coba lagi." }
-      }
+    const session = await signIn({ email, password })
+    if (!session.user.role) {
+      await signOut()
+      return { error: "Email atau password salah" }
     }
-    throw error
+    return { success: true }
+  } catch {
+    return { error: "Email atau password salah" }
   }
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/admin/login" })
+  await signOut()
+  redirect("/admin/login")
 }

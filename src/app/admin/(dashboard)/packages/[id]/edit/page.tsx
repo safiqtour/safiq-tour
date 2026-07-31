@@ -2,10 +2,10 @@ import { notFound } from "next/navigation"
 import { PackageForm } from "@/components/admin/packages/package-form"
 import { updatePackage } from "@/actions/packages"
 import { db } from "@/lib/prisma/db"
-import { auth } from "@/lib/auth/auth"
+import { getSession } from "@/services/auth.integration.service"
 
 export default async function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) return null
 
   const { id } = await params
