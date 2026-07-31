@@ -3,6 +3,16 @@ import type { ResolvedRole } from "@/providers/auth/resolvers/role.resolver"
 
 export const SESSION_COOKIE = "stms.session-token"
 
+export const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
+
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: SESSION_COOKIE_MAX_AGE,
+}
+
 export type SessionCookiePayload = {
   session: AuthSession
   appRole: ResolvedRole | null

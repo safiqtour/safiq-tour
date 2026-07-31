@@ -1,9 +1,8 @@
-import type { AuthProvider, AuthSessionStore } from "./types"
+import type { AuthProvider } from "./types"
 import { createSupabaseAuthProvider } from "./supabase.provider"
 
 export type AuthFactoryOptions = {
   provider?: string
-  sessionStore?: AuthSessionStore
 }
 
 export function createAuthProvider(options: AuthFactoryOptions = {}): AuthProvider {
@@ -11,7 +10,7 @@ export function createAuthProvider(options: AuthFactoryOptions = {}): AuthProvid
 
   switch (name) {
     case "supabase":
-      return createSupabaseAuthProvider({ sessionStore: options.sessionStore })
+      return createSupabaseAuthProvider()
     case "authjs":
     case "clerk":
     case "keycloak":

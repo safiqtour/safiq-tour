@@ -1,8 +1,10 @@
 import { createAuthProvider } from "@/providers/auth/factory"
+import type { AuthProvider } from "@/providers/auth/types"
 import type { AuthCredentials, AuthSession } from "@/providers/auth/types"
 import type { AuthUser as ProviderUser } from "@/providers/auth/types"
 import {
   SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
   encodeSessionCookie,
   decodeSessionCookie,
   type SessionCookiePayload,
@@ -14,8 +16,7 @@ export {
   SESSION_COOKIE,
   encodeSessionCookie,
   decodeSessionCookie,
-  verifySession,
-} from "@/services/auth.middleware"
+} from "@/lib/auth/session-token"
 
 export type AuthCookieTransport = {
   get(): Promise<string | null> | string | null
@@ -35,14 +36,11 @@ export type AppSession = {
   provider: string
 }
 
-const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
+let provider: AuthProvider | null = null
 
-const SESSION_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: SESSION_COOKIE_MAX_AGE,
+function getProvider(): AuthProvider {
+  provider ??= createAuthProvider()
+  return provider
 }
 
 async function defaultTransport(): Promise<AuthCookieTransport> {
@@ -63,15 +61,6 @@ async function resolveTransport(
   transport?: AuthCookieTransport
 ): Promise<AuthCookieTransport> {
   return transport ?? (await defaultTransport())
-}
-
-function createProvider(seed: AuthSession | null) {
-  return createAuthProvider({
-    sessionStore: {
-      get: () => seed,
-      set: () => {},
-    },
-  })
 }
 
 async function readSession(transport?: AuthCookieTransport): Promise<SessionCookiePayload | null> {
@@ -118,28 +107,25 @@ async function toCookiePayload(session: AuthSession): Promise<SessionCookiePaylo
   return { session, appRole: appUser.role }
 }
 
+export async function verifySession(session?: AuthSession | null): Promise<boolean> {
+  return getProvider().verifySession(session ?? null)
+}
+
 export async function signIn(
   credentials: AuthCredentials,
   transport?: AuthCookieTransport
 ): Promise<AppSession> {
-  const provider = createProvider(null)
-  const session = await provider.signIn(credentials)
+  const session = await getProvider().signIn(credentials)
   const payload = await toCookiePayload(session)
   await writeSession(payload, transport)
-  return {
-    user: (await resolveAppUser(session.user)),
-    accessToken: session.accessToken,
-    refreshToken: session.refreshToken,
-    expiresAt: session.expiresAt,
-    provider: session.provider,
-  }
+  return buildAppSession(session)
 }
 
 export async function signOut(transport?: AuthCookieTransport): Promise<void> {
   const current = await readSession(transport)
-  const provider = createProvider(current?.session ?? null)
+  const active = getProvider()
   try {
-    await provider.signOut()
+    await active.signOut(current?.session ?? null)
   } catch {
     // best-effort: clear the local session regardless
   }
@@ -156,8 +142,7 @@ export async function getSession(
     return refreshSession(transport)
   }
 
-  const provider = createProvider(current.session)
-  const session = await provider.getSession()
+  const session = await getProvider().getSession(current.session)
   if (!session) {
     await deleteSession(transport)
     return null
@@ -178,8 +163,7 @@ export async function refreshSession(
   const current = await readSession(transport)
   if (!current?.session.refreshToken) return null
 
-  const provider = createProvider(current.session)
-  const refreshed = await provider.refreshSession()
+  const refreshed = await getProvider().refreshSession(current.session)
   if (!refreshed) {
     await deleteSession(transport)
     return null

@@ -98,7 +98,7 @@ export async function runAuthHealthCheck(
       email: options.email!,
       password: options.password!,
     })
-    const retrieved = await active.getSession()
+    const retrieved = await active.getSession(session)
     const ok = Boolean(session.accessToken && retrieved?.accessToken)
     checks.push(
       makeCheck(
@@ -109,30 +109,35 @@ export async function runAuthHealthCheck(
           : "Sign-in succeeded but session retrieval returned an empty session"
       )
     )
+
+    try {
+      const refreshed = await active.refreshSession(session)
+      const refreshOk = Boolean(refreshed?.accessToken)
+      checks.push(
+        makeCheck(
+          "token-refresh",
+          refreshOk,
+          refreshOk
+            ? "Session token was refreshed with a new access token"
+            : "Token refresh returned no session"
+        )
+      )
+    } catch (error) {
+      checks.push(makeCheck("token-refresh", false, `Token refresh failed: ${errorMessage(error)}`))
+    }
+
+    await active.signOut(session)
   } catch (error) {
     checks.push(
       makeCheck("session-retrieval", false, `Sign-in failed: ${errorMessage(error)}`)
     )
-  }
-
-  try {
-    const refreshed = await active.refreshSession()
-    const ok = Boolean(refreshed?.accessToken)
     checks.push(
       makeCheck(
         "token-refresh",
-        ok,
-        ok ? "Session token was refreshed with a new access token" : "Token refresh returned no session"
+        false,
+        "Skipped (sign-in failed)"
       )
     )
-  } catch (error) {
-    checks.push(makeCheck("token-refresh", false, `Token refresh failed: ${errorMessage(error)}`))
-  }
-
-  try {
-    await active.signOut()
-  } catch {
-    // best-effort cleanup
   }
 
   return { provider: name, ok: checks.every((check) => check.ok), checks }

@@ -4,19 +4,13 @@ import { resolvePermissionsFromRoles, matchesPermission } from "@/providers/auth
 import type {
   AuthCredentials,
   AuthProvider,
-  AuthRoleResolution,
-  AuthRoleResolver,
   AuthSession,
-  AuthSessionStore,
   AuthUser,
 } from "./types"
 
 export type SupabaseAuthProviderOptions = {
   url?: string
   anonKey?: string
-  serviceRoleKey?: string
-  sessionStore?: AuthSessionStore
-  roleResolver?: AuthRoleResolver
 }
 
 function requireEnvVar(name: string, value: string | undefined): string {
@@ -64,10 +58,6 @@ function mapSession(session: Session | null): AuthSession | null {
   }
 }
 
-function permissionsForRole(role: string | null): string[] {
-  return role ? resolvePermissionsFromRoles([role]) : []
-}
-
 export function createSupabaseAuthProvider(
   options: SupabaseAuthProviderOptions = {}
 ): AuthProvider {
@@ -79,36 +69,10 @@ export function createSupabaseAuthProvider(
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     options.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
-  void options.serviceRoleKey
 
   const supabase: SupabaseClient = createClient(url, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   })
-
-  const sessionStore: AuthSessionStore | null = options.sessionStore ?? null
-  const roleResolver: AuthRoleResolver | null = options.roleResolver ?? null
-
-  let currentSession: AuthSession | null = null
-
-  async function loadSession(): Promise<AuthSession | null> {
-    if (currentSession) return currentSession
-    const stored = await sessionStore?.get()
-    if (stored) {
-      currentSession = stored
-      return stored
-    }
-    return null
-  }
-
-  async function persistSession(session: AuthSession | null): Promise<void> {
-    currentSession = session
-    await sessionStore?.set(session)
-  }
-
-  async function resolveRoles(user: AuthUser): Promise<AuthRoleResolution> {
-    if (roleResolver) return roleResolver(user)
-    return { role: user.role, permissions: permissionsForRole(user.role) }
-  }
 
   return {
     async signIn(credentials: AuthCredentials): Promise<AuthSession> {
@@ -123,27 +87,22 @@ export function createSupabaseAuthProvider(
       if (!session) {
         throw new Error("Sign-in failed: no session returned by provider.")
       }
-      await persistSession(session)
       return session
     },
 
-    async signOut(): Promise<void> {
+    async signOut(session?: AuthSession | null): Promise<void> {
       const { error } = await supabase.auth.signOut()
       if (error) {
         throw new Error(`Sign-out failed: ${error.message}`)
       }
-      await persistSession(null)
+      void session
     },
 
-    async getSession(): Promise<AuthSession | null> {
-      const loaded = await loadSession()
-      if (loaded) return loaded
-      const { data } = await supabase.auth.getSession()
-      return mapSession(data.session)
+    async getSession(session?: AuthSession | null): Promise<AuthSession | null> {
+      return session ?? null
     },
 
-    async getUser(): Promise<AuthUser | null> {
-      const session = await loadSession()
+    async getUser(session?: AuthSession | null): Promise<AuthUser | null> {
       const token = session?.accessToken ?? undefined
       const { data, error } = token
         ? await supabase.auth.getUser(token)
@@ -152,44 +111,30 @@ export function createSupabaseAuthProvider(
       return mapUser(data.user)
     },
 
-    async refreshSession(): Promise<AuthSession | null> {
-      const session = await loadSession()
+    async refreshSession(session?: AuthSession | null): Promise<AuthSession | null> {
       const refreshToken = session?.refreshToken ?? undefined
       const { data, error } = refreshToken
         ? await supabase.auth.refreshSession({ refresh_token: refreshToken })
         : await supabase.auth.refreshSession()
-      if (error || !data.session) {
-        await persistSession(null)
-        return null
-      }
-      const refreshed = mapSession(data.session)
-      await persistSession(refreshed)
-      return refreshed
+      if (error || !data.session) return null
+      return mapSession(data.session)
     },
 
-    async verifySession(): Promise<boolean> {
-      const session = await loadSession()
+    async verifySession(session?: AuthSession | null): Promise<boolean> {
       if (!session?.accessToken) return false
       const { error } = await supabase.auth.getUser(session.accessToken)
       return !error
     },
 
-    async hasRole(role: string): Promise<boolean> {
-      const user = await this.getUser()
+    async hasRole(user: AuthUser | null, role: string): Promise<boolean> {
       if (!user) return false
-      const resolved = await resolveRoles(user)
-      const roles = new Set([...(resolved.role ? [resolved.role] : []), ...user.roles])
+      const roles = new Set([...(user.role ? [user.role] : []), ...user.roles])
       return roles.has(role)
     },
 
-    async hasPermission(permission: string): Promise<boolean> {
-      const user = await this.getUser()
+    async hasPermission(user: AuthUser | null, permission: string): Promise<boolean> {
       if (!user) return false
-      const resolved = await resolveRoles(user)
-      const granted =
-        resolved.permissions.length > 0
-          ? resolved.permissions
-          : permissionsForRole(resolved.role)
+      const granted = resolvePermissionsFromRoles(user.role ? [user.role] : [])
       return matchesPermission(permission, granted)
     },
   }

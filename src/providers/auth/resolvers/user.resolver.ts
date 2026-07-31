@@ -2,10 +2,14 @@ import type { AuthUser as ProviderUser } from "@/providers/auth/types"
 import { resolvePermissionsFromRoles } from "./permission.resolver"
 import type { ResolvedRole, ResolvedUser } from "./role.resolver"
 
-export async function resolveUserFromIdentity(identity: ProviderUser): Promise<ResolvedUser> {
+export async function resolveUserFromIdentity(
+  identity: ProviderUser
+): Promise<ResolvedUser> {
   const { findUserByEmail } = await import("@/services/auth.service")
 
-  const appUser = identity.email ? await findUserByEmail(identity.email) : null
+  const appUser = identity.email
+    ? await findUserByEmail(identity.email)
+    : null
 
   if (!appUser || !appUser.isActive) {
     return {
@@ -27,7 +31,9 @@ export async function resolveUserFromIdentity(identity: ProviderUser): Promise<R
       }
     : null
 
-  const permissions = role ? resolvePermissionsFromRoles([role]) : []
+  const permissions = role
+    ? resolvePermissionsFromRoles([role])
+    : []
 
   return {
     id: appUser.id,

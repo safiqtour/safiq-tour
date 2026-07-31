@@ -21,27 +21,15 @@ export type AuthSession = {
   provider: string
 }
 
-export type AuthRoleResolution = {
-  role: string | null
-  permissions: string[]
-}
-
-export type AuthRoleResolver = (user: AuthUser) => Promise<AuthRoleResolution> | AuthRoleResolution
-
-export type AuthSessionStore = {
-  get(): Promise<AuthSession | null> | AuthSession | null
-  set(session: AuthSession | null): Promise<void> | void
-}
-
 export type AuthProvider = {
   signIn(credentials: AuthCredentials): Promise<AuthSession>
-  signOut(): Promise<void>
-  getSession(): Promise<AuthSession | null>
-  getUser(): Promise<AuthUser | null>
-  refreshSession(): Promise<AuthSession | null>
-  verifySession(): Promise<boolean>
-  hasRole(role: string): Promise<boolean>
-  hasPermission(permission: string): Promise<boolean>
+  signOut(session?: AuthSession | null): Promise<void>
+  getSession(session?: AuthSession | null): Promise<AuthSession | null>
+  getUser(session?: AuthSession | null): Promise<AuthUser | null>
+  refreshSession(session?: AuthSession | null): Promise<AuthSession | null>
+  verifySession(session?: AuthSession | null): Promise<boolean>
+  hasRole(user: AuthUser | null, role: string): Promise<boolean>
+  hasPermission(user: AuthUser | null, permission: string): Promise<boolean>
 }
 
 export type AuthProviderName = "supabase" | "authjs" | "clerk" | "keycloak"
