@@ -36,6 +36,7 @@ import { matchesPermission } from "@/providers/auth/resolvers/permission.resolve
 
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" },
+  { href: "/admin/customers", label: "Customers", icon: Users, permission: "pilgrim:read" },
   {
     label: "Master Data",
     icon: Globe,

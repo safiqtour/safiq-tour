@@ -25,6 +25,9 @@ model User {
   createdPackages Package[]    @relation("CreatedByUser")
   uploadedMedia   Media[]
 
+  uploadedPilgrimDocuments PilgrimDocument[] @relation("PilgrimDocumentUploader")
+  verifiedPilgrimDocuments PilgrimDocument[] @relation("PilgrimDocumentVerifier")
+
   @@map("users")
 }
 
@@ -368,6 +371,8 @@ model Media {
   hotelFeatured    Hotel[]          @relation("HotelFeatured")
   airlineLogos     Airline[]         @relation("AirlineLogo")
   transportMedia   Transportation[]  @relation("TransportMedia")
+  pilgrimPhotos    Pilgrim[]         @relation("PilgrimPhoto")
+  pilgrimDocuments PilgrimDocument[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
@@ -868,4 +873,59 @@ model BusinessSetting {
   @@index([sortOrder])
   @@index([deletedAt])
   @@map("business_settings")
+}
+
+model Pilgrim {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  name           String
+  nickName       String    @default("")
+  email          String?
+  phone          String?
+  gender         String    @default("MALE")
+  birthPlace     String    @default("")
+  birthDate      DateTime?
+  address        String    @default("")
+  nationality    String    @default("")
+  nik            String    @default("")
+  passportNumber String?
+  passportExpiry DateTime?
+  photoMediaId   String?
+  photoMedia     Media?    @relation("PilgrimPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+  status         String    @default("ACTIVE")
+  notes          String    @default("")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  documents PilgrimDocument[]
+
+  @@index([name])
+  @@index([passportNumber])
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("pilgrims")
+}
+
+model PilgrimDocument {
+  id           String     @id @default(uuid())
+  pilgrimId    String
+  pilgrim      Pilgrim    @relation(fields: [pilgrimId], references: [id], onDelete: Cascade)
+  type         String     @default("PASSPORT")
+  status       String     @default("PENDING")
+  mediaId      String?
+  media        Media?     @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  notes        String     @default("")
+  uploadedById String?
+  uploadedBy   User?      @relation("PilgrimDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  verifiedById String?
+  verifiedBy   User?      @relation("PilgrimDocumentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([pilgrimId])
+  @@index([type])
+  @@map("pilgrim_documents")
 }
