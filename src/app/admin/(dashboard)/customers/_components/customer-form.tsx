@@ -4,13 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Save, Plus, Trash2, UploadCloud, Image as ImageIcon } from "lucide-react"
-import { createPilgrim, updatePilgrim } from "@/modules/pilgrim/actions/pilgrim"
+import { createCustomer, updateCustomer } from "@/modules/customer/actions/customer"
 import {
-  PILGRIM_DOCUMENT_TYPES,
-  PILGRIM_DOCUMENT_STATUSES,
-  PILGRIM_GENDERS,
-  PILGRIM_STATUSES,
-} from "@/modules/pilgrim/types"
+  CUSTOMER_DOCUMENT_TYPES,
+  CUSTOMER_DOCUMENT_STATUSES,
+  CUSTOMER_GENDERS,
+  CUSTOMER_STATUSES,
+} from "@/modules/customer/types"
 
 export interface CustomerDocumentDraft {
   id?: string
@@ -149,8 +149,8 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
         notes: form.notes,
         documents: docs,
       }
-      if (mode === "create") await createPilgrim(payload)
-      else await updatePilgrim(initial?.id ?? "", payload)
+      if (mode === "create") await createCustomer(payload)
+      else await updateCustomer(initial?.id ?? "", payload)
       router.push("/admin/customers")
       router.refresh()
     } catch (err) {
@@ -166,7 +166,7 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
         <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">
           {mode === "create" ? "New Customer" : "Edit Customer"}
         </h1>
-        <p className="text-sm text-[#9CA3AF]">Pilgrim / Jamaah profile with photo and documents</p>
+        <p className="text-sm text-[#9CA3AF]">Customer / Jamaah profile with photo and documents</p>
       </div>
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -211,14 +211,14 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
               <label className="text-xs font-medium text-gray-500">Gender</label>
               <select value={form.gender} onChange={(e) => set("gender", e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400">
-                {PILGRIM_GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
+                {CUSTOMER_GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500">Status</label>
               <select value={form.status} onChange={(e) => set("status", e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400">
-                {PILGRIM_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {CUSTOMER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div>
@@ -293,14 +293,14 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
                     <label className="text-xs font-medium text-gray-500">Type</label>
                     <select value={doc.type} onChange={(e) => updateDocument(index, { type: e.target.value })}
                       className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm outline-none focus:border-blue-400">
-                      {PILGRIM_DOCUMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {CUSTOMER_DOCUMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500">Status</label>
                     <select value={doc.status} onChange={(e) => updateDocument(index, { status: e.target.value })}
                       className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm outline-none focus:border-blue-400">
-                      {PILGRIM_DOCUMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {CUSTOMER_DOCUMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="md:col-span-2">

@@ -1,25 +1,25 @@
 "use server"
 
 import { requirePermission } from "@/modules/business/lib/permission"
-import { pilgrimService } from "../services/pilgrim.service"
+import { customerService } from "../services/customer.service"
 import {
-  createPilgrimSchema,
-  pilgrimQuerySchema,
-  updatePilgrimSchema,
-} from "../validations/pilgrim.schema"
+  createCustomerSchema,
+  customerQuerySchema,
+  updateCustomerSchema,
+} from "../validations/customer.schema"
 import type {
-  CreatePilgrimInput,
-  PilgrimQueryInput,
-  UpdatePilgrimInput,
-} from "../validations/pilgrim.schema"
-import type { PilgrimListItem } from "../types"
+  CreateCustomerInput,
+  CustomerQueryInput,
+  UpdateCustomerInput,
+} from "../validations/customer.schema"
+import type { CustomerListItem } from "../types"
 
-export async function getPilgrims(params: unknown) {
-  await requirePermission("pilgrim:read")
+export async function getCustomers(params: unknown) {
+  await requirePermission("customer:read")
 
-  const query = pilgrimQuerySchema.parse(params) as PilgrimQueryInput
+  const query = customerQuerySchema.parse(params) as CustomerQueryInput
 
-  const result = await pilgrimService.findAll({
+  const result = await customerService.findAll({
     page: query.page,
     limit: query.limit,
     search: query.search,
@@ -36,55 +36,55 @@ export async function getPilgrims(params: unknown) {
   }
 }
 
-export async function getPilgrim(id: string) {
-  await requirePermission("pilgrim:read")
-  const detail = await pilgrimService.getDetail(id)
+export async function getCustomer(id: string) {
+  await requirePermission("customer:read")
+  const detail = await customerService.getDetail(id)
   return detail ? toDetail(detail) : null
 }
 
-export async function createPilgrim(data: unknown) {
-  await requirePermission("pilgrim:create")
+export async function createCustomer(data: unknown) {
+  await requirePermission("customer:create")
 
-  const parsed = createPilgrimSchema.parse(data) as CreatePilgrimInput
-  const created = await pilgrimService.create(parsed)
+  const parsed = createCustomerSchema.parse(data) as CreateCustomerInput
+  const created = await customerService.create(parsed)
 
   return { id: created.id }
 }
 
-export async function updatePilgrim(id: string, data: unknown) {
-  await requirePermission("pilgrim:update")
+export async function updateCustomer(id: string, data: unknown) {
+  await requirePermission("customer:update")
 
-  const parsed = updatePilgrimSchema.parse(data) as UpdatePilgrimInput
-  const updated = await pilgrimService.update(id, parsed)
+  const parsed = updateCustomerSchema.parse(data) as UpdateCustomerInput
+  const updated = await customerService.update(id, parsed)
 
   return { id: updated.id }
 }
 
-export async function deletePilgrim(id: string) {
-  await requirePermission("pilgrim:delete")
-  await pilgrimService.softDelete(id)
+export async function deleteCustomer(id: string) {
+  await requirePermission("customer:delete")
+  await customerService.softDelete(id)
 }
 
-export async function restorePilgrim(id: string) {
-  await requirePermission("pilgrim:update")
-  await pilgrimService.restore(id)
+export async function restoreCustomer(id: string) {
+  await requirePermission("customer:update")
+  await customerService.restore(id)
 }
 
-export async function verifyPilgrimDocument(documentId: string) {
+export async function verifyCustomerDocument(documentId: string) {
   const user = await requirePermission("document:update")
-  await pilgrimService.verifyDocument(documentId, user.id)
+  await customerService.verifyDocument(documentId, user.id)
 }
 
-export async function rejectPilgrimDocument(documentId: string) {
+export async function rejectCustomerDocument(documentId: string) {
   const user = await requirePermission("document:update")
-  await pilgrimService.rejectDocument(documentId, user.id)
+  await customerService.rejectDocument(documentId, user.id)
 }
 
 /* ------------------------------------------------------------------ */
 /* Serialization helpers (Date -> ISO string) for strong-typed clients */
 /* ------------------------------------------------------------------ */
 
-interface PilgrimDocumentListItem {
+interface CustomerDocumentListItem {
   id: string
   type: string
   status: string
@@ -93,13 +93,13 @@ interface PilgrimDocumentListItem {
   createdAt: string
 }
 
-interface PilgrimDetail extends PilgrimListItem {
+interface CustomerDetail extends CustomerListItem {
   email: string | null
   phone: string | null
-  documents: PilgrimDocumentListItem[]
+  documents: CustomerDocumentListItem[]
 }
 
-function toListItem(row: Record<string, unknown>): PilgrimListItem {
+function toListItem(row: Record<string, unknown>): CustomerListItem {
   return {
     id: row.id as string,
     code: row.code as string,
@@ -124,7 +124,7 @@ function toListItem(row: Record<string, unknown>): PilgrimListItem {
   }
 }
 
-function toDetail(row: Record<string, unknown>): PilgrimDetail {
+function toDetail(row: Record<string, unknown>): CustomerDetail {
   const base = toListItem(row)
   const documents = (Array.isArray(row.documents) ? row.documents : []) as Record<string, unknown>[]
   return {

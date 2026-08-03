@@ -6,15 +6,15 @@ import { Plus, Pencil, Users } from "lucide-react"
 import Link from "next/link"
 import { DataTable, type Column } from "@/components/admin/data-table"
 import {
-  getPilgrims,
-  deletePilgrim,
-  restorePilgrim,
-} from "@/modules/pilgrim/actions/pilgrim"
-import type { PilgrimListItem } from "@/modules/pilgrim/types"
+  getCustomers,
+  deleteCustomer,
+  restoreCustomer,
+} from "@/modules/customer/actions/customer"
+import type { CustomerListItem } from "@/modules/customer/types"
 import { canUser } from "@/actions/permissions"
 
 export default function CustomersPage() {
-  const [data, setData] = useState<PilgrimListItem[]>([])
+  const [data, setData] = useState<CustomerListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
@@ -30,7 +30,7 @@ export default function CustomersPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await getPilgrims({
+      const result = await getCustomers({
         page,
         limit: 10,
         search,
@@ -52,14 +52,14 @@ export default function CustomersPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
   useEffect(() => { setPage(1) }, [search, showDeleted, statusFilter, genderFilter])
-  useEffect(() => { canUser("pilgrim:create").then(setCanCreate) }, [])
+  useEffect(() => { canUser("customer:create").then(setCanCreate) }, [])
 
   const handleSort = (key: string) => {
     if (sort === key) setOrder(order === "asc" ? "desc" : "asc")
     else { setSort(key); setOrder("asc") }
   }
 
-  const columns: Column<PilgrimListItem>[] = [
+  const columns: Column<CustomerListItem>[] = [
     { key: "name", header: "Name", sortable: true, render: (item) => (
       <div className="flex items-center gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#0B3C6D]/10 text-[#0B3C6D]">
@@ -96,7 +96,7 @@ export default function CustomersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">Customers (Jamaah)</h1>
-          <p className="text-sm text-[#9CA3AF]">Manage pilgrim / customer records with documents</p>
+          <p className="text-sm text-[#9CA3AF]">Manage customer records with documents</p>
         </div>
         {canCreate && (
           <Link
@@ -146,8 +146,8 @@ export default function CustomersPage() {
         searchPlaceholder="Search by name, code, passport, phone, or email..."
         showDeleted={showDeleted}
         onToggleShowDeleted={setShowDeleted}
-        onDelete={(id) => deletePilgrim(id).then(fetchData)}
-        onRestore={(id) => restorePilgrim(id).then(fetchData)}
+        onDelete={(id) => deleteCustomer(id).then(fetchData)}
+        onRestore={(id) => restoreCustomer(id).then(fetchData)}
         getId={(item) => item.id}
         getIsDeleted={(item) => !!item.deletedAt}
         actions={(item) => canCreate ? (

@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client"
 /**
  * Structural view of a generated Prisma model delegate built from the model's
  * own types. Using `Prisma.Args` / `Prisma.Result` lets a native delegate
- * (e.g. `db.pilgrim`) bind with full type-safety and without `as never` /
+ * (e.g. `db.customer`) bind with full type-safety and without `as never` /
  * `as unknown` casts.
  */
 type ModelDelegate<TDelegate> = {

@@ -1,15 +1,15 @@
 import { db } from "@/lib/prisma/db"
-import type { Prisma, Pilgrim } from "@prisma/client"
+import type { Prisma, Customer } from "@prisma/client"
 import { BaseService } from "@/modules/business/services/base.service"
 import { generateCode } from "@/modules/business/utils/code"
 import { audit } from "@/modules/business/lib/audit"
-import { pilgrimRepository } from "../repositories/pilgrim.repository"
-import type { CreatePilgrimInput, PilgrimDocumentInput, UpdatePilgrimInput } from "../validations/pilgrim.schema"
+import { customerRepository } from "../repositories/customer.repository"
+import type { CreateCustomerInput, CustomerDocumentInput, UpdateCustomerInput } from "../validations/customer.schema"
 
 type Tx = Prisma.TransactionClient
-type PilgrimDoc = Prisma.PilgrimDocumentGetPayload<{}>
+type CustomerDoc = Prisma.CustomerDocumentGetPayload<{}>
 
-function toDocFields(doc: PilgrimDocumentInput): Pick<PilgrimDoc, "type" | "status" | "mediaId" | "notes"> {
+function toDocFields(doc: CustomerDocumentInput): Pick<CustomerDoc, "type" | "status" | "mediaId" | "notes"> {
   return {
     type: doc.type,
     status: doc.status,
@@ -18,7 +18,7 @@ function toDocFields(doc: PilgrimDocumentInput): Pick<PilgrimDoc, "type" | "stat
   }
 }
 
-function areDocsEqual(existing: PilgrimDoc, next: PilgrimDocumentInput): boolean {
+function areDocsEqual(existing: CustomerDoc, next: CustomerDocumentInput): boolean {
   return (
     existing.type === next.type &&
     existing.status === next.status &&
@@ -27,18 +27,18 @@ function areDocsEqual(existing: PilgrimDoc, next: PilgrimDocumentInput): boolean
   )
 }
 
-export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, UpdatePilgrimInput> {
+export class CustomerService extends BaseService<Customer, CreateCustomerInput, UpdateCustomerInput> {
   constructor() {
-    super(pilgrimRepository, "pilgrim")
+    super(customerRepository, "customer")
   }
 
-  async create(data: CreatePilgrimInput) {
+  async create(data: CreateCustomerInput) {
     const { documents, ...fields } = data
 
-    const pilgrim = await db.$transaction(async (tx: Tx) => {
-      const created = await tx.pilgrim.create({
+    const customer = await db.$transaction(async (tx: Tx) => {
+      const created = await tx.customer.create({
         data: {
-          code: generateCode("PLG"),
+          code: generateCode("CUS"),
           name: fields.name,
           nickName: fields.nickName ?? "",
           email: fields.email ?? null,
@@ -59,9 +59,9 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
 
       if (documents.length > 0) {
         // Multi-write inside the same transaction.
-        await tx.pilgrimDocument.createMany({
+        await tx.customerDocument.createMany({
           data: documents.map((doc) => ({
-            pilgrimId: created.id,
+            customerId: created.id,
             ...toDocFields(doc),
           })),
         })
@@ -72,22 +72,22 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
 
     await audit({
       action: "CREATE",
-      resource: "pilgrim",
-      resourceId: pilgrim.id,
-      metadata: { name: pilgrim.name },
+      resource: "customer",
+      resourceId: customer.id,
+      metadata: { name: customer.name },
     })
 
-    return pilgrim
+    return customer
   }
 
-  async update(id: string, data: UpdatePilgrimInput) {
+  async update(id: string, data: UpdateCustomerInput) {
     const { documents, ...fields } = data
 
-    const pilgrim = await db.$transaction(async (tx: Tx) => {
-      const existing = await tx.pilgrim.findUnique({ where: { id }, include: { documents: true } })
-      if (!existing) throw new Error("Pilgrim not found")
+    const customer = await db.$transaction(async (tx: Tx) => {
+      const existing = await tx.customer.findUnique({ where: { id }, include: { documents: true } })
+      if (!existing) throw new Error("Customer not found")
 
-      const updated = await tx.pilgrim.update({
+      const updated = await tx.customer.update({
         where: { id },
         data: {
           ...(fields.name !== undefined ? { name: fields.name } : {}),
@@ -117,51 +117,51 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
 
     await audit({
       action: "UPDATE",
-      resource: "pilgrim",
+      resource: "customer",
       resourceId: id,
-      metadata: { name: pilgrim.name },
+      metadata: { name: customer.name },
     })
 
-    return pilgrim
+    return customer
   }
 
   async getDetail(id: string) {
-    return pilgrimRepository.findByIdWithRelations(id)
+    return customerRepository.findByIdWithRelations(id)
   }
 
   async verifyDocument(documentId: string, userId: string) {
-    const doc = await db.pilgrimDocument.findUnique({ where: { id: documentId } })
+    const doc = await db.customerDocument.findUnique({ where: { id: documentId } })
     if (!doc) throw new Error("Document not found")
 
-    const updated = await db.pilgrimDocument.update({
+    const updated = await db.customerDocument.update({
       where: { id: documentId },
       data: { status: "VERIFIED", verifiedById: userId, verifiedAt: new Date() },
     })
 
     await audit({
       action: "APPROVE",
-      resource: "pilgrimDocument",
+      resource: "customerDocument",
       resourceId: documentId,
-      metadata: { pilgrimId: updated.pilgrimId, type: updated.type },
+      metadata: { customerId: updated.customerId, type: updated.type },
     })
 
     return updated
   }
 
   async rejectDocument(documentId: string, userId: string) {
-    const doc = await db.pilgrimDocument.findUnique({ where: { id: documentId } })
+    const doc = await db.customerDocument.findUnique({ where: { id: documentId } })
     if (!doc) throw new Error("Document not found")
 
-    const updated = await db.pilgrimDocument.update({
+    const updated = await db.customerDocument.update({
       where: { id: documentId },
       data: { status: "REJECTED", verifiedById: userId, verifiedAt: new Date() },
     })
 
     await audit({
       action: "REJECT",
-      resource: "pilgrimDocument",
+      resource: "customerDocument",
       resourceId: documentId,
-      metadata: { pilgrimId: updated.pilgrimId, type: updated.type },
+      metadata: { customerId: updated.customerId, type: updated.type },
     })
 
     return updated
@@ -174,7 +174,7 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
    * rows are updated in place (upsert-style), new rows are created, and only rows
    * actually removed from the payload are deleted.
    */
-  private async syncDocuments(tx: Tx, pilgrimId: string, existing: PilgrimDoc[], incoming: PilgrimDocumentInput[]) {
+  private async syncDocuments(tx: Tx, customerId: string, existing: CustomerDoc[], incoming: CustomerDocumentInput[]) {
     const incomingWithId = new Map(
       incoming.filter((doc) => doc.id).map((doc) => [doc.id as string, doc]),
     )
@@ -183,13 +183,13 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
       const next = incomingWithId.get(existingDoc.id)
 
       if (!next) {
-        await tx.pilgrimDocument.delete({ where: { id: existingDoc.id } })
+        await tx.customerDocument.delete({ where: { id: existingDoc.id } })
         continue
       }
 
       if (areDocsEqual(existingDoc, next)) continue
 
-      await tx.pilgrimDocument.update({
+      await tx.customerDocument.update({
         where: { id: existingDoc.id },
         data: toDocFields(next),
       })
@@ -197,9 +197,9 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
 
     for (const doc of incoming) {
       if (doc.id) continue // already handled by update/delete branch above
-      await tx.pilgrimDocument.create({
+      await tx.customerDocument.create({
         data: {
-          pilgrimId,
+          customerId,
           ...toDocFields(doc),
         },
       })
@@ -207,4 +207,4 @@ export class PilgrimService extends BaseService<Pilgrim, CreatePilgrimInput, Upd
   }
 }
 
-export const pilgrimService = new PilgrimService()
+export const customerService = new CustomerService()

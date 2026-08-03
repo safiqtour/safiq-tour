@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { getPilgrim } from "@/modules/pilgrim/actions/pilgrim"
+import { getCustomer } from "@/modules/customer/actions/customer"
 import { CustomerForm, type CustomerFormData, type CustomerDocumentDraft } from "../../_components/customer-form"
 
 export default function EditCustomerPage() {
@@ -12,7 +12,7 @@ export default function EditCustomerPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    getPilgrim(params.id as string)
+    getCustomer(params.id as string)
       .then((res) => {
         if (!res) { setError("Customer tidak ditemukan"); return }
         const documents: CustomerDocumentDraft[] = (res.documents ?? []).map((d) => ({
