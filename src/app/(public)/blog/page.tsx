@@ -19,9 +19,9 @@ export const metadata = {
   },
 }
 
-export default function BlogPage() {
-  const posts = getAllPosts()
-  const featured = getFeaturedPost()
+export default async function BlogPage() {
+  const posts = await getAllPosts()
+  const featured = (await getFeaturedPost()) ?? null
 
   return <BlogClient posts={posts} featured={featured} />
 }

@@ -1,5 +1,12 @@
 import type { Metadata } from "next"
 import { GalleryPageClient } from "@/components/gallery/GalleryPageClient"
+import {
+  getGalleryPhotos,
+  getGalleryVideos,
+  getGalleryCategories,
+  type GalleryPhoto,
+  type GalleryVideo,
+} from "@/modules/public/gallery"
 
 export const metadata: Metadata = {
   title: "Galeri Safiq Tour | Dokumentasi Perjalanan Umroh",
@@ -41,6 +48,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function GalleryPage() {
-  return <GalleryPageClient />
+export default async function GalleryPage() {
+  const [photos, videos, categories] = await Promise.all([
+    getGalleryPhotos(),
+    getGalleryVideos(),
+    getGalleryCategories(),
+  ])
+
+  return <GalleryPageClient photos={photos} videos={videos} categories={categories} />
 }

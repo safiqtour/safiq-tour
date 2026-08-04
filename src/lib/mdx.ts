@@ -1,7 +1,19 @@
-import fs from "fs"
-import path from "path"
-import matter from "gray-matter"
 import type { BlogArticle, BlogCategory } from "./blog/types"
+import {
+  getArticleBySlug,
+  getAllArticleSlugs,
+  getPublishedArticles,
+  type DbArticle,
+} from "@/modules/public/articles"
+
+/**
+ * DB-backed blog pipeline.
+ *
+ * Replaces the former filesystem `content/blog/*.mdx` + gray-matter reads. The
+ * public contract (BlogPost / BlogFrontmatter) is preserved so all consumers
+ * (blog pages, sitemap, feed, homepage) map to the exact same shape, while the
+ * content itself is now CMS-managed in the `articles` table.
+ */
 
 export interface BlogFrontmatter {
   title: string
@@ -22,37 +34,42 @@ export interface BlogPost {
   content: string
 }
 
-const contentDir = path.join(process.cwd(), "content", "blog")
-
-export function getAllPosts(): BlogPost[] {
-  const files = fs.readdirSync(contentDir).filter((f) => f.endsWith(".mdx"))
-  const posts = files.map((file) => {
-    const slug = file.replace(/\.mdx$/, "")
-    const raw = fs.readFileSync(path.join(contentDir, file), "utf-8")
-    const { data, content } = matter(raw)
-    return { slug, frontmatter: data as BlogFrontmatter, content }
-  })
-  return posts.sort((a, b) => new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime())
-}
-
-export function getPostBySlug(slug: string): BlogPost | null {
-  try {
-    const filePath = path.join(contentDir, `${slug}.mdx`)
-    if (!fs.existsSync(filePath)) return null
-    const raw = fs.readFileSync(filePath, "utf-8")
-    const { data, content } = matter(raw)
-    return { slug, frontmatter: data as BlogFrontmatter, content }
-  } catch {
-    return null
+function toPost(article: DbArticle): BlogPost {
+  return {
+    slug: article.slug,
+    frontmatter: {
+      title: article.title,
+      description: article.excerpt,
+      date: article.publishDate.toISOString(),
+      author: article.author,
+      category: article.category as BlogCategory,
+      featured: article.featured,
+      featuredImage: article.featuredImage,
+      readTime: article.readTime,
+      tags: article.tags,
+      keywords: article.keywords,
+    },
+    content: article.content,
   }
 }
 
-export function getAllSlugs(): string[] {
-  return fs.readdirSync(contentDir).filter((f) => f.endsWith(".mdx")).map((f) => f.replace(/\.mdx$/, ""))
+export async function getAllPosts(): Promise<BlogPost[]> {
+  const articles = await getPublishedArticles()
+  return articles.map(toPost)
 }
 
-export function getRelatedPosts(current: BlogPost, limit = 3): BlogPost[] {
-  return getAllPosts()
+export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  const article = await getArticleBySlug(slug)
+  return article ? toPost(article) : null
+}
+
+export async function getAllSlugs(): Promise<string[]> {
+  return getAllArticleSlugs()
+}
+
+export async function getRelatedPosts(current: BlogPost, limit = 3): Promise<BlogPost[]> {
+  const all = await getAllPosts()
+  return all
     .filter(
       (p) =>
         p.slug !== current.slug &&
@@ -62,8 +79,9 @@ export function getRelatedPosts(current: BlogPost, limit = 3): BlogPost[] {
     .slice(0, limit)
 }
 
-export function getFeaturedPost(): BlogPost | null {
-  return getAllPosts().find((p) => p.frontmatter.featured) ?? null
+export async function getFeaturedPost(): Promise<BlogPost | null> {
+  const all = await getAllPosts()
+  return all.find((p) => p.frontmatter.featured) ?? null
 }
 
 export function postToArticle(post: BlogPost): BlogArticle {
@@ -91,3 +109,4 @@ export function postToArticle(post: BlogPost): BlogArticle {
 export function postsToArticles(posts: BlogPost[]): BlogArticle[] {
   return posts.map(postToArticle)
 }
+

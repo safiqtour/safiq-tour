@@ -9,8 +9,11 @@ import { TestimonialsSection } from "@/components/shared/testimonials-section"
 import { BlogSection } from "@/components/shared/blog-section"
 import { LogoMarquee } from "@/components/shared/logo-marquee"
 import { Hero } from "@/components/home/Hero"
+import { getPublicPackages } from "@/modules/public/packages"
 
-export default function Home() {
+export default async function Home() {
+  const allPackages = await getPublicPackages()
+
   return (
     <>
       <Hero />
@@ -86,7 +89,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <PackagesSection showAllPackagesButton={false} allowedCategories={["zamzam", "thaibah", "rawdah"]} />
+      <PackagesSection packages={allPackages} showAllPackagesButton={false} allowedCategories={["zamzam", "thaibah", "rawdah"]} />
 
       <FacilitiesSection />
 

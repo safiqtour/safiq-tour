@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import type { LucideIcon } from "lucide-react"
 import {
   LayoutGrid,
   Building2,
@@ -13,30 +14,40 @@ import {
   Video,
 } from "lucide-react"
 
-const categories = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "makkah", label: "Makkah", icon: Building2 },
-  { id: "madinah", label: "Madinah", icon: MapPin },
-  { id: "masjidil-haram", label: "Masjidil Haram", icon: Church },
-  { id: "masjid-nabawi", label: "Masjid Nabawi", icon: Church },
-  { id: "manasik", label: "Manasik", icon: Users },
-  { id: "keberangkatan", label: "Keberangkatan", icon: Plane },
-  { id: "kepulangan", label: "Kepulangan", icon: Home },
-  { id: "jamaah", label: "Jamaah", icon: Camera },
-  { id: "video", label: "Video", icon: Video },
-]
+const CATEGORY_META: Record<string, { label: string; icon: LucideIcon }> = {
+  makkah: { label: "Makkah", icon: Building2 },
+  madinah: { label: "Madinah", icon: MapPin },
+  "masjidil-haram": { label: "Masjidil Haram", icon: Church },
+  "masjid-nabawi": { label: "Masjid Nabawi", icon: Church },
+  manasik: { label: "Manasik", icon: Users },
+  keberangkatan: { label: "Keberangkatan", icon: Plane },
+  kepulangan: { label: "Kepulangan", icon: Home },
+  jamaah: { label: "Jamaah", icon: Camera },
+}
+
+const FALLBACK_META = { label: "Lainnya", icon: Camera }
 
 type CategoryFilterProps = {
   active: string
   onSelect: (id: string) => void
+  categories: string[]
 }
 
-export function CategoryFilter({ active, onSelect }: CategoryFilterProps) {
+export function CategoryFilter({ active, onSelect, categories }: CategoryFilterProps) {
+  const items = [
+    { id: "all", label: "All", icon: LayoutGrid },
+    ...categories.map((id) => {
+      const meta = CATEGORY_META[id] ?? FALLBACK_META
+      return { id, label: meta.label, icon: meta.icon }
+    }),
+    { id: "video", label: "Video", icon: Video },
+  ]
+
   return (
     <div className="sticky top-20 z-40 bg-[#F8F6F2]/90 backdrop-blur-md border-b border-[#E5E7EB]">
       <div className="mx-auto max-w-(--container-max) px-3 sm:px-6 lg:px-8">
         <div className="flex gap-1 overflow-x-auto py-4 scrollbar-hide">
-          {categories.map((cat) => {
+          {items.map((cat) => {
             const Icon = cat.icon
             const isActive = active === cat.id
             return (

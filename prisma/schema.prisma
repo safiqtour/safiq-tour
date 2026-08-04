@@ -23,6 +23,7 @@ model User {
   accounts        Account[]
   activityLogs    ActivityLog[]
   createdPackages Package[]    @relation("CreatedByUser")
+  createdBookings Booking[]    @relation("BookingCreatedBy")
   uploadedMedia   Media[]
 
   uploadedCustomerDocuments CustomerDocument[] @relation("CustomerDocumentUploader")
@@ -409,6 +410,7 @@ model Package {
   metaTitle       String            @default("")
   metaDescription String            @default("")
   keywords        String            @default("")
+  publicContent   Json?
   publishedAt     DateTime?
   createdById     String?
   createdBy       User?             @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
@@ -420,6 +422,7 @@ model Package {
   facilities  PackageFacility[]
   itineraries PackageItinerary[]
   galleries   PackageGallery[]
+  bookings    Booking[]
 
   @@map("packages")
 }
@@ -449,6 +452,7 @@ model PackageSchedule {
   seat          Int      @default(0)
   seatFilled    Int      @default(0)
   package       Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
 
   @@map("package_schedules")
 }
@@ -875,6 +879,75 @@ model BusinessSetting {
   @@map("business_settings")
 }
 
+model Article {
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  excerpt         String   @default("")
+  content         String   @default("")
+  category        String   @default("Edukasi Umroh")
+  author          String   @default("")
+  featuredImage   String   @default("")
+  publishDate     DateTime @default(now())
+  readTime        Int      @default(0)
+  tags            Json?
+  keywords        Json?
+  featured        Boolean  @default(false)
+  metaTitle       String   @default("")
+  metaDescription String   @default("")
+  status          String   @default("PUBLISHED")
+  publishedAt     DateTime?
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@index([status])
+  @@index([category])
+  @@index([featured])
+  @@index([status, publishedAt])
+  @@map("articles")
+}
+
+model Gallery {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String        @default("")
+  isActive    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  items GalleryItem[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("galleries")
+}
+
+model GalleryItem {
+  id            String  @id @default(uuid())
+  galleryId     String
+  gallery       Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  url           String  @default("")
+  type          String  @default("PHOTO") // PHOTO | VIDEO
+  category      String  @default("")
+  alt           String  @default("")
+  location      String  @default("")
+  dateLabel     String  @default("")
+  durationLabel String  @default("")
+  sortOrder     Int     @default(0)
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+
+  @@index([galleryId])
+  @@index([category])
+  @@index([type])
+  @@map("gallery_items")
+}
+
 model Customer {
   id             String    @id @default(uuid())
   code           String    @unique
@@ -899,6 +972,7 @@ model Customer {
   deletedAt      DateTime?
 
   documents CustomerDocument[]
+  bookings  Booking[]
 
   @@index([name])
   @@index([passportNumber])
@@ -928,4 +1002,31 @@ model CustomerDocument {
   @@index([customerId])
   @@index([type])
   @@map("customer_documents")
+}
+
+model Booking {
+  id            String          @id @default(uuid())
+  bookingNumber String          @unique
+  customerId    String
+  customer      Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  packageId     String
+  package       Package         @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  scheduleId    String
+  schedule      PackageSchedule @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  status        String          @default("DRAFT")
+  totalPrice    Int             @default(0)
+  downPayment   Int             @default(0)
+  notes         String          @default("")
+  createdById   String?
+  createdBy     User?           @relation("BookingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+
+  @@index([customerId])
+  @@index([packageId])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("bookings")
 }

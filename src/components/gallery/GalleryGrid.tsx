@@ -5,31 +5,25 @@ import { motion, AnimatePresence } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar } from "lucide-react"
 import Image from "next/image"
 
-const galleryImages = [
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-01.webp", alt: "Jamaah Safiq Tour di Masjidil Haram", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Januari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-02.webp", alt: "Suasana ibadah di Masjid Nabawi", category: "masjid-nabawi", location: "Masjid Nabawi, Madinah", date: "Februari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-03.webp", alt: "Hotel Safiq Tour di Mekkah", category: "makkah", location: "Mekkah", date: "Januari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-04.webp", alt: "Pembimbing ibadah bersama jamaah", category: "jamaah", location: "Madinah", date: "Maret 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-05.webp", alt: "City Tour di Madinah", category: "madinah", location: "Madinah", date: "Februari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-06.webp", alt: "Jamaah berfoto di landmark Islam", category: "jamaah", location: "Mekkah", date: "Maret 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-07.webp", alt: "Suasana Masjid Nabawi", category: "masjid-nabawi", location: "Masjid Nabawi, Madinah", date: "Januari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-08.webp", alt: "Jamaah Safiq Tour saat thawaf", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Februari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-01.webp", alt: "Keberangkatan jamaah Safiq Tour", category: "keberangkatan", location: "Bandara Soekarno-Hatta", date: "Maret 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-02.webp", alt: "Kepulangan jamaah Safiq Tour", category: "kepulangan", location: "Bandara Soekarno-Hatta", date: "April 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-03.webp", alt: "Manasik Umroh Safiq Tour", category: "manasik", location: "Bandung", date: "Januari 2026" },
-  { src: "/images/Galery/Image-Galery-Safiq-Tour-04.webp", alt: "Jamaah Safiq Tour berdoa", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Februari 2026" },
-]
-
 const masonryHeights = ["h-[320px] sm:h-[400px]", "h-[260px] sm:h-[320px]", "h-[380px] sm:h-[480px]", "h-[280px] sm:h-[360px]", "h-[220px] sm:h-[280px]", "h-[340px] sm:h-[420px]"]
 
+export interface GalleryGridItem {
+  src: string
+  alt: string
+  category: string
+  location: string
+  date: string
+}
+
 type GalleryGridProps = {
+  items: GalleryGridItem[]
   filter: string
 }
 
-export function GalleryGrid({ filter }: GalleryGridProps) {
+export function GalleryGrid({ items, filter }: GalleryGridProps) {
   const [selected, setSelected] = useState<number | null>(null)
-  const filtered = filter === "all" ? galleryImages : galleryImages.filter((img) => img.category === filter)
-  const displayed = filtered.length > 0 ? filtered : galleryImages
+  const filtered = filter === "all" ? items : items.filter((img) => img.category === filter)
+  const displayed = filtered.length > 0 ? filtered : items
 
   const next = useCallback(() => {
     if (selected === null) return

@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react"
 import { Section, SectionHeader, SectionTitle, SectionDescription } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
 import { ArticleCard } from "@/components/shared/article-card"
-import { articles } from "@/data/articles"
+import { getArticles } from "@/data/articles"
 
-export function BlogSection() {
-  const latestArticles = articles.slice(0, 3)
+export async function BlogSection() {
+  const latestArticles = (await getArticles()).slice(0, 3)
 
   return (
     <Section variant="muted">

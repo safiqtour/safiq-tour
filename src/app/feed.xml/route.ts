@@ -2,7 +2,7 @@ import { getAllPosts } from "@/lib/mdx"
 
 export async function GET() {
   const baseUrl = "https://safiq-tour.com"
-  const posts = getAllPosts()
+  const posts = await getAllPosts()
 
   const items = posts
     .map(

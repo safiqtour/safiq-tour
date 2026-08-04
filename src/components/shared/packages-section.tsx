@@ -8,11 +8,12 @@ import { Container } from "@/components/ui/container"
 import { PackageFilter } from "./package-filter"
 import { PackageSearch } from "./package-search"
 import { PackageGrid } from "./package-grid"
-import { packages, type Package } from "@/data/packages"
+import type { Package } from "@/data/packages"
 
 type SortKey = "popular" | "price-asc" | "price-desc" | "duration"
 
 type PackagesSectionProps = {
+  packages?: Package[]
   maxItems?: number
   showAllPackagesButton?: boolean
   showConsultationButton?: boolean
@@ -28,6 +29,7 @@ type PackagesSectionProps = {
 }
 
 function PackagesSection({
+  packages: packagesProp,
   maxItems,
   showAllPackagesButton = true,
   showConsultationButton = true,
@@ -51,6 +53,8 @@ function PackagesSection({
   const setFilter = onFilterChange ?? setInternalFilter
   const setSearch = onSearchChange ?? setInternalSearch
   const setSort = onSortChange ?? setInternalSort
+
+  const packages = packagesProp ?? []
 
   const filtered = useMemo(() => {
     let result: Package[] = [...packages]
@@ -92,7 +96,7 @@ function PackagesSection({
     }
 
     return result
-  }, [filter, search, sort, allowedCategories])
+  }, [filter, search, sort, allowedCategories, packages])
 
   return (
     <Section variant="muted">

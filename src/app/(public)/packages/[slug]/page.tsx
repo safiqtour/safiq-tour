@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { packages } from "@/data/packages"
-import { getPackageDetail } from "@/data/packages-detail"
+import { getAllPackageSlugs, getPublicPackageBySlug } from "@/modules/public/packages"
 import { Hero } from "@/components/packages/Hero"
 import { QuickInfo } from "@/components/packages/QuickInfo"
 import { Highlights } from "@/components/packages/Highlights"
@@ -18,12 +17,13 @@ type Props = {
 }
 
 export async function generateStaticParams() {
-  return packages.map((pkg) => ({ slug: pkg.slug }))
+  return (await getAllPackageSlugs()).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const pkg = packages.find((p) => p.slug === slug)
+  const pub = await getPublicPackageBySlug(slug)
+  const pkg = pub?.card
   if (!pkg) return {}
 
   return {
@@ -39,10 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PackageDetailPage({ params }: Props) {
   const { slug } = await params
-  const pkg = packages.find((p) => p.slug === slug)
-  if (!pkg) notFound()
+  const pub = await getPublicPackageBySlug(slug)
+  if (!pub) notFound()
 
-  const detail = getPackageDetail(slug, pkg.duration)
+  const pkg = pub.card
+  const detail = pub.detail
+  if (!detail) notFound()
+
   const cat = pkg.category
 
   const hotelStarMap: Record<string, number> = {

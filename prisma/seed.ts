@@ -1,6 +1,11 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import bcrypt from "bcryptjs"
+import fs from "fs"
+import path from "path"
+import matter from "gray-matter"
+import { packages, type Package } from "./seed-data/packages"
+import { getPackageDetail } from "../src/data/packages-detail"
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -925,6 +930,147 @@ async function main() {
       bsCount++
     }
   }
+
+  /* ---------------------------------------------------------------- */
+  /* Public CMS: seed packages -> publicContent (card + detail) JSON   */
+  /* ---------------------------------------------------------------- */
+  let publicPackageCount = 0
+  for (const pkg of packages) {
+    const detail = getPackageDetail(pkg.slug, pkg.duration)
+    const publicContent = JSON.parse(JSON.stringify({ card: pkg, detail }))
+    const fields = {
+      title: pkg.title,
+      excerpt: `${pkg.title} - ${pkg.duration}`,
+      description: detail?.description ?? "",
+      category: pkg.category,
+      duration: parseInt(pkg.duration, 10) || 0,
+      price: pkg.price,
+      currency: "IDR",
+      airline: pkg.maskapai,
+      status: "PUBLISHED",
+      featured: Boolean(pkg.featured),
+      badge: pkg.badge,
+      thumbnail: pkg.image ?? "",
+      heroImage: detail?.heroImage ?? "",
+      publicContent,
+      publishedAt: new Date(),
+    }
+    await db.package.upsert({
+      where: { slug: pkg.slug },
+      update: fields,
+      create: { slug: pkg.slug, ...fields },
+    })
+    publicPackageCount++
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Public CMS: seed blog articles from content/blog/*.mdx            */
+  /* ---------------------------------------------------------------- */
+  let articleCount = 0
+  const blogDir = path.join(process.cwd(), "content", "blog")
+  if (fs.existsSync(blogDir)) {
+    const mdFiles = fs.readdirSync(blogDir).filter((f) => f.endsWith(".mdx"))
+    for (const file of mdFiles) {
+      const slug = file.replace(/\.mdx$/, "")
+      const raw = fs.readFileSync(path.join(blogDir, file), "utf-8")
+      const { data, content } = matter(raw)
+      const fm = data as Record<string, unknown>
+      const tagList = Array.isArray(fm.tags) ? fm.tags.map(String) : []
+      const keywordList = Array.isArray(fm.keywords) ? fm.keywords.map(String) : []
+      const title = String(fm.title ?? slug)
+      const publishDate = new Date(fm.date as string | number | Date)
+      const fields = {
+        title,
+        excerpt: String(fm.description ?? ""),
+        content,
+        category: String(fm.category ?? "Edukasi Umroh"),
+        author: String(fm.author ?? ""),
+        featuredImage: String(fm.featuredImage ?? ""),
+        publishDate,
+        readTime: Number(fm.readTime ?? 0),
+        tags: tagList,
+        keywords: keywordList,
+        featured: Boolean(fm.featured),
+        metaTitle: `${title} | Safiq Tour`,
+        metaDescription: String(fm.description ?? ""),
+        status: "PUBLISHED",
+        publishedAt: publishDate,
+      }
+      await db.article.upsert({
+        where: { slug },
+        update: fields,
+        create: { slug, ...fields },
+      })
+      articleCount++
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Public CMS: seed gallery photo/video items (url-string approach)  */
+  /* ---------------------------------------------------------------- */
+  const photoItems = [
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-01.webp", alt: "Jamaah Safiq Tour di Masjidil Haram", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Januari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-02.webp", alt: "Suasana ibadah di Masjid Nabawi", category: "masjid-nabawi", location: "Masjid Nabawi, Madinah", date: "Februari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-03.webp", alt: "Hotel Safiq Tour di Mekkah", category: "makkah", location: "Mekkah", date: "Januari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-04.webp", alt: "Pembimbing ibadah bersama jamaah", category: "jamaah", location: "Madinah", date: "Maret 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-05.webp", alt: "City Tour di Madinah", category: "madinah", location: "Madinah", date: "Februari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-06.webp", alt: "Jamaah berfoto di landmark Islam", category: "jamaah", location: "Mekkah", date: "Maret 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-07.webp", alt: "Suasana Masjid Nabawi", category: "masjid-nabawi", location: "Masjid Nabawi, Madinah", date: "Januari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-08.webp", alt: "Jamaah Safiq Tour saat thawaf", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Februari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-01.webp", alt: "Keberangkatan jamaah Safiq Tour", category: "keberangkatan", location: "Bandara Soekarno-Hatta", date: "Maret 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-02.webp", alt: "Kepulangan jamaah Safiq Tour", category: "kepulangan", location: "Bandara Soekarno-Hatta", date: "April 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-03.webp", alt: "Manasik Umroh Safiq Tour", category: "manasik", location: "Bandung", date: "Januari 2026" },
+    { src: "/images/Galery/Image-Galery-Safiq-Tour-04.webp", alt: "Jamaah Safiq Tour berdoa", category: "masjidil-haram", location: "Masjidil Haram, Makkah", date: "Februari 2026" },
+  ]
+  const videoItems = [
+    { id: "fDSV15dPXqk", title: "Meraih Berkah Syawal di Tanah Suci: Umroh Plus Turki 1447H", location: "Mekkah & Madinah", duration: "2:30" },
+    { id: "yxnvxYkqNFg", title: "Berangkat Bersama Safiq Tour, Insha Alloh Aman & Nyaman", location: "Bandara Soekarno-Hatta", duration: "1:25" },
+    { id: "NajKXlTZcIM", title: "Yu Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:10" },
+    { id: "fhVGbInBvAU", title: "Ayo Wujudkan Mimpi Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:02" },
+  ]
+  const gallery = await db.gallery.upsert({
+    where: { slug: "jamaah-dokumentasi" },
+    update: {},
+    create: {
+      slug: "jamaah-dokumentasi",
+      title: "Jamaah Dokumentasi",
+      description: "Dokumentasi perjalanan umroh jamaah Safiq Tour",
+      isActive: true,
+    },
+  })
+  await db.galleryItem.deleteMany({ where: { galleryId: gallery.id } })
+  if (photoItems.length > 0) {
+    await db.galleryItem.createMany({
+      data: photoItems.map((p, i) => ({
+        galleryId: gallery.id,
+        url: p.src,
+        type: "PHOTO",
+        category: p.category,
+        alt: p.alt,
+        location: p.location,
+        dateLabel: p.date,
+        sortOrder: i,
+      })),
+    })
+  }
+  if (videoItems.length > 0) {
+    await db.galleryItem.createMany({
+      data: videoItems.map((v, i) => ({
+        galleryId: gallery.id,
+        url: v.id,
+        type: "VIDEO",
+        category: "video",
+        alt: v.title,
+        location: v.location,
+        durationLabel: v.duration,
+        sortOrder: i,
+      })),
+    })
+  }
+
+  console.log(`  - ${publicPackageCount} public packages`)
+  console.log(`  - ${articleCount} articles`)
+  console.log(`  - ${photoItems.length + videoItems.length} gallery items`)
 
   console.log(`  - ${tagCount} tags`)
   console.log(`  - ${typeCount} package types`)

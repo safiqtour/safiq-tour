@@ -8,16 +8,23 @@ import { VideoGallery } from "@/components/gallery/VideoGallery"
 import { Timeline } from "@/components/gallery/Timeline"
 import { Testimonials } from "@/components/gallery/Testimonials"
 import { FloatingWhatsapp } from "@/components/gallery/FloatingWhatsapp"
+import type { GalleryPhoto, GalleryVideo } from "@/modules/public/gallery"
 
-export function GalleryPageClient() {
+type GalleryPageClientProps = {
+  photos: GalleryPhoto[]
+  videos: GalleryVideo[]
+  categories: string[]
+}
+
+export function GalleryPageClient({ photos, videos, categories }: GalleryPageClientProps) {
   const [filter, setFilter] = useState("all")
 
   return (
     <>
       <Hero />
-      <CategoryFilter active={filter} onSelect={setFilter} />
-      <GalleryGrid filter={filter} />
-      <VideoGallery />
+      <CategoryFilter active={filter} onSelect={setFilter} categories={categories} />
+      <GalleryGrid items={photos} filter={filter} />
+      <VideoGallery videos={videos} />
       <Timeline />
       <Testimonials />
       <FloatingWhatsapp />

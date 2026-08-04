@@ -4,15 +4,13 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Play, X, Clock, MapPin } from "lucide-react"
 import Image from "next/image"
+import type { GalleryVideo } from "@/modules/public/gallery"
 
-const videos = [
-  { id: "fDSV15dPXqk", title: "Meraih Berkah Syawal di Tanah Suci: Umroh Plus Turki 1447H", location: "Mekkah & Madinah", duration: "2:30" },
-  { id: "yxnvxYkqNFg", title: "Berangkat Bersama Safiq Tour, Insha Alloh Aman & Nyaman", location: "Bandara Soekarno-Hatta", duration: "1:25" },
-  { id: "NajKXlTZcIM", title: "Yu Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:10" },
-  { id: "fhVGbInBvAU", title: "Ayo Wujudkan Mimpi Umroh Bersama Safiq Tour", location: "Mekkah", duration: "1:02" },
-]
+type VideoGalleryProps = {
+  videos: GalleryVideo[]
+}
 
-export function VideoGallery() {
+export function VideoGallery({ videos }: VideoGalleryProps) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null)
 
   return (

@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next"
 import { getAllPosts } from "@/lib/mdx"
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://safiq-tour.com"
 
-  const posts = getAllPosts()
+  const posts = await getAllPosts()
 
   const blogEntries: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,

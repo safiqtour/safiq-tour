@@ -9,19 +9,18 @@ export interface Article {
   image?: string
 }
 
-import { getAllPosts, postToArticle } from "@/lib/mdx"
+import { getPublishedArticles } from "@/modules/public/articles"
 
-const allPosts = getAllPosts()
-
-export const articles: Article[] = allPosts.map((p) => ({
-  slug: p.slug,
-  title: p.frontmatter.title,
-  excerpt: p.frontmatter.description,
-  content: p.content,
-  date: p.frontmatter.date,
-  author: p.frontmatter.author,
-  category: p.frontmatter.category,
-  image: p.frontmatter.featuredImage,
-}))
-
-export const blogArticles = allPosts.map(postToArticle)
+export async function getArticles(): Promise<Article[]> {
+  const items = await getPublishedArticles()
+  return items.map((a) => ({
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.excerpt,
+    content: a.content,
+    date: a.publishDate.toISOString(),
+    author: a.author,
+    category: a.category,
+    image: a.featuredImage || undefined,
+  }))
+}
