@@ -4,9 +4,9 @@ import {
   getGalleryPhotos,
   getGalleryVideos,
   getGalleryCategories,
-  type GalleryPhoto,
-  type GalleryVideo,
 } from "@/modules/public/gallery"
+
+export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Galeri Safiq Tour | Dokumentasi Perjalanan Umroh",

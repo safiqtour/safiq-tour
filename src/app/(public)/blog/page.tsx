@@ -1,6 +1,8 @@
 import { getAllPosts, getFeaturedPost } from "@/lib/mdx"
 import BlogClient from "./client"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Artikel & Inspirasi Umroh | Safiq Tour",
   description:

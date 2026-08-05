@@ -57,6 +57,7 @@ export const packages: Package[] = [
     hotelMadinah: "Al Baraka Karim /Setaraf",
     maskapai: "Qatar, Emirates",
     features: ["Hotel Bintang 3 setaraf", "Tiket Pesawat PP", "Makan 3x", "Visa Umroh", "Perlengkapan", "Pembimbing Ibadah", "Muthowif", "Manasik", "Handling Bandara"],
+  },
   {
     id: "3",
     slug: "thaibah-deluxe",

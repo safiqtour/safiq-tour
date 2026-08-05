@@ -7,8 +7,7 @@ import { customerRepository } from "../repositories/customer.repository"
 import type { CreateCustomerInput, CustomerDocumentInput, UpdateCustomerInput } from "../validations/customer.schema"
 
 type Tx = Prisma.TransactionClient
-type CustomerDoc = Prisma.CustomerDocumentGetPayload<{}>
-
+type CustomerDoc = Prisma.CustomerDocumentGetPayload<Record<string, never>>
 function toDocFields(doc: CustomerDocumentInput): Pick<CustomerDoc, "type" | "status" | "mediaId" | "notes"> {
   return {
     type: doc.type,

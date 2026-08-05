@@ -6,7 +6,7 @@ import { Calendar, User, Clock, ChevronLeft } from "lucide-react"
 import { Section } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
 import { Badge } from "@/components/ui/badge"
-import { getPostBySlug, getAllSlugs, getRelatedPosts } from "@/lib/mdx"
+import { getPostBySlug, getRelatedPosts } from "@/lib/mdx"
 import { Breadcrumb } from "@/components/blog/breadcrumb"
 import { ArticleContent } from "@/components/blog/article-content"
 import { TableOfContents } from "@/components/blog/table-of-contents"
@@ -14,12 +14,10 @@ import { SocialShare } from "@/components/blog/social-share"
 import { RelatedPostCard } from "@/components/blog/related-posts"
 import { CtaSection } from "@/components/blog/cta-section"
 
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ slug: string }>
-}
-
-export async function generateStaticParams() {
-  return (await getAllSlugs()).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

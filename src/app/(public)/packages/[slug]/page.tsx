@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getAllPackageSlugs, getPublicPackageBySlug } from "@/modules/public/packages"
+import { getPublicPackageBySlug } from "@/modules/public/packages"
 import { Hero } from "@/components/packages/Hero"
 import { QuickInfo } from "@/components/packages/QuickInfo"
 import { Highlights } from "@/components/packages/Highlights"
@@ -12,12 +12,10 @@ import { Gallery } from "@/components/packages/Gallery"
 import { Testimonials } from "@/components/packages/Testimonials"
 import { FAQ } from "@/components/packages/FAQ"
 
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ slug: string }>
-}
-
-export async function generateStaticParams() {
-  return (await getAllPackageSlugs()).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

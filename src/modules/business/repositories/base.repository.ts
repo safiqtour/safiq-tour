@@ -20,7 +20,7 @@ export class BaseRepository<
   TRecord,
   TCreate = Record<string, unknown>,
   TUpdate = Record<string, unknown>,
-  TDelegate = any,
+  TDelegate = unknown,
 > {
   constructor(
     protected delegate: ModelDelegate<TDelegate>,

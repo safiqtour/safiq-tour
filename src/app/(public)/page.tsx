@@ -11,6 +11,8 @@ import { LogoMarquee } from "@/components/shared/logo-marquee"
 import { Hero } from "@/components/home/Hero"
 import { getPublicPackages } from "@/modules/public/packages"
 
+export const dynamic = "force-dynamic"
+
 export default async function Home() {
   const allPackages = await getPublicPackages()
 

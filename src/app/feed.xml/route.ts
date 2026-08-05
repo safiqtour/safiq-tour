@@ -1,5 +1,7 @@
 import { getAllPosts } from "@/lib/mdx"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   const baseUrl = "https://safiq-tour.com"
   const posts = await getAllPosts()
