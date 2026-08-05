@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/prisma/db"
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { packageFormSchema } from "@/lib/packages/schema"
@@ -15,7 +15,7 @@ export async function getPackages(params: {
   page?: number
   pageSize?: number
 }) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) return { data: [], total: 0, page: 1, totalPages: 1 }
 
   const { search = "", category = "", status = "", page = 1, pageSize = 10 } = params
@@ -70,7 +70,7 @@ export async function getPackages(params: {
 }
 
 export async function getPackageById(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) return null
 
   const pkg = await db.package.findUnique({
@@ -95,7 +95,7 @@ export async function getPackageById(id: string) {
 }
 
 export async function createPackage(formData: FormData) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   const raw: Record<string, unknown> = {
@@ -186,7 +186,7 @@ export async function createPackage(formData: FormData) {
 }
 
 export async function updatePackage(id: string, formData: FormData) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   const raw: Record<string, unknown> = {
@@ -286,7 +286,7 @@ export async function updatePackage(id: string, formData: FormData) {
 }
 
 export async function deletePackage(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   await db.package.delete({ where: { id } })
@@ -294,7 +294,7 @@ export async function deletePackage(id: string) {
 }
 
 export async function duplicatePackage(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   const original = await db.package.findUnique({
@@ -350,7 +350,7 @@ export async function duplicatePackage(id: string) {
 }
 
 export async function updatePackageStatus(id: string, status: PackageStatus) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   await db.package.update({
@@ -365,7 +365,7 @@ export async function updatePackageStatus(id: string, status: PackageStatus) {
 }
 
 export async function toggleFeatured(id: string, featured: boolean) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
 
   await db.package.update({ where: { id }, data: { featured } })

@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { countryService } from "@/services/country.service"
 import { can } from "@/services/authorization.service"
 import { createCountrySchema, updateCountrySchema, countryQuerySchema } from "@/validations/country.schema"
 
 export async function getCountries(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.country:view")
@@ -17,7 +17,7 @@ export async function getCountries(params: unknown) {
 }
 
 export async function getCountry(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.country:view")
@@ -31,7 +31,7 @@ export async function getAllActiveCountries() {
 }
 
 export async function createCountry(data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canCreate = can(session.user.role, "master.country:create")
@@ -42,7 +42,7 @@ export async function createCountry(data: unknown) {
 }
 
 export async function updateCountry(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.country:update")
@@ -53,7 +53,7 @@ export async function updateCountry(id: string, data: unknown) {
 }
 
 export async function deleteCountry(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "master.country:delete")
@@ -63,7 +63,7 @@ export async function deleteCountry(id: string) {
 }
 
 export async function restoreCountry(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.country:update")
@@ -73,7 +73,7 @@ export async function restoreCountry(id: string) {
 }
 
 export async function toggleCountryStatus(id: string, isActive: boolean) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.country:update")

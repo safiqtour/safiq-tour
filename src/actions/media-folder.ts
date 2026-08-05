@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { mediaService } from "@/services/media.service"
 import { can } from "@/services/authorization.service"
 import { createFolderSchema, renameFolderSchema } from "@/validations/media.schema"
 
 export async function createMediaFolder(data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canCreate = can(session.user.role, "media:create")
@@ -17,7 +17,7 @@ export async function createMediaFolder(data: unknown) {
 }
 
 export async function renameMediaFolder(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "media:update")
@@ -28,7 +28,7 @@ export async function renameMediaFolder(id: string, data: unknown) {
 }
 
 export async function deleteMediaFolder(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "media:delete")

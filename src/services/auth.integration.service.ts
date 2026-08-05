@@ -1,3 +1,5 @@
+import { cache } from "react"
+
 import { createAuthProvider } from "@/providers/auth/factory"
 import type { AuthProvider } from "@/providers/auth/types"
 import type { AuthCredentials, AuthSession } from "@/providers/auth/types"
@@ -132,7 +134,36 @@ export async function signOut(transport?: AuthCookieTransport): Promise<void> {
   await deleteSession(transport)
 }
 
-export async function getSession(
+// Read-only session accessor. Safe to call during Server Component
+// rendering — it NEVER mutates cookies. Memoized per request with
+// React.cache(). An expired/invalid session returns null without writing;
+// callers that need to refresh an expired session (Server Actions / Route
+// Handlers) must use getWritableSession() instead.
+export const getSession = cache(
+  async (transport?: AuthCookieTransport): Promise<AppSession | null> => {
+    const current = await readSession(transport)
+    if (!current?.session.accessToken) return null
+
+    // Read-only: do not refresh (which would write the cookie) here.
+    if (isExpired(current.session)) return null
+
+    const session = await getProvider().getSession(current.session)
+    if (!session) return null
+    return buildAppSession(session)
+  }
+)
+
+export const getUser = cache(
+  async (transport?: AuthCookieTransport): Promise<AppUser | null> => {
+    const session = await getSession(transport)
+    return session?.user ?? null
+  }
+)
+
+// Writable session accessor. Only call from a Server Action or Route
+// Handler. Refreshes an expired session (rewriting the cookie) and clears
+// the cookie when the stored session can no longer be validated.
+export async function getWritableSession(
   transport?: AuthCookieTransport
 ): Promise<AppSession | null> {
   const current = await readSession(transport)
@@ -148,13 +179,6 @@ export async function getSession(
     return null
   }
   return buildAppSession(session)
-}
-
-export async function getUser(
-  transport?: AuthCookieTransport
-): Promise<AppUser | null> {
-  const session = await getSession(transport)
-  return session?.user ?? null
 }
 
 export async function refreshSession(

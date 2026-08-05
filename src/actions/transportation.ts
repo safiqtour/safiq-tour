@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { transportationService } from "@/services/transportation.service"
 import { can } from "@/services/authorization.service"
 import { createTransportationSchema, updateTransportationSchema, transportationQuerySchema } from "@/validations/transportation.schema"
 
 export async function getTransportations(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:read")) throw new Error("Forbidden")
   const query = transportationQuerySchema.parse(params)
@@ -14,14 +14,14 @@ export async function getTransportations(params: unknown) {
 }
 
 export async function getTransportation(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:read")) throw new Error("Forbidden")
   return transportationService.findById(id)
 }
 
 export async function createTransportation(data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:create")) throw new Error("Forbidden")
   const parsed = createTransportationSchema.parse(data)
@@ -29,7 +29,7 @@ export async function createTransportation(data: unknown) {
 }
 
 export async function updateTransportation(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:update")) throw new Error("Forbidden")
   const parsed = updateTransportationSchema.parse(data)
@@ -37,14 +37,14 @@ export async function updateTransportation(id: string, data: unknown) {
 }
 
 export async function deleteTransportation(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:delete")) throw new Error("Forbidden")
   await transportationService.softDelete(id)
 }
 
 export async function restoreTransportation(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.transportation:update")) throw new Error("Forbidden")
   await transportationService.restore(id)

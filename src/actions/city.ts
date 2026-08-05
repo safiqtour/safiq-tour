@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { cityService } from "@/services/city.service"
 import { can } from "@/services/authorization.service"
 import { createCitySchema, updateCitySchema, cityQuerySchema } from "@/validations/city.schema"
 
 export async function getCities(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.city:view")
@@ -17,7 +17,7 @@ export async function getCities(params: unknown) {
 }
 
 export async function getCity(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.city:view")
@@ -35,7 +35,7 @@ export async function getCitiesByRegion(regionId: string) {
 }
 
 export async function createCity(data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canCreate = can(session.user.role, "master.city:create")
@@ -46,7 +46,7 @@ export async function createCity(data: unknown) {
 }
 
 export async function updateCity(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.city:update")
@@ -57,7 +57,7 @@ export async function updateCity(id: string, data: unknown) {
 }
 
 export async function deleteCity(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "master.city:delete")
@@ -67,7 +67,7 @@ export async function deleteCity(id: string) {
 }
 
 export async function restoreCity(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.city:update")
@@ -77,7 +77,7 @@ export async function restoreCity(id: string) {
 }
 
 export async function toggleCityStatus(id: string, isActive: boolean) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.city:update")

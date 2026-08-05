@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { mediaService } from "@/services/media.service"
 import { can } from "@/services/authorization.service"
 import { mediaQuerySchema, updateMediaSchema } from "@/validations/media.schema"
 
 export async function getMediaList(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "media:read")
@@ -17,7 +17,7 @@ export async function getMediaList(params: unknown) {
 }
 
 export async function getMedia(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "media:read")
@@ -27,7 +27,7 @@ export async function getMedia(id: string) {
 }
 
 export async function updateMedia(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "media:update")
@@ -38,7 +38,7 @@ export async function updateMedia(id: string, data: unknown) {
 }
 
 export async function deleteMedia(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "media:delete")
@@ -48,7 +48,7 @@ export async function deleteMedia(id: string) {
 }
 
 export async function restoreMedia(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "media:update")
@@ -58,7 +58,7 @@ export async function restoreMedia(id: string) {
 }
 
 export async function hardDeleteMedia(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "media:delete")
@@ -68,7 +68,7 @@ export async function hardDeleteMedia(id: string) {
 }
 
 export async function addMediaTag(mediaId: string, tagName: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "media:update")
@@ -78,7 +78,7 @@ export async function addMediaTag(mediaId: string, tagName: string) {
 }
 
 export async function removeMediaTag(mediaId: string, tagId: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "media:update")
@@ -88,7 +88,7 @@ export async function removeMediaTag(mediaId: string, tagId: string) {
 }
 
 export async function getFolderTree() {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "media:read")
@@ -98,7 +98,7 @@ export async function getFolderTree() {
 }
 
 export async function getAllFolders() {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "media:read")

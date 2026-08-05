@@ -1,4 +1,4 @@
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import type { AuthCookieTransport } from "@/services/auth.integration.service"
 import {
   resolveRolesFromUser,
@@ -17,7 +17,7 @@ export type { ResolvedRole, ResolvedUser } from "@/providers/auth/resolvers/role
 export async function resolveUser(
   transport?: AuthCookieTransport
 ): Promise<ResolvedUser | null> {
-  const session = await getSession(transport)
+  const session = await getWritableSession(transport)
   return session?.user ?? null
 }
 

@@ -1,6 +1,6 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { businessSettingService } from "../services/business-setting.service"
@@ -11,7 +11,7 @@ import {
 } from "../validations/business-setting.schema"
 
 export async function getBusinessSettings(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
 
@@ -20,7 +20,7 @@ export async function getBusinessSettings(params: unknown) {
 }
 
 export async function getBusinessSetting(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.business-setting:read")) throw new Error("Forbidden")
 

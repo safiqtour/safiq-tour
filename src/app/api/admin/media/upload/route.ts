@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { can } from "@/services/authorization.service"
 import { mediaService } from "@/services/media.service"
 
 export async function POST(request: Request) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const canCreate = can(session.user.role, "media:create")

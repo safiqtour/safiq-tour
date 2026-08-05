@@ -1,12 +1,12 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { regionService } from "@/services/region.service"
 import { can } from "@/services/authorization.service"
 import { createRegionSchema, updateRegionSchema, regionQuerySchema } from "@/validations/region.schema"
 
 export async function getRegions(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.region:view")
@@ -17,7 +17,7 @@ export async function getRegions(params: unknown) {
 }
 
 export async function getRegion(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canView = can(session.user.role, "master.region:view")
@@ -31,7 +31,7 @@ export async function getRegionsByCountry(countryId: string) {
 }
 
 export async function createRegion(data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canCreate = can(session.user.role, "master.region:create")
@@ -42,7 +42,7 @@ export async function createRegion(data: unknown) {
 }
 
 export async function updateRegion(id: string, data: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.region:update")
@@ -53,7 +53,7 @@ export async function updateRegion(id: string, data: unknown) {
 }
 
 export async function deleteRegion(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canDelete = can(session.user.role, "master.region:delete")
@@ -63,7 +63,7 @@ export async function deleteRegion(id: string) {
 }
 
 export async function restoreRegion(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.region:update")
@@ -73,7 +73,7 @@ export async function restoreRegion(id: string) {
 }
 
 export async function toggleRegionStatus(id: string, isActive: boolean) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
   const canUpdate = can(session.user.role, "master.region:update")

@@ -1,6 +1,6 @@
 "use server"
 
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { can } from "@/services/authorization.service"
 import { requirePermission } from "../../lib/permission"
 import { tagService } from "../services/tag.service"
@@ -11,7 +11,7 @@ import {
 } from "../validations/tag.schema"
 
 export async function getTags(params: unknown) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.tag:read")) throw new Error("Forbidden")
 
@@ -20,7 +20,7 @@ export async function getTags(params: unknown) {
 }
 
 export async function getTag(id: string) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
   if (!can(session.user.role, "master.tag:read")) throw new Error("Forbidden")
 

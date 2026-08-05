@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/prisma/db"
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
 
 export async function GET(request: Request) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
