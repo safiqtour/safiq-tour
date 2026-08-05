@@ -29,6 +29,8 @@ model User {
   uploadedCustomerDocuments CustomerDocument[] @relation("CustomerDocumentUploader")
   verifiedCustomerDocuments CustomerDocument[] @relation("CustomerDocumentVerifier")
 
+  uploadedJamaahDocuments JamaahDocument[] @relation("JamaahDocumentUploader")
+
   @@map("users")
 }
 
@@ -374,6 +376,8 @@ model Media {
   transportMedia   Transportation[]  @relation("TransportMedia")
   customerPhotos    Customer[]         @relation("CustomerPhoto")
   customerDocuments CustomerDocument[]
+  jamaahPhotos      Jamaah[]           @relation("JamaahPhoto")
+  jamaahDocuments   JamaahDocument[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
@@ -1023,10 +1027,79 @@ model Booking {
   updatedAt     DateTime        @updatedAt
   deletedAt     DateTime?
 
+  jamaah Jamaah[]
+
   @@index([customerId])
   @@index([packageId])
   @@index([scheduleId])
   @@index([status])
   @@index([deletedAt])
   @@map("bookings")
+}
+
+model Jamaah {
+  id                String    @id @default(uuid())
+  bookingId         String
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  // Personal
+  fullName          String
+  passportName      String    @default("")
+  gender            String    @default("MALE")
+  birthPlace        String    @default("")
+  birthDate         DateTime?
+  nik               String    @default("")
+
+  // Passport
+  passportNumber    String?
+  passportIssueDate DateTime?
+  passportExpiry    DateTime?
+
+  // Address
+  province          String    @default("")
+  city              String    @default("")
+  district          String    @default("")
+  village           String    @default("")
+  address           String    @default("")
+
+  // Contact
+  phone             String?
+  whatsapp          String?
+
+  photoMediaId      String?
+  photoMedia        Media?    @relation("JamaahPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+
+  status            String    @default("ACTIVE")
+  notes             String    @default("")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  documents JamaahDocument[]
+
+  @@index([bookingId])
+  @@index([fullName])
+  @@index([passportNumber])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("jamaah")
+}
+
+model JamaahDocument {
+  id           String     @id @default(uuid())
+  jamaahId     String
+  jamaah       Jamaah     @relation(fields: [jamaahId], references: [id], onDelete: Cascade)
+  type         String     @default("PASSPORT") // PASSPORT | KTP | KK | PHOTO
+  status       String     @default("PENDING")
+  mediaId      String?
+  media        Media?     @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  notes        String     @default("")
+  uploadedById String?
+  uploadedBy   User?      @relation("JamaahDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([jamaahId])
+  @@index([type])
+  @@map("jamaah_documents")
 }
