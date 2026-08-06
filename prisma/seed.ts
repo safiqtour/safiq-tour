@@ -70,6 +70,7 @@ const ROLE_PERMISSIONS_MAP: Record<string, { resource: string; action: string }[
     { resource: "booking", action: "create" },
     { resource: "booking", action: "read" },
     { resource: "booking", action: "update" },
+    { resource: "booking", action: "delete" },
     { resource: "customer", action: "create" },
     { resource: "customer", action: "read" },
     { resource: "customer", action: "update" },

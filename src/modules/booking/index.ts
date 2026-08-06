@@ -7,6 +7,8 @@ export {
   updateBooking,
   updateBookingStatus,
   cancelBooking,
+  deleteBooking,
+  restoreBooking,
 } from "./actions/booking"
 export {
   createBookingSchema,

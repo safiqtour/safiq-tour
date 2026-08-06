@@ -2,6 +2,7 @@
 
 import { requirePermission } from "@/modules/business/lib/permission"
 import { bookingService } from "../services/booking.service"
+import { bookingInclude } from "../repositories/booking.repository"
 import {
   bookingQuerySchema,
   createBookingSchema,
@@ -33,6 +34,7 @@ export async function getBookings(params: unknown) {
     order: query.order,
     status: query.status,
     includeDeleted: query.includeDeleted,
+    include: bookingInclude,
   })
 
   return {
@@ -80,6 +82,20 @@ export async function cancelBooking(id: string) {
   return { id: updated.id, status: updated.status }
 }
 
+export async function deleteBooking(id: string) {
+  await requirePermission("booking:delete")
+  if (!id || !id.trim()) throw new Error("Booking id wajib diisi")
+  await bookingService.softDelete(id)
+  return { id }
+}
+
+export async function restoreBooking(id: string) {
+  await requirePermission("booking:delete")
+  if (!id || !id.trim()) throw new Error("Booking id wajib diisi")
+  await bookingService.restore(id)
+  return { id }
+}
+
 /* ------------------------------------------------------------------ */
 /* Serialization helpers (Date -> ISO string) for strong-typed clients */
 /* ------------------------------------------------------------------ */
@@ -87,12 +103,21 @@ export async function cancelBooking(id: string) {
 function toListItem(row: Record<string, unknown>): BookingListItem {
   const totalPrice = row.totalPrice as number
   const downPayment = (row.downPayment as number) ?? 0
+  const customer = row.customer as Record<string, unknown> | undefined
+  const pkg = row.package as Record<string, unknown> | undefined
+  const schedule = row.schedule as Record<string, unknown> | undefined
+  const departureDate = schedule?.departureDate
+    ? new Date(schedule.departureDate as string).toISOString()
+    : null
   return {
     id: row.id as string,
     bookingNumber: row.bookingNumber as string,
     customerId: row.customerId as string,
     packageId: row.packageId as string,
     scheduleId: row.scheduleId as string,
+    customerName: (customer?.name as string) ?? "",
+    packageTitle: (pkg?.title as string) ?? "",
+    departureDate,
     status: row.status as string,
     totalPrice,
     downPayment,

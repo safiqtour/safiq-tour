@@ -1,4 +1,4 @@
-export const BOOKING_STATUSES = ["DRAFT", "CONFIRMED", "CANCELLED"] as const
+export const BOOKING_STATUSES = ["DRAFT", "CONFIRMED", "PAID", "CANCELLED"] as const
 export type BookingStatus = (typeof BOOKING_STATUSES)[number]
 
 /**
@@ -19,6 +19,9 @@ export interface BookingListItem {
   customerId: string
   packageId: string
   scheduleId: string
+  customerName: string
+  packageTitle: string
+  departureDate: string | null
   status: string
   totalPrice: number
   downPayment: number

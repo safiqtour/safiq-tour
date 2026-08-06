@@ -79,7 +79,7 @@ export const ROLE_PERMISSIONS: Record<RoleSlug, PermissionString[]> = {
     "master.country:all", "master.region:all", "master.city:all", "master.destination:all",
     "master.hotel:all", "master.airline:all", "master.transportation:all", "master.facility:all", "master.visa:all", "master.currency:all", "master.promotion:all", "master.package-category:all", "master.package-type:all", "master.tag:all", "master.business-setting:all",
     "package:create", "package:read", "package:update", "package:delete",
-    "booking:create", "booking:read", "booking:update",
+    "booking:create", "booking:read", "booking:update", "booking:delete",
     "customer:create", "customer:read", "customer:update",
     "jamaah:create", "jamaah:read", "jamaah:update", "jamaah:delete",
     "payment:read",

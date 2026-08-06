@@ -94,6 +94,38 @@ export async function getPackageById(id: string) {
   }
 }
 
+/**
+ * Fetch departure schedules for a specific package (future dates only, ascending).
+ * Used by the booking flow to populate the schedule selector after a package is chosen.
+ */
+export async function getPackageSchedules(packageId: string) {
+  const session = await getWritableSession()
+  if (!session?.user?.id || !packageId) return []
+
+  const now = new Date()
+  const schedules = await db.packageSchedule.findMany({
+    where: {
+      packageId,
+      departureDate: { gt: now },
+    },
+    orderBy: { departureDate: "asc" },
+    select: {
+      id: true,
+      departureDate: true,
+      returnDate: true,
+      meetingPoint: true,
+      seat: true,
+      seatFilled: true,
+    },
+  })
+
+  return schedules.map((s) => ({
+    ...s,
+    departureDate: s.departureDate.toISOString(),
+    returnDate: s.returnDate?.toISOString() ?? null,
+  }))
+}
+
 export async function createPackage(formData: FormData) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")

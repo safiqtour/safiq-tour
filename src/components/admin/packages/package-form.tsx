@@ -139,7 +139,14 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           } else if (key === "hotels") {
             fd.append(key, JSON.stringify(hotels))
           } else if (key === "schedules") {
-            fd.append(key, JSON.stringify(schedules))
+            // seatFilled is system-controlled (managed by booking seat lifecycle);
+            // never send it from the UI. Only seat (capacity) is editable.
+            fd.append(key, JSON.stringify(schedules.map((s) => ({
+              departureDate: s.departureDate,
+              returnDate: s.returnDate,
+              meetingPoint: s.meetingPoint,
+              seat: s.seat,
+            }))))
           }
         } else if (val !== null && val !== undefined) {
           fd.append(key, String(val))
@@ -408,19 +415,11 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                       const updated = [...schedules]; updated[i] = { ...updated[i], meetingPoint: e.target.value }; setSchedules(updated)
                     }} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Seat</label>
-                      <input type="number" value={s.seat} onChange={(e) => {
-                        const updated = [...schedules]; updated[i] = { ...updated[i], seat: Number(e.target.value) }; setSchedules(updated)
-                      }} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Terisi</label>
-                      <input type="number" value={s.seatFilled} onChange={(e) => {
-                        const updated = [...schedules]; updated[i] = { ...updated[i], seatFilled: Number(e.target.value) }; setSchedules(updated)
-                      }} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
-                    </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Seat (Kapasitas)</label>
+                    <input type="number" value={s.seat} onChange={(e) => {
+                      const updated = [...schedules]; updated[i] = { ...updated[i], seat: Number(e.target.value) }; setSchedules(updated)
+                    }} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
                   </div>
                 </div>
               </div>

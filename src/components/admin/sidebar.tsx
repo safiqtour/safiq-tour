@@ -29,6 +29,7 @@ import {
   Coins,
   Tag,
   LayoutGrid,
+  ClipboardList,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,7 @@ import { matchesPermission } from "@/providers/auth/resolvers/permission.resolve
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" },
   { href: "/admin/customers", label: "Customers", icon: Users, permission: "customer:read" },
+  { href: "/admin/bookings", label: "Booking", icon: ClipboardList, permission: "booking:read" },
   {
     label: "Master Data",
     icon: Globe,

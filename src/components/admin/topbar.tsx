@@ -18,6 +18,8 @@ import type { AppUser } from "@/services/auth.integration.service"
 
 const breadcrumbMap: Record<string, string> = {
   dashboard: "Dashboard",
+  customers: "Customers",
+  bookings: "Booking",
   packages: "Paket Umroh",
   articles: "Artikel",
   gallery: "Gallery",

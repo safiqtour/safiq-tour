@@ -10,13 +10,14 @@ export const bookingFieldsSchema = z.object({
 
 export const createBookingSchema = bookingFieldsSchema.extend({
   downPayment: z.coerce.number().int().min(0, "Uang muka tidak boleh negatif").default(0),
-  status: z.enum(BOOKING_STATUSES).optional(),
+  // status intentionally NOT accepted here: a booking always starts as DRAFT.
+  // Use updateBookingStatus to change status (state machine enforced in service).
   notes: z.string().trim().max(2000).optional().default(""),
 })
 
 export const updateBookingSchema = bookingFieldsSchema.partial().extend({
   downPayment: z.coerce.number().int().min(0, "Uang muka tidak boleh negatif").optional(),
-  status: z.enum(BOOKING_STATUSES).optional(),
+  // status intentionally NOT accepted here: status can only change through updateBookingStatus.
   notes: z.string().trim().max(2000).optional(),
 })
 

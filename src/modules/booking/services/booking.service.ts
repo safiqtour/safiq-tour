@@ -13,6 +13,17 @@ type Tx = Prisma.TransactionClient
 
 const CANCELLED = "CANCELLED"
 
+/**
+ * Allowed status transitions (booking state machine).
+ * CANCELLED is terminal: no outgoing transitions.
+ */
+const BOOKING_STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  DRAFT: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["PAID", "CANCELLED"],
+  PAID: ["CANCELLED"],
+  CANCELLED: [],
+}
+
 export class BookingService extends BaseService<Booking, CreateBookingInput, UpdateBookingInput> {
   constructor() {
     super(bookingRepository, "booking")
@@ -42,13 +53,15 @@ export class BookingService extends BaseService<Booking, CreateBookingInput, Upd
   private async createAttempt(data: CreateBookingInput, createdById?: string) {
     return db.$transaction(async (tx: Tx) => {
       const bookingNumber = await this.generateBookingNumber(tx)
+      // Validate departure-seat availability and atomically reserve a seat before inserting.
+      await this.reserveSeat(tx, data.scheduleId)
       return tx.booking.create({
         data: {
           bookingNumber,
           customerId: data.customerId,
           packageId: data.packageId,
           scheduleId: data.scheduleId,
-          status: data.status ?? "DRAFT",
+          status: "DRAFT",
           totalPrice: data.totalPrice,
           downPayment: data.downPayment ?? 0,
           notes: data.notes ?? "",
@@ -58,11 +71,52 @@ export class BookingService extends BaseService<Booking, CreateBookingInput, Upd
     })
   }
 
+  /**
+   * Atomically reserve one seat on the schedule inside the booking transaction.
+   * - seat > 0  : seatFilled must be < seat. The increment is a conditional update,
+   *               so two concurrent bookings cannot both take the last seat.
+   * - seat === 0: unlimited — no seat reserved, no blocking.
+   */
+  private async reserveSeat(tx: Tx, scheduleId: string) {
+    const schedule = await tx.packageSchedule.findUnique({ where: { id: scheduleId } })
+    if (!schedule) throw new Error("Jadwal keberangkatan tidak ditemukan")
+
+    if (schedule.seat > 0) {
+      const reserved = await tx.packageSchedule.updateMany({
+        where: {
+          id: scheduleId,
+          seatFilled: { lt: tx.packageSchedule.fields.seat },
+        },
+        data: { seatFilled: { increment: 1 } },
+      })
+      if (reserved.count === 0) throw new Error("Departure seat is full")
+    }
+  }
+
+  /** Release one reserved seat on cancellation. Skips unlimited (seat === 0) schedules; never below 0. */
+  private async releaseSeat(tx: Tx, scheduleId: string) {
+    const schedule = await tx.packageSchedule.findUnique({ where: { id: scheduleId } })
+    if (!schedule || schedule.seat <= 0) return
+
+    await tx.packageSchedule.updateMany({
+      where: { id: scheduleId, seatFilled: { gt: 0 } },
+      data: { seatFilled: { decrement: 1 } },
+    })
+  }
+
   async update(id: string, data: UpdateBookingInput) {
     const booking = await db.$transaction(async (tx: Tx) => {
       const existing = await tx.booking.findUnique({ where: { id } })
       if (!existing) throw new Error("Booking not found")
       if (existing.status === CANCELLED) throw new Error("Booking yang dibatalkan tidak dapat diubah")
+
+      // Rebalance the seat when the departure schedule changes: release the old
+      // schedule's seat, then reserve the new one. All inside the same transaction,
+      // so a failed reserve rolls the release back (full rollback safety).
+      if (data.scheduleId !== undefined && data.scheduleId !== existing.scheduleId) {
+        await this.releaseSeat(tx, existing.scheduleId)
+        await this.reserveSeat(tx, data.scheduleId)
+      }
 
       return tx.booking.update({
         where: { id },
@@ -87,11 +141,16 @@ export class BookingService extends BaseService<Booking, CreateBookingInput, Upd
   }
 
   async updateStatus(id: string, status: UpdateBookingStatusInput["status"]) {
+    let previousStatus: string | undefined
     const booking = await db.$transaction(async (tx: Tx) => {
       const existing = await tx.booking.findUnique({ where: { id } })
       if (!existing) throw new Error("Booking not found")
       if (existing.status === status) return existing
       this.assertValidTransition(existing.status, status)
+      previousStatus = existing.status
+      // Release the reserved seat when a booking is cancelled, inside the same transaction.
+      // releaseSeat skips unlimited schedules and never lets seatFilled drop below 0.
+      if (status === CANCELLED) await this.releaseSeat(tx, existing.scheduleId)
       return tx.booking.update({ where: { id }, data: { status } })
     })
 
@@ -99,7 +158,9 @@ export class BookingService extends BaseService<Booking, CreateBookingInput, Upd
       action: "UPDATE",
       resource: "booking",
       resourceId: id,
-      metadata: { status, bookingNumber: booking.bookingNumber },
+      // Metadata clearly captures the cancellation / status change even though the
+      // audit action stays the existing "UPDATE" convention.
+      metadata: { previousStatus, newStatus: status, bookingNumber: booking.bookingNumber },
     })
     return booking
   }
@@ -113,9 +174,10 @@ export class BookingService extends BaseService<Booking, CreateBookingInput, Upd
   }
 
   private assertValidTransition(from: string, to: string) {
-    // CANCELLED is terminal for the MVP lifecycle (DRAFT / CONFIRMED only).
-    if (from === CANCELLED && to !== CANCELLED) {
-      throw new Error("Booking yang dibatalkan tidak dapat diaktifkan kembali")
+    // Enforce the whitelisted state machine. CANCELLED has no outgoing transitions.
+    const allowed = BOOKING_STATUS_TRANSITIONS[from] ?? []
+    if (!allowed.includes(to)) {
+      throw new Error(`Transisi status tidak diizinkan: ${from} -> ${to}`)
     }
   }
 
