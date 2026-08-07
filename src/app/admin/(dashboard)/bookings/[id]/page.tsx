@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowLeft, RotateCcw, Ban, Loader2 } from "lucide-react"
+import { ArrowLeft, RotateCcw, Ban, Loader2, Plus } from "lucide-react"
 import {
   getBooking,
   updateBookingStatus,
@@ -13,6 +13,9 @@ import {
 import { BOOKING_STATUSES } from "@/modules/booking/types"
 import type { BookingDetail } from "@/modules/booking/types"
 import { BookingStatusBadge } from "@/components/admin/bookings/booking-status-badge"
+import { getJamaahList } from "@/modules/jamaah/actions/jamaah"
+import type { JamaahListItem } from "@/modules/jamaah/types"
+import { canUser } from "@/actions/permissions"
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—"
@@ -61,6 +64,12 @@ export default function BookingDetailPage() {
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState("")
+  const [jamaah, setJamaah] = useState<JamaahListItem[]>([])
+  const [canReadJamaah, setCanReadJamaah] = useState(false)
+  const [canCreateJamaah, setCanCreateJamaah] = useState(false)
+
+  useEffect(() => { canUser("jamaah:read").then(setCanReadJamaah) }, [])
+  useEffect(() => { canUser("jamaah:create").then(setCanCreateJamaah) }, [])
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -75,6 +84,14 @@ export default function BookingDetailPage() {
   }, [id])
 
   useEffect(() => { fetchDetail() }, [fetchDetail])
+
+  // Fetch Jamaah separately (not part of bookingInclude).
+  useEffect(() => {
+    if (!canReadJamaah) return
+    getJamaahList({ bookingId: id, page: 1, limit: 100 })
+      .then((res) => setJamaah(res.data))
+      .catch(() => setJamaah([]))
+  }, [canReadJamaah, id])
 
   const runAction = async (fn: () => Promise<unknown>) => {
     setBusy(true)
@@ -138,6 +155,58 @@ export default function BookingDetailPage() {
         <Field label="Telepon" value={booking.customer?.phone ?? "—"} />
         <Field label="Email" value={booking.customer?.email ?? "—"} />
       </Section>
+
+      {canReadJamaah && (
+        <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-heading text-sm font-semibold text-[#0B3C6D]">Jamaah</h2>
+            {canCreateJamaah && (
+              <button
+                type="button"
+                onClick={() => router.push(`/admin/bookings/${id}/jamaah/new`)}
+                className="flex items-center gap-2 rounded-xl bg-[#0B3C6D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0B2D52] transition-colors"
+              >
+                <Plus className="size-4" /> Tambah Jamaah
+              </button>
+            )}
+          </div>
+
+          {jamaah.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[#9CA3AF]">No jamaah registered yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#E5E7EB] text-xs uppercase tracking-wide text-[#9CA3AF]">
+                    <th className="px-3 py-2 font-medium">No</th>
+                    <th className="px-3 py-2 font-medium">Nama Jamaah</th>
+                    <th className="px-3 py-2 font-medium">Passport Name</th>
+                    <th className="px-3 py-2 font-medium">Gender</th>
+                    <th className="px-3 py-2 font-medium">Passport Number</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jamaah.map((j, index) => (
+                    <tr key={j.id} className="border-b border-[#F3F4F6] last:border-0">
+                      <td className="px-3 py-3 text-[#9CA3AF]">{index + 1}</td>
+                      <td className="px-3 py-3 font-medium text-[#0B3C6D]">{j.fullName}</td>
+                      <td className="px-3 py-3 text-[#6B7280]">{j.passportName || "—"}</td>
+                      <td className="px-3 py-3 text-[#6B7280]">{j.gender === "FEMALE" ? "Female" : "Male"}</td>
+                      <td className="px-3 py-3 text-[#6B7280]">{j.passportNumber || "—"}</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          j.status === "ACTIVE" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-700"
+                        }`}>{j.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <Section title="Paket">
         <Field label="Nama Paket" value={booking.package?.title ?? "—"} />

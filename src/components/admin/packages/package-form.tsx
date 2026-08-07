@@ -119,6 +119,11 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           metaTitle: "",
           metaDescription: "",
           keywords: "",
+          hotels: [],
+          schedules: [],
+          facilities: [],
+          itineraries: [],
+          galleries: [],
         },
   })
 
@@ -133,11 +138,15 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           if (key === "facilities") {
             fd.append(key, JSON.stringify(facilities.map((f) => ({ name: f, icon: "" }))))
           } else if (key === "itineraries") {
-            fd.append(key, JSON.stringify(itineraries))
+            // Only submit rows with a title; skip empty placeholder rows so Zod
+            // doesn't reject the payload (title is required in the schema).
+            fd.append(key, JSON.stringify(itineraries.filter((it) => (it.title ?? "").trim())))
           } else if (key === "galleries") {
             fd.append(key, JSON.stringify(galleries))
           } else if (key === "hotels") {
-            fd.append(key, JSON.stringify(hotels))
+            // Only submit rows with the required fields filled (name, distance);
+            // skip empty placeholder rows so Zod doesn't reject the payload.
+            fd.append(key, JSON.stringify(hotels.filter((h) => (h.name ?? "").trim() && (h.distance ?? "").trim())))
           } else if (key === "schedules") {
             // seatFilled is system-controlled (managed by booking seat lifecycle);
             // never send it from the UI. Only seat (capacity) is editable.
