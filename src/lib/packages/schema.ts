@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const packageHotelSchema = z.object({
   type: z.enum(["MEKKAH", "MADINAH"]),
+  hotelId: z.string().optional().nullable(),
   name: z.string().min(1, "Nama hotel wajib diisi"),
   stars: z.coerce.number().min(0).max(5),
   distance: z.string().min(1, "Jarak wajib diisi"),
@@ -41,6 +42,8 @@ export const packageFormSchema = z.object({
   excerpt: z.string().min(1, "Deskripsi singkat wajib diisi"),
   description: z.string().optional().default(""),
   category: z.enum(["REGULAR", "PLUS", "EXECUTIVE", "LUXURY", "PRIVATE"]),
+  packageCategoryId: z.string().uuid().optional().nullable().or(z.literal("")),
+  packageTypeId: z.string().uuid().optional().nullable().or(z.literal("")),
   country: z.string().min(1, "Negara wajib diisi"),
   city: z.string().min(1, "Kota wajib diisi"),
   duration: z.coerce.number().min(1, "Durasi wajib diisi"),

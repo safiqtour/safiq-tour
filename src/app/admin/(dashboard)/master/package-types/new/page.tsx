@@ -24,7 +24,7 @@ const COLOR_OPTIONS = [
 
 interface SelectOption { id: string; name: string }
 
-export default function NewPackageTypePage() {
+export default function NewProgramPaketPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -69,8 +69,8 @@ export default function NewPackageTypePage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl space-y-6">
       <div>
-        <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">New Package Type</h1>
-        <p className="text-sm text-[#9CA3AF]">Add a new package type</p>
+        <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">Tambah Program Paket</h1>
+        <p className="text-sm text-[#9CA3AF]">Buat program paket baru</p>
       </div>
       {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
@@ -101,6 +101,7 @@ export default function NewPackageTypePage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500">Default Visa</label>
+              <p className="text-xs text-gray-400 mt-1">Visa default program, dapat disesuaikan pada masing-masing paket.</p>
             <select value={form.defaultVisaId} onChange={(e) => setForm({ ...form, defaultVisaId: e.target.value })}
               className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400">
               <option value="">None</option>
@@ -108,7 +109,8 @@ export default function NewPackageTypePage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Default Category</label>
+            <label className="text-xs font-medium text-gray-500">Default Kategori</label>
+              <p className="text-xs text-gray-400 mt-1">Kategori default program, dapat disesuaikan pada masing-masing paket.</p>
             <select value={form.defaultCategoryId} onChange={(e) => setForm({ ...form, defaultCategoryId: e.target.value })}
               className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400">
               <option value="">None</option>
@@ -159,7 +161,7 @@ export default function NewPackageTypePage() {
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
           <button type="submit" disabled={saving}
             className="flex items-center gap-1.5 rounded-xl bg-[#0B3C6D] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0B3C6D]/20 hover:bg-[#0B2D52] disabled:opacity-50">
-            {saving ? "Saving..." : <><Save className="size-4" /> Save Type</>}
+            {saving ? "Saving..." : <><Save className="size-4" /> Simpan Program Paket</>}
           </button>
         </div>
       </form>

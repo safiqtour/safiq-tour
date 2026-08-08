@@ -1,3 +1,7 @@
+// Load .env for standalone scripts (tsx/node) that don't get auto-injected by
+// Next.js or the Prisma CLI. dotenv does not override already-set env vars, so
+// Next.js runtime behavior is unchanged.
+import "dotenv/config"
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 

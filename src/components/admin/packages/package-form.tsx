@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -29,6 +29,12 @@ import { slugify } from "@/lib/packages/utils"
 import { TipTapEditor } from "./tiptap-editor"
 import { ImageUpload } from "./image-upload"
 import type { PackageData } from "@/lib/packages/types"
+import { getHotels } from "@/actions/hotel"
+import type { HotelListItem } from "@/types/hospitality"
+import { getPackageCategories } from "@/modules/business/package-category/actions/package-category"
+import { getPackageTypes } from "@/modules/business/package-type/actions/package-type"
+import type { PackageCategoryListItem } from "@/modules/business/package-category/types"
+import type { PackageTypeListItem } from "@/modules/business/package-type/types"
 
 const tabs = [
   { id: "general", label: "General", icon: Info },
@@ -43,6 +49,17 @@ const tabs = [
 ] as const
 
 type TabId = (typeof tabs)[number]["id"]
+
+interface HotelRow {
+  type: "MEKKAH" | "MADINAH"
+  hotelId?: string | null
+  name: string
+  stars: number
+  distance: string
+  mapsUrl: string
+  image: string
+  city?: string
+}
 
 const defaultFacilities = [
   "Visa", "Hotel", "Makan", "Transportasi", "Bus AC", "Zamzam",
@@ -67,22 +84,64 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   const [galleries, setGalleries] = useState(
     initialData?.galleries ?? []
   )
-  const [hotels, setHotels] = useState(
-    initialData?.hotels ?? [
-      { type: "MEKKAH" as const, name: "", stars: 5, distance: "", mapsUrl: "", image: "" },
-      { type: "MADINAH" as const, name: "", stars: 5, distance: "", mapsUrl: "", image: "" },
-    ]
+  const [hotels, setHotels] = useState<HotelRow[]>(
+    initialData?.hotels?.map((h) => ({
+      type: h.type === "MADINAH" ? "MADINAH" : "MEKKAH",
+      hotelId: h.hotelId ?? null,
+      name: h.name,
+      stars: h.stars,
+      distance: h.distance,
+      mapsUrl: h.mapsUrl,
+      image: h.image,
+      city: h.type === "MADINAH" ? "Madinah" : "Mekkah",
+    })) ?? []
   )
+  function toDateInputValue(value: unknown): string {
+    if (!value) return ""
+    const d = value instanceof Date ? value : new Date(value as string)
+    if (isNaN(d.getTime())) return ""
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
   const [schedules, setSchedules] = useState(
-    initialData?.schedules ?? [{ departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
+    initialData?.schedules?.map((s) => ({
+      ...s,
+      departureDate: toDateInputValue(s.departureDate),
+      returnDate: toDateInputValue(s.returnDate),
+    })) ?? [{ departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
   )
   const [customFacility, setCustomFacility] = useState("")
+  const [masterHotels, setMasterHotels] = useState<HotelListItem[]>([])
+  const [masterCategories, setMasterCategories] = useState<PackageCategoryListItem[]>([])
+  const [masterTypes, setMasterTypes] = useState<PackageTypeListItem[]>([])
+
+  useEffect(() => {
+    getHotels({ page: 1, limit: 100, status: "ACTIVE" })
+      .then((res) => setMasterHotels((res.data ?? []) as unknown as HotelListItem[]))
+      .catch(() => setMasterHotels([]))
+  }, [])
+
+  useEffect(() => {
+    getPackageCategories({ page: 1, limit: 100, status: "ACTIVE" })
+      .then((res) => setMasterCategories((res.data ?? []) as unknown as PackageCategoryListItem[]))
+      .catch(() => setMasterCategories([]))
+  }, [])
+
+  useEffect(() => {
+    getPackageTypes({ page: 1, limit: 100, status: "ACTIVE" })
+      .then((res) => setMasterTypes((res.data ?? []) as unknown as PackageTypeListItem[]))
+      .catch(() => setMasterTypes([]))
+  }, [])
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<PackageFormValues>({
     resolver: zodResolver(packageFormSchema as never),
@@ -119,6 +178,8 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           metaTitle: "",
           metaDescription: "",
           keywords: "",
+          packageCategoryId: null,
+          packageTypeId: null,
           hotels: [],
           schedules: [],
           facilities: [],
@@ -127,12 +188,38 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
         },
   })
 
+  const selectedTypeId = watch("packageTypeId")
+
+  useEffect(() => {
+    if (!selectedTypeId) return
+    const selectedType = masterTypes.find((t) => t.id === selectedTypeId)
+    if (!selectedType) return
+
+    const currentDuration = getValues("duration")
+    const currentCategoryId = getValues("packageCategoryId")
+
+    if (
+      (currentDuration === 0 || currentDuration === null || currentDuration === undefined) &&
+      selectedType.defaultDurationDays > 0
+    ) {
+      setValue("duration", selectedType.defaultDurationDays)
+    }
+
+    if (
+      (currentCategoryId === null || currentCategoryId === undefined || currentCategoryId === "") &&
+      selectedType.defaultCategoryId
+    ) {
+      setValue("packageCategoryId", selectedType.defaultCategoryId)
+    }
+  }, [selectedTypeId, masterTypes])
+
   const title = watch("title")
 
   async function onSubmit(data: PackageFormValues) {
     setIsSubmitting(true)
     try {
       const fd = new FormData()
+        console.log(`DEBUG packageCategoryId=${data.packageCategoryId} packageTypeId=${data.packageTypeId}`)
       Object.entries(data).forEach(([key, val]) => {
         if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries") {
           if (key === "facilities") {
@@ -146,19 +233,39 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           } else if (key === "hotels") {
             // Only submit rows with the required fields filled (name, distance);
             // skip empty placeholder rows so Zod doesn't reject the payload.
-            fd.append(key, JSON.stringify(hotels.filter((h) => (h.name ?? "").trim() && (h.distance ?? "").trim())))
+            fd.append(key, JSON.stringify(hotels
+              .filter((h) => (h.name ?? "").trim() && (h.distance ?? "").trim())
+              .map((h) => ({
+                type: h.type,
+                hotelId: h.hotelId ?? null,
+                name: h.name,
+                stars: h.stars,
+                distance: h.distance,
+                mapsUrl: h.mapsUrl,
+                image: h.image,
+              }))))
           } else if (key === "schedules") {
             // seatFilled is system-controlled (managed by booking seat lifecycle);
             // never send it from the UI. Only seat (capacity) is editable.
-            fd.append(key, JSON.stringify(schedules.map((s) => ({
-              departureDate: s.departureDate,
-              returnDate: s.returnDate,
-              meetingPoint: s.meetingPoint,
-              seat: s.seat,
-            }))))
+            // Skip empty placeholder rows so Zod (departureDate is required)
+            // doesn't reject the payload on save.
+            fd.append(key, JSON.stringify(schedules
+              .filter((s) => (s.departureDate ?? "").trim())
+              .map((s) => ({
+                departureDate: s.departureDate,
+                returnDate: s.returnDate,
+                meetingPoint: s.meetingPoint,
+                seat: s.seat,
+              }))))
           }
         } else if (val !== null && val !== undefined) {
-          fd.append(key, String(val))
+          const normalized =
+            key === "packageCategoryId" || key === "packageTypeId"
+              ? val === "" || val === "null"
+                ? null
+                : val
+              : val
+          fd.append(key, String(normalized))
         }
       })
       await action(fd)
@@ -181,6 +288,31 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     setSchedules([...schedules, { departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }])
   }
 
+  const addHotel = () => {
+    setHotels([...hotels, { type: "MEKKAH", hotelId: null, name: "", stars: 5, distance: "", mapsUrl: "", image: "", city: "Mekkah" }])
+  }
+
+  const removeHotel = (idx: number) => {
+    setHotels(hotels.filter((_, i) => i !== idx))
+  }
+
+  const updateHotel = (idx: number, patch: Partial<HotelRow>) => {
+    setHotels(hotels.map((h, i) => (i === idx ? { ...h, ...patch } : h)))
+  }
+
+  const applyMasterHotel = (idx: number, hotel: HotelListItem) => {
+    const cityName = (hotel.city?.name ?? "").toLowerCase()
+    const type: "MEKKAH" | "MADINAH" = cityName.includes("madin") ? "MADINAH" : "MEKKAH"
+    updateHotel(idx, {
+      hotelId: hotel.id,
+      name: hotel.name,
+      stars: hotel.starRating,
+      type,
+      city: (hotel.city?.name ?? "") || (type === "MADINAH" ? "Madinah" : "Mekkah"),
+      image: hotel.featuredMedia?.url || "",
+    })
+  }
+
   const toggleFacility = (fac: string) => {
     setFacilities((prev) => prev.includes(fac) ? prev.filter((f) => f !== fac) : [...prev, fac])
   }
@@ -193,13 +325,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   }
 
   const renderTab = (tabId: TabId) => {
-  const mekkahHotel = hotels.find((h) => h.type === "MEKKAH")
-    const madinahHotel = hotels.find((h) => h.type === "MADINAH")
-
-    const updateHotel = (type: string, field: string, value: unknown) => {
-      setHotels(hotels.map((h) => h.type === type ? { ...h, [field]: value } : h))
-    }
-
     switch (tabId) {
       case "general":
         return (
@@ -226,13 +351,25 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                 {errors.slug && <p className="mt-1 text-xs text-red-500">{errors.slug.message}</p>}
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Kategori</label>
-                <select {...register("category")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all">
-                  <option value="REGULAR">Regular</option>
-                  <option value="PLUS">Plus</option>
-                  <option value="EXECUTIVE">Executive</option>
-                  <option value="LUXURY">Luxury</option>
-                  <option value="PRIVATE">Private</option>
+                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Kategori Paket</label>
+                <select {...register("packageCategoryId")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all">
+                  <option value="">Pilih kategori paket</option>
+                  {masterCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} {cat.shortName ? `(${cat.shortName})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Tipe Paket</label>
+                <select {...register("packageTypeId")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all">
+                  <option value="">Pilih tipe paket</option>
+                  {masterTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name} {type.shortName ? `(${type.shortName})` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -336,36 +473,75 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
 
       case "hotel":
         return (
-          <div className="space-y-8">
-            {[{ type: "MEKKAH", label: "Mekkah" }, { type: "MADINAH", label: "Madinah" }].map(({ type, label }) => {
-              const h = type === "MEKKAH" ? mekkahHotel : madinahHotel
+          <div className="space-y-4">
+            {hotels.map((h, i) => {
+              const sel = masterHotels.find((m) => m.id === h.hotelId)
               return (
-                <div key={type} className="rounded-2xl border border-[#E5E7EB] p-6">
-                  <h4 className="mb-4 font-heading text-sm font-bold text-[#0B3C6D]">Hotel {label}</h4>
+                <div key={i} className="rounded-2xl border border-[#E5E7EB] p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="font-heading text-sm font-bold text-[#0B3C6D]">Hotel {i + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => removeHotel(i)}
+                      className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <Trash2 className="size-4" /> Hapus
+                    </button>
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Nama Hotel</label>
+                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Pilih Hotel (Master Data)</label>
+                      <select
+                        value={h.hotelId ?? ""}
+                        onChange={(e) => {
+                          const m = masterHotels.find((mm) => mm.id === e.target.value)
+                          if (m) applyMasterHotel(i, m)
+                        }}
+                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                      >
+                        <option value="">— Pilih hotel dari master data —</option>
+                        {masterHotels.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                            {m.city?.name ? ` (${m.city.name})` : ""} • {m.starRating}★
+                          </option>
+                        ))}
+                      </select>
+                      {sel && <p className="mt-1 text-xs text-[#9CA3AF]">Disalin dari master data: {sel.name}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Kota</label>
                       <input
-                        value={h?.name ?? ""}
-                        onChange={(e) => updateHotel(type, "name", e.target.value)}
+                        value={h.city ?? ""}
+                        onChange={(e) => updateHotel(i, { city: e.target.value })}
+                        placeholder="Mekkah / Madinah"
+                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Nama Hotel <span className="text-red-500">*</span></label>
+                      <input
+                        value={h.name}
+                        onChange={(e) => updateHotel(i, { name: e.target.value })}
+                        placeholder="Nama hotel"
                         className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
                       />
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Bintang</label>
                       <select
-                        value={h?.stars ?? 5}
-                        onChange={(e) => updateHotel(type, "stars", Number(e.target.value))}
+                        value={h.stars}
+                        onChange={(e) => updateHotel(i, { stars: Number(e.target.value) })}
                         className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
                       >
                         {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{s} Bintang</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Jarak (dari Masjid)</label>
+                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Jarak (dari Masjid) <span className="text-red-500">*</span></label>
                       <input
-                        value={h?.distance ?? ""}
-                        onChange={(e) => updateHotel(type, "distance", e.target.value)}
+                        value={h.distance}
+                        onChange={(e) => updateHotel(i, { distance: e.target.value })}
                         placeholder="250m"
                         className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
                       />
@@ -373,22 +549,29 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Google Maps URL</label>
                       <input
-                        value={h?.mapsUrl ?? ""}
-                        onChange={(e) => updateHotel(type, "mapsUrl", e.target.value)}
+                        value={h.mapsUrl}
+                        onChange={(e) => updateHotel(i, { mapsUrl: e.target.value })}
                         className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
                       />
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <ImageUpload
-                      value={h?.image ?? ""}
-                      onChange={(url) => updateHotel(type, "image", url)}
-                      label="Foto Hotel"
-                    />
+                    <div className="sm:col-span-2">
+                      <ImageUpload
+                        value={h.image}
+                        onChange={(url) => updateHotel(i, { image: url })}
+                        label="Foto Hotel"
+                      />
+                    </div>
                   </div>
                 </div>
               )
             })}
+            <button
+              type="button"
+              onClick={addHotel}
+              className="flex items-center gap-2 text-sm text-[#C89B3C] hover:text-[#B88A2E] transition-colors"
+            >
+              <Plus className="size-4" /> Tambah Hotel
+            </button>
           </div>
         )
 

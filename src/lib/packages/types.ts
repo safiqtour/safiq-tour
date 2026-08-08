@@ -32,6 +32,8 @@ export interface PackageData {
   publishedAt: string | null
   createdAt: string
   updatedAt: string
+  packageCategoryId?: string | null
+  packageTypeId?: string | null
   hotels: PackageHotelData[]
   schedules: PackageScheduleData[]
   facilities: PackageFacilityData[]
@@ -41,6 +43,7 @@ export interface PackageData {
 
 export interface PackageHotelData {
   id?: string
+  hotelId?: string | null
   type: "MEKKAH" | "MADINAH"
   name: string
   stars: number

@@ -25,7 +25,7 @@ const COLOR_CLASSES: Record<string, string> = {
   orange: "bg-orange-100 text-orange-700",
 }
 
-export default function PackageTypesPage() {
+export default function ProgramPaketPage() {
   const [data, setData] = useState<PackageTypeListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -114,8 +114,8 @@ export default function PackageTypesPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">Package Types</h1>
-          <p className="text-sm text-[#9CA3AF]">Manage package type master data</p>
+          <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">Program Paket</h1>
+          <p className="text-sm text-[#9CA3AF]">Manage program paket master data</p>
         </div>
         {canCreate && (
           <Link

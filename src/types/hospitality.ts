@@ -16,9 +16,7 @@ export type HotelDetail = HotelListItem & {
   region?: RegionBrief | null
   destination?: DestinationBrief | null
   distanceToHaram: string; distanceToNabawi: string
-  latitude: string; longitude: string
   address: string; mapsUrl: string; phone: string; email: string; website: string
-  checkIn: string; checkOut: string
   shortDescription: string; description: string
   countryId: string; regionId?: string | null; cityId?: string | null; destinationId?: string | null
   featuredMediaId?: string | null
