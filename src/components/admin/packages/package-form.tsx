@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -28,7 +28,7 @@ import { packageFormSchema, type PackageFormValues } from "@/lib/packages/schema
 import { slugify } from "@/lib/packages/utils"
 import { TipTapEditor } from "./tiptap-editor"
 import { ImageUpload } from "./image-upload"
-import type { PackageData } from "@/lib/packages/types"
+import type { PackageData, PackageCategory } from "@/lib/packages/types"
 import { getHotels } from "@/actions/hotel"
 import type { HotelListItem } from "@/types/hospitality"
 import { getPackageCategories } from "@/modules/business/package-category/actions/package-category"
@@ -66,6 +66,15 @@ const defaultFacilities = [
   "Perlengkapan", "Handling", "Asuransi", "Tour Leader", "Muthowif",
   "City Tour", "Kereta Cepat", "Laundry", "SIM Card", "Air Mineral",
 ]
+
+const LEGACY_CATEGORIES: PackageCategory[] = ["REGULAR", "PLUS", "EXECUTIVE", "LUXURY", "PRIVATE"]
+
+// `category` is a hidden legacy field (no UI control). Normalize legacy DB values to one
+// of the Zod enum options, defaulting to REGULAR when the value is out-of-enum or empty.
+function normalizeLegacyCategory(value: string | null | undefined): PackageCategory {
+  const v = (value ?? "").trim().toUpperCase()
+  return (LEGACY_CATEGORIES as string[]).includes(v) ? (v as PackageCategory) : "REGULAR"
+}
 
 interface PackageFormProps {
   initialData?: PackageData
@@ -106,12 +115,20 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     return `${year}-${month}-${day}`
   }
 
+  // Schedules from Prisma arrive as Date objects (or ISO strings with time). Normalize
+  // them ONCE to a single yyyy-MM-dd string shared by both the rendered inputs and the
+  // RHF defaultValues (which zodResolver validates). This prevents the resolver from
+  // failing on raw Date objects for legacy packages that have schedules.
+  const normalizedSchedules = (initialData?.schedules ?? []).map((s) => ({
+    ...s,
+    departureDate: toDateInputValue(s.departureDate),
+    returnDate: toDateInputValue(s.returnDate),
+  }))
+
   const [schedules, setSchedules] = useState(
-    initialData?.schedules?.map((s) => ({
-      ...s,
-      departureDate: toDateInputValue(s.departureDate),
-      returnDate: toDateInputValue(s.returnDate),
-    })) ?? [{ departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
+    initialData?.schedules
+      ? normalizedSchedules
+      : [{ departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
   )
   const [customFacility, setCustomFacility] = useState("")
   const [masterHotels, setMasterHotels] = useState<HotelListItem[]>([])
@@ -138,6 +155,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     watch,
@@ -148,8 +166,12 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     defaultValues: initialData
       ? {
           ...initialData,
+          // Legacy enum field (no UI control): normalize out-of-enum/empty DB values.
+          category: normalizeLegacyCategory(initialData.category),
           hotels: initialData.hotels ?? [],
-          schedules: initialData.schedules ?? [],
+          // Normalize to yyyy-MM-dd and drop empty placeholder rows so the zod
+          // resolver doesn't reject legacy packages (raw Date objects / empty rows).
+          schedules: normalizedSchedules.filter((s) => (s.departureDate ?? "").trim()),
           facilities: initialData.facilities ?? [],
           itineraries: initialData.itineraries ?? [],
           galleries: initialData.galleries ?? [],
@@ -205,6 +227,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
       setValue("duration", selectedType.defaultDurationDays)
     }
 
+    // Never overwrite a user-selected category: only auto-fill when it is empty.
     if (
       (currentCategoryId === null || currentCategoryId === undefined || currentCategoryId === "") &&
       selectedType.defaultCategoryId
@@ -219,7 +242,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     setIsSubmitting(true)
     try {
       const fd = new FormData()
-        console.log(`DEBUG packageCategoryId=${data.packageCategoryId} packageTypeId=${data.packageTypeId}`)
       Object.entries(data).forEach(([key, val]) => {
         if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries") {
           if (key === "facilities") {
@@ -265,7 +287,9 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                 ? null
                 : val
               : val
-          fd.append(key, String(normalized))
+          if (normalized !== null) {
+  fd.append(key, String(normalized))
+}
         }
       })
       await action(fd)
@@ -352,25 +376,45 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Kategori Paket</label>
-                <select {...register("packageCategoryId")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all">
-                  <option value="">Pilih kategori paket</option>
-                  {masterCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name} {cat.shortName ? `(${cat.shortName})` : ""}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="packageCategoryId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
+                      className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                    >
+                      <option value="">Pilih kategori paket</option>
+                      {masterCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name} {cat.shortName ? `(${cat.shortName})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Tipe Paket</label>
-                <select {...register("packageTypeId")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all">
-                  <option value="">Pilih tipe paket</option>
-                  {masterTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} {type.shortName ? `(${type.shortName})` : ""}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="packageTypeId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
+                      className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                    >
+                      <option value="">Pilih tipe paket</option>
+                      {masterTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name} {type.shortName ? `(${type.shortName})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Negara</label>
@@ -422,12 +466,22 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                 <input type="checkbox" {...register("featured")} className="rounded border-[#E5E7EB] text-[#C89B3C] focus:ring-[#C89B3C]/20" />
                 Featured
               </label>
-              <select {...register("badge")} className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#0B3C6D] outline-none">
-                <option value="">No Badge</option>
-                <option value="BEST_SELLER">Best Seller</option>
-                <option value="NEW">New</option>
-                <option value="PROMO">Promo</option>
-              </select>
+              <Controller
+                name="badge"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
+                    className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#0B3C6D] outline-none"
+                  >
+                    <option value="">No Badge</option>
+                    <option value="BEST_SELLER">Best Seller</option>
+                    <option value="NEW">New</option>
+                    <option value="PROMO">Promo</option>
+                  </select>
+                )}
+              />
             </div>
           </div>
         )
@@ -834,7 +888,14 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form
+ onSubmit={handleSubmit(
+   onSubmit,
+   (errors)=>{
+     console.log("FORM ERRORS", errors)
+   }
+ )}
+>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">

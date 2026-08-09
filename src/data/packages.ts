@@ -2,7 +2,7 @@
   id: string
   slug: string
   title: string
-  category: "zamzam" | "thaibah" | "rawdah" | "firdaus" | "ramadhan"
+  category: "zamzam" | "thaibah" | "rawdah" | "firdaus" | "ramadhan" | "arbain" | "private"
   duration: string
   price: number
   priceLabel?: string
@@ -23,6 +23,8 @@ export const categories = [
   { value: "rawdah", label: "Rawdah" },
   { value: "firdaus", label: "Firdaus" },
   { value: "ramadhan", label: "Ramadhan" },
+  { value: "arbain", label: "Arbain" },
+  { value: "private", label: "Private" },
 ] as const
 
 export const sortOptions = [

@@ -221,11 +221,16 @@ export async function createPackage(formData: FormData) {
       },
     })
 
+    const packageCategory = parsed.packageCategoryId
+      ? await tx.packageCategory.findUnique({ where: { id: parsed.packageCategoryId } })
+      : null
+
     const publicContent = buildPublicContent({
       id: pkg.id,
       title: parsed.title,
       slug: parsed.slug,
       category: parsed.category,
+      packageCategoryName: packageCategory?.name ?? null,
       duration: parsed.duration,
       price: parsed.price,
       description: parsed.description,
@@ -290,6 +295,12 @@ export async function updatePackage(id: string, formData: FormData) {
 
   const parsed = packageFormSchema.parse(raw)
 
+  // Resolve the master category so the public payload can use PackageCategory.name
+  // as its primary category source (legacy regex remains the fallback).
+  const packageCategory = parsed.packageCategoryId
+    ? await db.packageCategory.findUnique({ where: { id: parsed.packageCategoryId } })
+    : null
+
   // Regenerate the public payload from the submitted form data so the published
   // public page reflects the latest CMS content.
   const publicContent = buildPublicContent({
@@ -297,6 +308,7 @@ export async function updatePackage(id: string, formData: FormData) {
     title: parsed.title,
     slug: parsed.slug,
     category: parsed.category,
+    packageCategoryName: packageCategory?.name ?? null,
     duration: parsed.duration,
     price: parsed.price,
     description: parsed.description,

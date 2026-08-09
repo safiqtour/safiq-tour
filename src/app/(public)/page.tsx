@@ -91,7 +91,7 @@ export default async function Home() {
         </Container>
       </Section>
 
-      <PackagesSection packages={allPackages} showAllPackagesButton={false} allowedCategories={["zamzam", "thaibah", "rawdah"]} />
+      <PackagesSection packages={allPackages} showAllPackagesButton={false} allowedCategories={["zamzam", "thaibah", "rawdah", "arbain", "private"]} />
 
       <FacilitiesSection />
 

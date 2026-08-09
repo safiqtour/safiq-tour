@@ -40,6 +40,7 @@ export interface BuildPublicContentInput {
   title: string
   slug: string
   category: string
+  packageCategoryName?: string | null
   duration: number
   price: number
   description?: string
@@ -60,13 +61,45 @@ export interface BuildPublicContentInput {
 const FALLBACK_IMAGE = "/images/Hero-Nabawi-paket-Safiq-Tour-01.webp"
 const FALLBACK_LOGO = "/images/Saudi-Airlines.png"
 
-/** Map the CMS package category/keywords to one of the 5 public card categories. */
-function mapCategory(title: string, slug: string, category: string): Package["category"] {
+/** Name → public category mapping, matched against the master PackageCategory name. */
+const PUBLIC_CATEGORY_BY_NAME: Record<string, Package["category"]> = {
+  zamzam: "zamzam",
+  thaibah: "thaibah",
+  rawdah: "rawdah",
+  firdaus: "firdaus",
+  ramadhan: "ramadhan",
+  arbain: "arbain",
+  private: "private",
+}
+
+/**
+ * Resolve the public card category. Priority:
+ *  1. Master `packageCategoryName` (explicit mapping by name).
+ *  2. Legacy regex over title/slug/category (kept for packages without a master category).
+ *  3. Fallback: "zamzam".
+ */
+function mapCategory(
+  title: string,
+  slug: string,
+  category: string,
+  packageCategoryName?: string | null
+): Package["category"] {
+  // Normalize so variants like "Zam Zam", "Zamzam", "zam zam", "zamzam" all map
+  // to the same key (strip spaces and non-alphanumerics).
+  const master = (packageCategoryName ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+  if (master && master in PUBLIC_CATEGORY_BY_NAME) {
+    return PUBLIC_CATEGORY_BY_NAME[master]
+  }
+
   const hay = `${title} ${slug} ${category}`.toLowerCase()
   if (/ramadh/.test(hay)) return "ramadhan"
   if (/rawdah|raudhah/.test(hay)) return "rawdah"
   if (/thaibah|thoybah|toybah/.test(hay)) return "thaibah"
   if (/firdaus|firdous/.test(hay)) return "firdaus"
+  if (/arba'?in|arbain/.test(hay)) return "arbain"
+  if (/private/.test(hay)) return "private"
   return "zamzam"
 }
 
@@ -143,7 +176,7 @@ export function buildPublicContent(input: BuildPublicContentInput): {
     id: input.id,
     slug: input.slug,
     title: input.title,
-    category: mapCategory(input.title, input.slug, input.category),
+    category: mapCategory(input.title, input.slug, input.category, input.packageCategoryName),
     duration: input.duration > 0 ? `${input.duration} Hari` : "Flexibel",
     price: input.price,
     badge: (input.badge && BADGE_LABEL[input.badge]) || "",

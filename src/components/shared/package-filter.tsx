@@ -9,6 +9,8 @@ const FILTERS = [
   { value: "rawdah", label: "Rawdah" },
   { value: "firdaus", label: "Firdaus" },
   { value: "ramadhan", label: "Ramadhan" },
+  { value: "arbain", label: "Arbain" },
+  { value: "private", label: "Private" },
 ] as const
 
 type PackageFilterProps = {

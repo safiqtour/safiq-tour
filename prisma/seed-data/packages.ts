@@ -10,7 +10,7 @@ export interface Package {
   id: string
   slug: string
   title: string
-  category: "zamzam" | "thaibah" | "rawdah" | "firdaus" | "ramadhan"
+  category: "zamzam" | "thaibah" | "rawdah" | "firdaus" | "ramadhan" | "arbain" | "private"
   duration: string
   price: number
   priceLabel?: string
