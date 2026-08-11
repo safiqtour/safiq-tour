@@ -5,10 +5,10 @@
 ### Package
 - **Purpose**: Data paket umroh
 - **PK**: id (UUID)
-- **FK**: categoryId → PackageCategory.id, createdById → User.id
-- **Index**: slug, status, featured, categoryId
-- **Fields**: id, title, slug, excerpt, description, categoryId, duration, price, promoPrice, currency, airline, quota, seatFilled, status (DRAFT/PUBLISHED/ARCHIVED), featured, badge, thumbnail, heroImage, metaTitle, metaDescription, keywords, publishedAt, createdById, createdAt, updatedAt
-- **Relationships**: belongs to Category, belongs to Creator (User), has many PackageDestinations, has many PackageHotels, has many PackageGalleries, has many PackageFacilities, has many PackageItineraries, has many PackageSchedules, has many Bookings
+- **FK**: categoryId → PackageCategory.id, airlineId → Airline.id, createdById → User.id
+- **Index**: slug, status, featured, categoryId, airlineId
+- **Fields**: id, title, slug, excerpt, description, categoryId, duration, price, promoPrice, currency, airline (legacy free-text snapshot), airlineId, quota, seatFilled, status (DRAFT/PUBLISHED/ARCHIVED), featured, badge, thumbnail, heroImage, metaTitle, metaDescription, keywords, publishedAt, createdById, createdAt, updatedAt
+- **Relationships**: belongs to Category, belongs to Airline (optional), belongs to Creator (User), has many PackageDestinations, has many PackageHotels, has many PackageGalleries, has many PackageFacilities, has many PackageItineraries, has many PackageSchedules, has many PackageFlights, has many Bookings
 
 ### PackageDestination
 - **Purpose**: Destinasi yang dikunjungi dalam paket
@@ -57,6 +57,23 @@
 - **Index**: packageId, departureDate
 - **Fields**: id, packageId, departureDate, returnDate, meetingPoint, seat, seatFilled, status (OPEN/CLOSED/FULL), createdAt, updatedAt
 - **Relationships**: belongs to Package, has many Bookings
+
+### PackageFlight
+- **Purpose**: Satu leg rute penerbangan paket (dari tab "Penerbangan" pada form paket)
+- **PK**: id (UUID)
+- **FK**: packageId → Package.id
+- **Index**: packageId
+- **Fields**: id, packageId, direction (DEPARTURE/RETURN — diturunkan dari label), label (Keberangkatan/Transit/Menuju Kota Tambahan/Kembali ke Saudi/Kepulangan/Lainnya), createdAt, updatedAt
+- **Relationships**: belongs to Package, has many PackageFlightSegments
+
+### PackageFlightSegment
+- **Purpose**: Detail segmen penerbangan (rute, maskapai, nomor & jadwal terbang)
+- **PK**: id (UUID)
+- **FK**: flightId → PackageFlight.id, airlineId → Airline.id
+- **Index**: flightId, airlineId
+- **Fields**: id, flightId, airlineId, flightNumber, departureCity, departureAirport, arrivalCity, arrivalAirport, departureDateTime, arrivalDateTime, segmentOrder, createdAt, updatedAt
+- **Relationships**: belongs to PackageFlight (cascade delete), belongs to Airline (optional, set null on delete)
+
 
 ### Booking
 - **Purpose**: Data pemesanan paket

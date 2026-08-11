@@ -27,7 +27,7 @@ function Header() {
           <Image
             src="/images/logo-safiq.png"
             alt="Safiq Tour"
-            width={160}
+            width={34}
             height={40}
             className="h-10 w-auto"
           />

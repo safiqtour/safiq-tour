@@ -48,7 +48,16 @@
 - **FK**: —
 - **Index**: name, code
 - **Fields**: id, name, code (IATA), logo, description, isActive, createdAt, updatedAt
-- **Relationships**: used in Package
+- **Relationships**: used in Package (airlineId), used in PackageFlightSegment, has many AirlineAliases
+### AirlineAlias
+- **Purpose**: Alias/nama alternatif maskapai untuk pencocokan teks legacy (backfill Package.airline → airlineId)
+- **PK**: id (UUID)
+- **FK**: airlineId → Airline.id
+- **Index**: alias, unique (airlineId, alias)
+- **Fields**: id, airlineId, alias, createdAt, updatedAt
+- **Relationships**: belongs to Airline
+
+
 
 ### Transportation
 - **Purpose**: Data transportasi darat (bus, travel)

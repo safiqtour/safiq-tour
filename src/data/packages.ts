@@ -6,6 +6,10 @@
   duration: string
   price: number
   priceLabel?: string
+  // Optional room-based pricing (null/undefined/0 = not offered, hidden in UI).
+  quadPrice?: number | null
+  triplePrice?: number | null
+  doublePrice?: number | null
   badge: string
   badgeVariant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link"
   featured?: boolean

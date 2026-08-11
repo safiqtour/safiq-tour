@@ -401,6 +401,10 @@ model Package {
   duration        Int       @default(0)
   price           Int       @default(0)
   promoPrice      Int?
+  // Optional room-based pricing (per orang). Null = not offered; never store 0.
+  quadPrice       Int?
+  triplePrice     Int?
+  doublePrice     Int?
   discount        Int       @default(0)
   currency        String    @default("IDR")
   airline         String    @default("")
@@ -426,13 +430,22 @@ model Package {
   packageCategory   PackageCategory? @relation(fields: [packageCategoryId], references: [id], onDelete: SetNull)
   packageType       PackageType?     @relation(fields: [packageTypeId], references: [id], onDelete: SetNull)
 
+  // Reference to the Airline master data. The existing `airline` String column is
+  // kept for backward compatibility (legacy free-text name snapshot). The relation
+  // field is named `masterAirline` to avoid colliding with the legacy `airline`
+  // scalar column on the same model.
+  airlineId     String?
+  masterAirline Airline? @relation(fields: [airlineId], references: [id], onDelete: SetNull)
+
   hotels      PackageHotel[]
   schedules   PackageSchedule[]
   facilities  PackageFacility[]
   itineraries PackageItinerary[]
   galleries   PackageGallery[]
   bookings    Booking[]
+  flights     PackageFlight[]
 
+  @@index([airlineId])
   @@map("packages")
 }
 
@@ -450,6 +463,44 @@ model PackageHotel {
   hotel     Hotel?  @relation(fields: [hotelId], references: [id], onDelete: SetNull)
 
   @@map("package_hotels")
+}
+
+model PackageFlight {
+  id        String   @id @default(uuid())
+  packageId String
+  // Leg/grouping of flights for a package: DEPARTURE | RETURN
+  direction String   @default("DEPARTURE")
+  // Display label for this leg (e.g. Keberangkatan, Transit, Kepulangan).
+  label     String   @default("")
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  segments  PackageFlightSegment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([packageId])
+  @@map("package_flights")
+}
+
+model PackageFlightSegment {
+  id                String         @id @default(uuid())
+  flightId          String
+  airlineId         String?
+  flightNumber      String         @default("")
+  departureCity     String         @default("")
+  departureAirport  String         @default("")
+  arrivalCity       String         @default("")
+  arrivalAirport    String         @default("")
+  departureDateTime DateTime?
+  arrivalDateTime   DateTime?
+  segmentOrder      Int            @default(0)
+  flight            PackageFlight  @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  airline           Airline?       @relation(fields: [airlineId], references: [id], onDelete: SetNull)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([flightId])
+  @@index([airlineId])
+  @@map("package_flight_segments")
 }
 
 model PackageSchedule {
@@ -649,10 +700,29 @@ model Airline {
   country   Country? @relation(fields: [countryId], references: [id])
   logoMedia Media?   @relation("AirlineLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
 
+  packages              Package[]
+  packageFlightSegments PackageFlightSegment[]
+  aliases               AirlineAlias[]
   @@index([status])
   @@index([deletedAt])
   @@map("airlines")
 }
+
+model AirlineAlias {
+  id        String   @id @default(uuid())
+  airlineId String
+  alias     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  airline Airline @relation(fields: [airlineId], references: [id], onDelete: Cascade)
+
+  @@unique([airlineId, alias])
+  @@index([alias])
+  @@map("airline_aliases")
+}
+
+
 
 model Transportation {
   id          String    @id @default(uuid())

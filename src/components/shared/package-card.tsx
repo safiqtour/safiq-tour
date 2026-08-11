@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { cn } from "@/lib/utils"
+import { cn, normalizeImageUrl } from "@/lib/utils"
 import { type Package, formatPrice } from "@/data/packages"
 
 type PackageCardProps = {
@@ -22,7 +22,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
       {pkg.image && (
         <div className="relative h-auto w-full shrink-0">
           <Image
-            src={pkg.image}
+            src={normalizeImageUrl(pkg.image)}
             alt={pkg.title}
             width={800}
             height={450}
@@ -33,7 +33,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
 
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="space-y-1">
-          <h3 className="text-xl font-bold text-[#0F2D5C]">{pkg.title}</h3>
+          <h3 className="line-clamp-2 break-words text-xl font-bold text-[#0F2D5C]" title={pkg.title}>{pkg.title}</h3>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <svg
               xmlns="http://www.w3.org/2000/svg"

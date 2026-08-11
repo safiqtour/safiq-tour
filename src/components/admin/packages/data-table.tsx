@@ -20,6 +20,7 @@ import {
   Star,
 } from "lucide-react"
 import { formatPrice, formatDate } from "@/lib/packages/utils"
+import { normalizeImageUrl } from "@/lib/utils"
 import type { PackageStatus } from "@/lib/packages/types"
 
 interface PackageListItem {
@@ -83,12 +84,17 @@ export function DataTable({
   const [loading, setLoading] = useState<string | null>(null)
 
   const handleAction = async (id: string, action: string, fn: () => Promise<void>) => {
+    // Re-entry guard: ignore repeat invocations while any action is in flight
+    // (double click would fire the server action twice -> P2025 on the second).
+    if (loading) return
     setLoading(`${action}-${id}`)
     try {
       await fn()
       toast.success("Berhasil!")
-    } catch {
-      toast.error("Gagal!")
+    } catch (error) {
+      // Log the real cause; the server action throws Error with a clear message.
+      console.error(`[DataTable] ${action} failed for id=${id}:`, error)
+      toast.error(error instanceof Error && error.message ? error.message : "Gagal!")
     } finally {
       setLoading(null)
     }
@@ -172,7 +178,7 @@ export function DataTable({
                     <td className="px-4 py-3">
                       <div className="relative size-10 rounded-xl overflow-hidden border border-[#E5E7EB]">
                         {pkg.thumbnail ? (
-                          <Image src={pkg.thumbnail} alt="" fill className="object-cover" sizes="40px" />
+                          <Image src={normalizeImageUrl(pkg.thumbnail)} alt="" fill className="object-cover" sizes="40px" />
                         ) : (
                           <div className="flex size-full items-center justify-center bg-[#F8FAFC] text-xs text-[#9CA3AF]">No</div>
                         )}
@@ -192,7 +198,10 @@ export function DataTable({
                     <td className="px-4 py-3">
                       <div>
                         <p className="text-sm font-semibold text-[#0B3C6D]">{formatPrice(pkg.price)}</p>
-                        {pkg.promoPrice && <p className="text-xs text-[#C89B3C]">{formatPrice(pkg.promoPrice)}</p>}
+                        {/* Explicit > 0 check: a bare `promoPrice &&` would render the number 0 */}
+                        {pkg.promoPrice != null && pkg.promoPrice > 0 && (
+                          <p className="text-xs text-[#C89B3C]">{formatPrice(pkg.promoPrice)}</p>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-[#6B7280]">
@@ -234,7 +243,11 @@ export function DataTable({
                         <button onClick={() => handleAction(pkg.id, "duplicate", () => onDuplicate(pkg.id))} className="flex size-8 items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F8FAFC] hover:text-[#C89B3C] transition-colors">
                           {loading === `duplicate-${pkg.id}` ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
                         </button>
-                        <button onClick={() => handleAction(pkg.id, "delete", () => onDelete(pkg.id))} className="flex size-8 items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => handleAction(pkg.id, "delete", () => onDelete(pkg.id))}
+                          disabled={loading === `delete-${pkg.id}`}
+                          className="flex size-8 items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-red-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        >
                           {loading === `delete-${pkg.id}` ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                         </button>
                         <select

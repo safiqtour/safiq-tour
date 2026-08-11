@@ -16,9 +16,14 @@ export interface PackageData {
   duration: number
   price: number
   promoPrice: number | null
+  // Optional room-based pricing (null/undefined = not offered).
+  quadPrice?: number | null
+  triplePrice?: number | null
+  doublePrice?: number | null
   discount: number
   currency: string
   airline: string
+  airlineId?: string | null
   quota: number
   seatFilled: number
   status: PackageStatus
@@ -39,6 +44,7 @@ export interface PackageData {
   facilities: PackageFacilityData[]
   itineraries: PackageItineraryData[]
   galleries: PackageGalleryData[]
+  flights?: PackageFlightData[]
 }
 
 export interface PackageHotelData {
@@ -80,4 +86,35 @@ export interface PackageGalleryData {
   url: string
   alt: string
   sortOrder: number
+}
+
+/**
+ * One flight segment (hop) of a package flight leg. Mirrors a single
+ * PackageFlightSegment row. `aircraft` is UI-only — there is no corresponding
+ * DB column, so it is never persisted (kept in local form state only).
+ */
+export interface PackageFlightSegmentData {
+  id?: string
+  airlineId?: string | null
+  flightNumber?: string
+  aircraft?: string
+  departureCity: string
+  departureAirport: string
+  arrivalCity: string
+  arrivalAirport: string
+  departureDateTime?: string
+  arrivalDateTime?: string
+}
+
+/**
+ * One flight leg of a package ("Penerbangan" tab). Persisted as one
+ * PackageFlight row (direction derived from `label`) with one or more
+ * PackageFlightSegments. A direct leg has a single segment; a transit leg is
+ * split into multiple segments (departure → transit… → arrival). Segment
+ * datetimes are wall-clock strings ("yyyy-MM-ddTHH:mm") — see wallClockToDate.
+ */
+export interface PackageFlightData {
+  id?: string
+  label: string
+  segments: PackageFlightSegmentData[]
 }

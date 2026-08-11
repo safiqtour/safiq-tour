@@ -16,6 +16,7 @@ export default function PackagesPage() {
     totalPages: number
   }>({ data: [], total: 0, page: 1, totalPages: 1 })
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const params = new URLSearchParams({ search, category, status, page: String(page), pageSize: "10" })
@@ -23,7 +24,13 @@ export default function PackagesPage() {
       .then((r) => r.json())
       .then(setData)
       .finally(() => setLoading(false))
-  }, [search, category, status, page])
+  }, [search, category, status, page, refreshKey])
+
+  // Refresh the list only after a successful delete (deletePackage throws on failure).
+  const handleDelete = async (id: string) => {
+    await deletePackage(id)
+    setRefreshKey((k) => k + 1)
+  }
 
   if (loading) {
     return (
@@ -48,7 +55,7 @@ export default function PackagesPage() {
       onCategoryChange={(v) => { setCategory(v); setPage(1) }}
       onStatusChange={(v) => { setStatus(v); setPage(1) }}
       onPageChange={setPage}
-      onDelete={deletePackage}
+      onDelete={handleDelete}
       onDuplicate={duplicatePackage}
       onToggleFeatured={toggleFeatured}
       onStatusUpdate={updatePackageStatus}

@@ -6,6 +6,24 @@ import Image from "next/image"
 import Link from "next/link"
 import { formatPrice } from "@/data/packages"
 import type { Package } from "@/data/packages"
+import { normalizeImageUrl } from "@/lib/utils"
+
+// Formatting tags allowed in TipTap-produced HTML descriptions. Every other
+// tag — and ALL attributes — is stripped, following the project's hand-rolled
+// sanitization pattern (see blog/article-content.tsx); no sanitization
+// library is installed in this project.
+const ALLOWED_DESCRIPTION_TAGS = new Set(["p", "strong", "b", "em", "i", "u", "ul", "ol", "li", "br"])
+
+/** Whitelist-sanitize rich-text HTML: keep formatting tags only, strip the rest. */
+function sanitizeDescriptionHtml(html: string): string {
+  return html
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\s*\1\s*>/gi, "")
+    .replace(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (_match, closing: string, tag: string) => {
+      const t = tag.toLowerCase()
+      if (!ALLOWED_DESCRIPTION_TAGS.has(t)) return ""
+      return t === "br" ? "<br />" : `<${closing ? "/" : ""}${t}>`
+    })
+}
 
 type HeroProps = {
   pkg: Package
@@ -15,13 +33,24 @@ type HeroProps = {
 }
 
 export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
+  // TipTap saves the description as HTML; plain-text (legacy) descriptions
+  // keep the original <p> rendering below.
+  const descriptionHasHtml = /<[a-z][\s\S]*?>/i.test(description)
+  // Optional room-based pricing — only non-empty (> 0) values are displayed;
+  // null/undefined/0 are hidden entirely.
+  const roomPrices = [
+    { label: "Quad", desc: "4 orang", value: pkg.quadPrice },
+    { label: "Triple", desc: "3 orang", value: pkg.triplePrice },
+    { label: "Double", desc: "2 orang", value: pkg.doublePrice },
+  ].filter((r): r is { label: string; desc: string; value: number } => typeof r.value === "number" && r.value > 0)
+  const hasRoomPrices = roomPrices.length > 0
   return (
-    <section className="relative z-10 -mt-20 flex min-h-0 md:min-h-[650px] items-start md:items-center overflow-hidden pb-24 md:pb-24">
+    <section className="relative z-10 -mt-20 flex min-h-0 md:min-h-[650px] items-start md:items-center overflow-hidden pb-24 md:pb-24 bg-[#0B2D5C]">
       <Image
-        src={heroImage}
+        src={normalizeImageUrl(heroImage)}
         alt={`Paket Umroh ${pkg.title}`}
         fill
-        className="object-cover"
+        className="object-contain object-top md:object-cover md:object-center"
         priority
         sizes="100vw"
       />
@@ -51,7 +80,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-              className="font-heading text-2xl font-bold leading-tight text-white drop-shadow-lg md:text-3xl lg:text-4xl"
+              className="line-clamp-2 break-words font-heading text-2xl font-bold leading-tight text-white drop-shadow-lg md:text-3xl lg:text-4xl"
             >
               {pkg.title.replace(/ \d+ Hari$/, "")}
             </motion.h1>
@@ -68,14 +97,24 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
               </div>
             </motion.div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="max-w-xl text-base leading-relaxed text-white/80 md:text-lg"
-            >
-              {description}
-            </motion.p>
+            {descriptionHasHtml ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="max-w-xl text-base leading-relaxed text-white/80 md:text-lg [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_strong]:text-white [&_b]:font-semibold [&_b]:text-white [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5"
+                dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(description) }}
+              />
+            ) : (
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="max-w-xl text-base leading-relaxed text-white/80 md:text-lg"
+              >
+                {description}
+              </motion.p>
+            )}
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -87,7 +126,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
                 href="#cta"
                 className="group inline-flex w-full md:flex-1 min-h-14 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-xs font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25 sm:px-7 sm:text-sm"
               >
-                Daftar Sekarang
+                Konsultasi Sekarang
                 <ArrowRight className="size-3.5 sm:size-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
 
@@ -107,21 +146,47 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
             transition={{ duration: 0.6, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
             className="flex justify-self-center md:justify-self-end mx-1 md:mx-0"
           >
-            <div className="w-full md:max-w-sm rounded-[28px] md:rounded-3xl border border-white/15 bg-white/8 p-6 md:p-8 backdrop-blur-md shadow-2xl shadow-black/15 transition-all duration-500 md:hover:-translate-y-2 md:hover:shadow-2xl md:hover:shadow-[#D4AF37]/10">
+            <div className="w-full md:max-w-sm lg:max-w-md rounded-[28px] md:rounded-3xl border border-white/15 bg-white/8 p-6 backdrop-blur-md shadow-2xl shadow-black/15 transition-all duration-500 md:hover:-translate-y-2 md:hover:shadow-2xl md:hover:shadow-[#D4AF37]/10">
               <div className="flex flex-col">
-                <div className="mb-5">
-                  <p className="text-xs font-medium tracking-wider text-white/50 uppercase">
-                    Harga Spesial
+                <div className="mb-4 lg:mb-6">
+                  <p className="text-[11px] font-medium tracking-wider text-white/50 uppercase">
+                    {hasRoomPrices ? "Harga Mulai Dari" : "Harga Spesial"}
                   </p>
-                  <p className="mt-1 font-playfair text-5xl md:text-3xl font-bold text-[#D4AF37] leading-[1.1]" style={{ fontFamily: "var(--font-playfair)" }}>
-                    {formatPrice(pkg.price)}
-                  </p>
-                  <p className="text-lg md:text-xs text-white/40">/per orang</p>
+                  <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
+                    <p className="font-playfair text-4xl font-bold leading-none text-[#D4AF37]" style={{ fontFamily: "var(--font-playfair)" }}>
+                      {formatPrice(pkg.price)}
+                    </p>
+                    <span className="text-xs text-white/40">/ per orang</span>
+                  </div>
                 </div>
+
+                {hasRoomPrices && (
+                  <div className="mb-4 lg:mb-6">
+                    <p className="mb-2.5 text-[11px] font-medium tracking-wider text-white/50 uppercase lg:mb-3">
+                      Pilihan Kamar
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:gap-3">
+                      {roomPrices.map((r) => (
+                        <div
+                          key={r.label}
+                          className="flex h-full flex-col items-center justify-center rounded-xl border border-[#D4AF37]/30 bg-gradient-to-b from-white/10 to-white/5 px-2 py-3 text-center backdrop-blur-sm transition-colors duration-300 hover:border-[#D4AF37]/60 lg:px-3 lg:py-4"
+                        >
+                          <p className="text-[11px] font-bold tracking-widest text-[#D4AF37] uppercase lg:text-xs">
+                            {r.label}
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-white/50 lg:text-[11px]">{r.desc}</p>
+                          <p className="mt-1.5 text-base font-bold leading-snug text-white md:text-[13px] lg:text-sm">
+                            {formatPrice(r.value)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="h-px bg-white/10" />
 
-                <div className="flex flex-col gap-4 py-3">
+                <div className="flex flex-col gap-3 py-3 lg:py-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-white/60">Durasi</span>
                     <span className="text-sm font-semibold text-white">{pkg.duration}</span>
@@ -146,9 +211,9 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
 
                 <Link
                   href="#cta"
-                  className="mt-6 flex h-14 md:h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
+                  className="mt-4 flex h-12 md:h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
                 >
-                  Daftar Sekarang
+                  Daftar Umroh
                   <ArrowRight className="size-4" />
                 </Link>
               </div>

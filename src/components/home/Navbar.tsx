@@ -45,8 +45,9 @@ export function Navbar() {
           <Image
             src="/images/logo-safiq.png"
             alt="Safiq Tour"
-            width={160}
+            width={34}
             height={40}
+            priority
             className={cn(
               "h-10 w-auto transition-all duration-300",
               scrolled ? "brightness-100" : "brightness-0 invert"

@@ -79,7 +79,7 @@ function FooterLinks() {
           <Image
             src="/images/logo-safiq.png"
             alt="Safiq Tour"
-            width={140}
+            width={31}
             height={36}
             className="h-9 w-auto brightness-0 invert"
           />

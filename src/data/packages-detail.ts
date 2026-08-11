@@ -5,6 +5,8 @@ export interface HotelInfo {
   distance: string
   desc: string
   images: string[]
+  /** Google Maps link from Hotel Master Data; empty/undefined = hide the maps button. */
+  mapsUrl?: string
 }
 
 export interface AirlineInfo {
@@ -25,6 +27,8 @@ export interface DayItinerary {
   day: number
   title: string
   desc: string
+  /** Optional day photo (from the itinerary image upload); empty/undefined = hidden. */
+  image?: string
 }
 
 export interface PackageDetail {

@@ -93,7 +93,7 @@ function MarqueeRow({ logos: row, reverse }: { logos: typeof logos; reverse: boo
     <div className="relative flex overflow-x-hidden">
       <div
         ref={trackRef}
-        className="flex will-change-transform"
+        className="marquee-track flex will-change-transform"
       >
         <div className="flex shrink-0 items-center px-2 sm:px-4">
           {row.map((logo, idx) => (

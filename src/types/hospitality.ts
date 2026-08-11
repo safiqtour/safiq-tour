@@ -8,6 +8,9 @@ export type HotelListItem = {
   id: string; name: string; slug: string; starRating: number; status: string
   country?: CountryBrief | null; city?: CityBrief | null
   featuredMedia?: MediaBrief | null
+  distanceToHaram?: string
+  distanceToNabawi?: string
+  mapsUrl?: string
   deletedAt?: Date | string | null
   _count?: { media: number; roomTypes: number; policies: number }
 }

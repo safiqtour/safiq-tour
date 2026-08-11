@@ -180,6 +180,30 @@
   }
 }
 
+/* Mobile: the page may only scroll vertically — nothing may exceed the
+   viewport width. Elements that intentionally scroll horizontally inside
+   their own container (carousels, admin tables, marquee track) are exempted
+   below so their inner scrolling keeps working. */
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  * {
+    max-width: 100%;
+  }
+
+  .marquee-track,
+  .overflow-x-auto,
+  .overflow-x-auto *,
+  .overflow-x-scroll,
+  .overflow-x-scroll * {
+    max-width: none;
+  }
+}
+
 .prose-content p {
   @apply text-justify;
 }

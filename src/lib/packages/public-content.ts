@@ -23,12 +23,14 @@ export interface PublicContentHotel {
   stars?: number
   distance?: string
   image?: string
+  mapsUrl?: string
 }
 
 export interface PublicContentItinerary {
   day?: number
   title?: string
   description?: string
+  image?: string
 }
 
 export interface PublicContentGallery {
@@ -43,6 +45,9 @@ export interface BuildPublicContentInput {
   packageCategoryName?: string | null
   duration: number
   price: number
+  quadPrice?: number | null
+  triplePrice?: number | null
+  doublePrice?: number | null
   description?: string
   excerpt?: string
   airline?: string
@@ -152,6 +157,7 @@ function toHotels(hotels: PublicContentHotel[] | undefined): HotelInfo[] {
     desc: "",
     // HotelCarousel requires at least one image, so always provide a fallback.
     images: h.image ? [h.image] : [FALLBACK_IMAGE],
+    mapsUrl: h.mapsUrl ?? "",
   }))
 }
 
@@ -179,6 +185,10 @@ export function buildPublicContent(input: BuildPublicContentInput): {
     category: mapCategory(input.title, input.slug, input.category, input.packageCategoryName),
     duration: input.duration > 0 ? `${input.duration} Hari` : "Flexibel",
     price: input.price,
+    // Only carry positive room prices; null/0/undefined stay hidden publicly.
+    quadPrice: input.quadPrice && input.quadPrice > 0 ? input.quadPrice : null,
+    triplePrice: input.triplePrice && input.triplePrice > 0 ? input.triplePrice : null,
+    doublePrice: input.doublePrice && input.doublePrice > 0 ? input.doublePrice : null,
     badge: (input.badge && BADGE_LABEL[input.badge]) || "",
     featured: Boolean(input.featured),
     image: input.thumbnail || input.heroImage || undefined,
@@ -201,6 +211,7 @@ export function buildPublicContent(input: BuildPublicContentInput): {
             day: it.day ?? 0,
             title: it.title ?? `Hari ${it.day ?? 0}`,
             desc: it.description ?? "",
+            image: it.image ?? "",
           }))
         : makeItinerary(input.duration),
     hotels: hotelsInfo,

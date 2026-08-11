@@ -10,12 +10,16 @@ interface TipTapEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  /** When false, bullet/ordered list extensions and toolbar buttons are disabled. */
+  allowLists?: boolean
 }
 
-export function TipTapEditor({ value, onChange, placeholder }: TipTapEditorProps) {
+export function TipTapEditor({ value, onChange, placeholder, allowLists = true }: TipTapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      allowLists
+        ? StarterKit
+        : StarterKit.configure({ bulletList: false, orderedList: false }),
       Image,
       Placeholder.configure({ placeholder: placeholder ?? "Tulis deskripsi..." }),
     ],
@@ -53,13 +57,17 @@ export function TipTapEditor({ value, onChange, placeholder }: TipTapEditorProps
           <Italic className="size-4" />
         </ToolButton>
         <div className="mx-1 w-px bg-[#E5E7EB]" />
-        <ToolButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} label="Bullet List">
-          <List className="size-4" />
-        </ToolButton>
-        <ToolButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} label="Ordered List">
-          <ListOrdered className="size-4" />
-        </ToolButton>
-        <div className="mx-1 w-px bg-[#E5E7EB]" />
+        {allowLists && (
+          <>
+            <ToolButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} label="Bullet List">
+              <List className="size-4" />
+            </ToolButton>
+            <ToolButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} label="Ordered List">
+              <ListOrdered className="size-4" />
+            </ToolButton>
+            <div className="mx-1 w-px bg-[#E5E7EB]" />
+          </>
+        )}
         <ToolButton onClick={() => {
           const url = prompt("Image URL:")
           if (url) editor.chain().focus().setImage({ src: url }).run()

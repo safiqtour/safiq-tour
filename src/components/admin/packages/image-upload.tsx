@@ -1,16 +1,18 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Upload, X } from "lucide-react"
+import { Upload, X, Plus } from "lucide-react"
 import Image from "next/image"
 
 interface ImageUploadProps {
   value: string
   onChange: (url: string) => void
   label?: string
+  /** Compact mode (itinerary rows): small upload button when empty, capped preview with Ganti/Hapus actions. */
+  compact?: boolean
 }
 
-export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, label, compact = false }: ImageUploadProps) {
   const [preview, setPreview] = useState(value)
   const [url, setUrl] = useState(value)
   const [mode, setMode] = useState<"upload" | "url">(value ? "url" : "upload")
@@ -30,6 +32,62 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
       setPreview(url)
       onChange(url)
     }
+  }
+
+  // Compact variant — used by itinerary day rows. Same upload logic, smaller UI.
+  if (compact) {
+    return (
+      <div>
+        {label && <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">{label}</label>}
+        {preview ? (
+          <div>
+            <div className="relative aspect-video max-h-[250px] w-full overflow-hidden rounded-xl border border-[#E5E7EB]">
+              <Image
+                src={preview}
+                alt="Preview"
+                fill
+                className="object-cover"
+                sizes="400px"
+              />
+            </div>
+            <div className="mt-2 flex items-center gap-4">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[#C89B3C] transition-colors hover:text-[#B88A2E]">
+                <Upload className="size-3.5" /> Ganti Gambar
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFile(file)
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => { setPreview(""); onChange("") }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-red-500 transition-colors hover:text-red-700"
+              >
+                <X className="size-3.5" /> Hapus
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#C89B3C] px-4 text-sm font-medium text-[#C89B3C] transition-colors hover:bg-[#C89B3C]/10">
+            <Plus className="size-4" /> Upload Gambar
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleFile(file)
+              }}
+            />
+          </label>
+        )}
+      </div>
+    )
   }
 
   return (

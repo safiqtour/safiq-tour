@@ -2,13 +2,48 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Star, MapPin, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
 import type { HotelInfo } from "@/data/packages-detail"
 
 type HotelsProps = {
   hotels: HotelInfo[]
+}
+
+/** Mosque name based on the hotel city. */
+function mosqueName(city: string): string {
+  return city.toLowerCase().includes("madin") ? "Masjid Nabawi" : "Masjidil Haram"
+}
+
+/** Display name for the hotel-city eyebrow heading ("Mekkah" → "Makkah"). */
+function cityDisplayName(city: string): string {
+  const c = city.toLowerCase()
+  if (c.includes("mekkah") || c.includes("makkah")) return "Makkah"
+  if (c.includes("madin")) return "Madinah"
+  return city
+}
+
+/** Kaaba / mosque emoji for the hotel-city label. */
+function cityEmoji(city: string): string {
+  return city.toLowerCase().includes("madin") ? "🕌" : "🕋"
+}
+
+/** Display order: Makkah hotel first, Madinah second, anything else last. */
+function cityRank(city: string): number {
+  const c = city.toLowerCase()
+  if (c.includes("mekkah") || c.includes("makkah")) return 0
+  if (c.includes("madin")) return 1
+  return 2
+}
+
+/** Normalize master-data distances: "50m" → "50 Meter", "1.2km" → "1.2 Km". */
+function formatDistance(distance: string): string {
+  const v = distance.trim()
+  const meters = v.match(/^(\d+(?:[.,]\d+)?)\s*m$/i)
+  if (meters) return `${meters[1]} Meter`
+  const km = v.match(/^(\d+(?:[.,]\d+)?)\s*km$/i)
+  if (km) return `${km[1]} Km`
+  return v
 }
 
 function HotelCarousel({ hotel }: { hotel: HotelInfo }) {
@@ -24,6 +59,12 @@ function HotelCarousel({ hotel }: { hotel: HotelInfo }) {
           className="object-cover transition-transform duration-700 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, 50vw"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B2D5C]/60 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute bottom-4 left-4 z-10">
+          <span className="rounded-lg bg-[#D4AF37]/90 px-3 py-1 text-xs font-bold text-[#0B2D5C]">
+            {hotel.city}
+          </span>
+        </div>
       </div>
     )
   }
@@ -82,6 +123,8 @@ function HotelCarousel({ hotel }: { hotel: HotelInfo }) {
 }
 
 export function Hotels({ hotels }: HotelsProps) {
+  // Makkah first, Madinah second (display-only ordering; data untouched).
+  const sortedHotels = [...hotels].sort((a, b) => cityRank(a.city) - cityRank(b.city))
   return (
     <section className="py-16 md:py-20">
       <div className="mx-auto max-w-(--container-max) px-3 sm:px-6 lg:px-8">
@@ -102,24 +145,32 @@ export function Hotels({ hotels }: HotelsProps) {
             Hotel Pilihan
           </h2>
           <p className="mt-3 text-center text-base text-[#1E293B]/60 md:text-lg">
-            Kenyamanan ibadah dengan hotel terbaik dan lokasi strategis
+            Hotel nyaman dengan lokasi strategis untuk jamaah Safiq Tour
           </p>
         </motion.div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {hotels.map((hotel, i) => (
+          {sortedHotels.map((hotel, i) => (
             <motion.div
               key={hotel.city}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6, delay: i * 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-              className="group overflow-hidden rounded-2xl border border-[#0B2D5C]/8 bg-white shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-[#D4AF37]/20 hover:shadow-xl hover:shadow-[#D4AF37]/5"
+              className="group overflow-hidden rounded-2xl border border-[#0B2D5C]/8 bg-white shadow-md transition-all duration-500 hover:-translate-y-1 hover:border-[#D4AF37]/20 hover:shadow-xl hover:shadow-[#D4AF37]/5"
             >
               <HotelCarousel hotel={hotel} />
 
               <div className="p-5 md:p-6">
-                <div className="mb-2 flex items-center gap-1">
+                <p className="mb-1 text-[11px] font-bold tracking-wider text-[#D4AF37]">
+                  {cityEmoji(hotel.city)} Hotel {cityDisplayName(hotel.city)}
+                </p>
+
+                <h3 className="font-playfair text-lg font-bold text-[#0B2D5C]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  {hotel.name}
+                </h3>
+
+                <div className="mt-1.5 flex items-center gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
@@ -128,26 +179,33 @@ export function Hotels({ hotels }: HotelsProps) {
                   ))}
                 </div>
 
-                <h3 className="font-playfair text-lg font-bold text-[#0B2D5C]" style={{ fontFamily: "var(--font-playfair)" }}>
-                  {hotel.name}
-                </h3>
+                {hotel.distance && (
+                  <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F8FAFC] px-3.5 py-2.5">
+                    <MapPin className="mt-0.5 size-4 shrink-0 text-[#D4AF37]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#0B2D5C]">{formatDistance(hotel.distance)}</p>
+                      <p className="text-xs text-[#1E293B]/50">{mosqueName(hotel.city)}</p>
+                    </div>
+                  </div>
+                )}
 
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-[#1E293B]/50">
-                  <MapPin className="size-3.5 text-[#D4AF37]" />
-                  <span>{hotel.distance} ke Masjid</span>
-                </div>
+                {hotel.desc && (
+                  <p className="mt-2 text-sm leading-relaxed text-[#1E293B]/60">{hotel.desc}</p>
+                )}
 
-                <p className="mt-2 text-sm leading-relaxed text-[#1E293B]/60">{hotel.desc}</p>
-
-                <div className="mt-4">
-                  <Link
-                    href="#"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#D4AF37] transition-colors hover:text-[#C49A2E]"
-                  >
-                    Lihat Detail
-                    <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
-                </div>
+                {hotel.mapsUrl && (
+                  <div className="mt-4">
+                    <a
+                      href={hotel.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3.5 py-2 text-xs font-semibold text-[#8a6d1f] transition-colors hover:bg-[#D4AF37]/20"
+                    >
+                      <MapPin className="size-3.5" />
+                      Lihat di Google Maps
+                    </a>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}

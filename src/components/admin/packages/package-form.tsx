@@ -21,16 +21,21 @@ import {
   Save,
   Loader2,
   Plus,
+  Plane,
   Trash2,
-
+  ArrowDown,
+  ArrowUp,
+  Clock,
 } from "lucide-react"
 import { packageFormSchema, type PackageFormValues } from "@/lib/packages/schema"
 import { slugify } from "@/lib/packages/utils"
 import { TipTapEditor } from "./tiptap-editor"
 import { ImageUpload } from "./image-upload"
-import type { PackageData, PackageCategory } from "@/lib/packages/types"
+import type { PackageData, PackageCategory, PackageBadge, PackageFlightData, PackageFlightSegmentData } from "@/lib/packages/types"
 import { getHotels } from "@/actions/hotel"
 import type { HotelListItem } from "@/types/hospitality"
+import { getAirlines } from "@/actions/airline"
+import type { AirlineListItem } from "@/types/hospitality"
 import { getPackageCategories } from "@/modules/business/package-category/actions/package-category"
 import { getPackageTypes } from "@/modules/business/package-type/actions/package-type"
 import type { PackageCategoryListItem } from "@/modules/business/package-category/types"
@@ -41,6 +46,7 @@ const tabs = [
   { id: "pricing", label: "Harga", icon: DollarSign },
   { id: "hotel", label: "Hotel", icon: Building2 },
   { id: "schedule", label: "Jadwal", icon: Calendar },
+  { id: "penerbangan", label: "Penerbangan", icon: Plane },
   { id: "facilities", label: "Fasilitas", icon: ListChecks },
   { id: "itinerary", label: "Itinerary", icon: FileText },
   { id: "gallery", label: "Gallery", icon: ImageIcon },
@@ -74,6 +80,346 @@ const LEGACY_CATEGORIES: PackageCategory[] = ["REGULAR", "PLUS", "EXECUTIVE", "L
 function normalizeLegacyCategory(value: string | null | undefined): PackageCategory {
   const v = (value ?? "").trim().toUpperCase()
   return (LEGACY_CATEGORIES as string[]).includes(v) ? (v as PackageCategory) : "REGULAR"
+}
+
+const BADGE_OPTIONS: PackageBadge[] = ["BEST_SELLER", "NEW", "PROMO"]
+
+// The badge select expects an enum value or null ("No Badge"). Normalize legacy
+// DB values (display labels like "Best Seller", empty strings, or other
+// out-of-enum values) so old packages load and save cleanly.
+function normalizeLegacyBadge(value: string | null | undefined): PackageBadge | null {
+  const v = (value ?? "").trim().toUpperCase().replace(/[\s-]+/g, "_")
+  return (BADGE_OPTIONS as string[]).includes(v) ? (v as PackageBadge) : null
+}
+
+/**
+ * redirect() inside a Server Action throws a special error whose digest starts
+ * with NEXT_REDIRECT — that is how Next.js triggers client navigation, so it
+ * must not be treated as a save failure.
+ */
+function isNextRedirect(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  )
+}
+
+/**
+ * Flight itinerary item for the "Penerbangan" tab.
+ * Persisted as one PackageFlight row (direction derived from the label) with
+ * one or more PackageFlightSegments (one per hop).
+ */
+interface FlightSegmentItem extends PackageFlightSegmentData {
+  id: string
+}
+
+interface FlightItem extends PackageFlightData {
+  id: string
+  segments: FlightSegmentItem[]
+}
+
+interface FlightCardProps {
+  flight: FlightItem
+  airlines: AirlineListItem[]
+  onChange: (patch: Partial<FlightItem>) => void
+  onRemove: () => void
+  canRemove: boolean
+  onMoveUp?: () => void
+  onMoveDown?: () => void
+  canMoveUp?: boolean
+  canMoveDown?: boolean
+}
+
+/** Combine a city and its IATA code into the display form "<city> (<IATA>)". */
+function formatRoute(city: string, iata: string): string {
+  const c = city.trim()
+  const i = iata.trim()
+  if (!c && !i) return ""
+  if (!c) return `(${i})`
+  if (!i) return c
+  return `${c} (${i})`
+}
+
+/** Parse a combined "<city> (<IATA>)" string back into its parts. */
+function parseRoute(value: string): { city: string; iata: string } {
+  const match = value.match(/^(.*?)\s*\(([^()]*)\)\s*$/)
+  if (match) {
+    return {
+      city: match[1].trim(),
+      iata: match[2].trim().toUpperCase(),
+    }
+  }
+  return { city: value.trim(), iata: "" }
+}
+
+/**
+ * Compute a human-readable duration between two datetime-local strings
+ * ("yyyy-MM-ddTHH:mm"). Supports crossing midnight / different dates.
+ * Returns "" when either value is missing or end is not after start.
+ */
+function calculateDuration(start: string, end: string): string {
+  if (!start || !end) return ""
+  const s = new Date(start)
+  const e = new Date(end)
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return ""
+  const totalMinutes = Math.round((e.getTime() - s.getTime()) / 60000)
+  if (totalMinutes <= 0) return ""
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  if (h === 0) return `${m} menit`
+  if (m === 0) return `${h} jam`
+  return `${h} jam ${m} menit`
+}
+
+/** Single flight-leg card for the "Penerbangan" tab. Each hop is a segment. */
+function FlightCard({ flight, airlines, onChange, onRemove, canRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: FlightCardProps) {
+  const segments = flight.segments ?? []
+
+  // Full route shown in the preview, built from every segment boundary with
+  // consecutive duplicates (segment N arrival == segment N+1 departure) collapsed
+  // so the route reads as a clean A → B → C chain.
+  const routePoints: { city: string; iata: string }[] = []
+  segments.forEach((s) => {
+    const dep = { city: s.departureCity, iata: s.departureAirport }
+    const arr = { city: s.arrivalCity, iata: s.arrivalAirport }
+    const last = routePoints[routePoints.length - 1]
+    if (!last || last.city !== dep.city || last.iata !== dep.iata) routePoints.push(dep)
+    routePoints.push(arr)
+  })
+
+  const updateSegment = (id: string, patch: Partial<Omit<FlightSegmentItem, "id">>) => {
+    onChange({ segments: segments.map((s) => (s.id === id ? { ...s, ...patch } : s)) })
+  }
+
+  const addSegment = () => {
+    onChange({
+      segments: [
+        ...segments,
+        {
+          id: crypto.randomUUID(),
+          airlineId: null,
+          flightNumber: "",
+          aircraft: "",
+          departureCity: "",
+          departureAirport: "",
+          arrivalCity: "",
+          arrivalAirport: "",
+          departureDateTime: "",
+          arrivalDateTime: "",
+        },
+      ],
+    })
+  }
+
+  const removeSegment = (id: string) => {
+    if (segments.length <= 1) return
+    onChange({ segments: segments.filter((s) => s.id !== id) })
+  }
+
+  return (
+    <div className="rounded-2xl border border-[#E5E7EB] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h4 className="font-heading text-sm font-bold text-[#0B3C6D]">
+          Penerbangan {flight.label}
+        </h4>
+        <div className="flex items-center gap-2">
+          {canMoveUp && (
+            <button
+              type="button"
+              onClick={onMoveUp}
+              title="Pindah ke atas"
+              className="flex items-center gap-1 text-sm text-[#6B7280] hover:text-[#0B3C6D] transition-colors"
+            >
+              <ArrowUp className="size-4" />
+            </button>
+          )}
+          {canMoveDown && (
+            <button
+              type="button"
+              onClick={onMoveDown}
+              title="Pindah ke bawah"
+              className="flex items-center gap-1 text-sm text-[#6B7280] hover:text-[#0B3C6D] transition-colors"
+            >
+              <ArrowDown className="size-4" />
+            </button>
+          )}
+          {canRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+            >
+              <Trash2 className="size-4" /> Hapus Penerbangan
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Route preview (horizontal) */}
+      <div className="mb-4 rounded-xl bg-[#F8FAFC] p-3">
+        <p className="mb-2 text-xs font-medium text-[#9CA3AF]">Rute</p>
+        <div className="flex flex-wrap items-center gap-1.5 text-sm">
+          {routePoints.map((p, idx) => (
+            <div key={idx} className="flex items-center gap-1.5">
+              <span className="font-medium text-[#0B3C6D]">
+                {formatRoute(p.city, p.iata) || "—"}
+              </span>
+              {idx < routePoints.length - 1 && (
+                <ArrowDown className="size-3.5 rotate-[-90deg] text-[#C89B3C]" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Label selector */}
+      <div className="mb-4">
+        <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Label Penerbangan</label>
+        <select
+          value={flight.label}
+          onChange={(e) => onChange({ label: e.target.value })}
+          className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+        >
+          <option value="Keberangkatan">Keberangkatan</option>
+          <option value="Transit">Transit</option>
+          <option value="Menuju Kota Tambahan">Menuju Kota Tambahan</option>
+          <option value="Kembali ke Saudi">Kembali ke Saudi</option>
+          <option value="Kepulangan">Kepulangan</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        {segments.map((seg, idx) => {
+          // Auto transit duration between this segment's arrival and the next
+          // segment's departure (prev arrival → next departure).
+          const next = segments[idx + 1]
+          const transitDuration = next
+            ? calculateDuration(seg.arrivalDateTime ?? "", next.departureDateTime ?? "")
+            : ""
+          // Transit location = this segment's arrival point, shown as "City (IATA)".
+          const transitLocation = next ? formatRoute(seg.arrivalCity, seg.arrivalAirport) : ""
+          return (
+            <div key={seg.id}>
+              <div className="rounded-xl border border-[#E5E7EB] p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-[#0B3C6D]">
+                    <Plane className="size-3.5 text-[#C89B3C]" /> Penerbangan {idx + 1}
+                  </p>
+              {segments.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("Hapus penerbangan ini?")) removeSegment(seg.id)
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Maskapai</label>
+                <select
+                  value={seg.airlineId ?? ""}
+                  onChange={(e) => updateSegment(seg.id, { airlineId: e.target.value === "" ? null : e.target.value })}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                >
+                  <option value="">— Pilih maskapai —</option>
+                  {airlines.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} {a.iataCode ? `(${a.iataCode})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Nomor Penerbangan</label>
+                <input
+                  type="text"
+                  placeholder="Mis. QR-955"
+                  value={seg.flightNumber ?? ""}
+                  onChange={(e) => updateSegment(seg.id, { flightNumber: e.target.value })}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] placeholder:text-[#9CA3AF] outline-none focus:border-[#C89B3C] transition-all"
+                />
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Keberangkatan</label>
+                <input
+                  type="text"
+                  placeholder="Mis. Jakarta (CGK)"
+                  value={formatRoute(seg.departureCity, seg.departureAirport)}
+                  onChange={(e) => {
+                    const { city, iata } = parseRoute(e.target.value)
+                    updateSegment(seg.id, { departureCity: city, departureAirport: iata })
+                  }}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] placeholder:text-[#9CA3AF] outline-none focus:border-[#C89B3C] transition-all"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Kedatangan</label>
+                <input
+                  type="text"
+                  placeholder="Mis. Madinah (MED)"
+                  value={formatRoute(seg.arrivalCity, seg.arrivalAirport)}
+                  onChange={(e) => {
+                    const { city, iata } = parseRoute(e.target.value)
+                    updateSegment(seg.id, { arrivalCity: city, arrivalAirport: iata })
+                  }}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] placeholder:text-[#9CA3AF] outline-none focus:border-[#C89B3C] transition-all"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Waktu Keberangkatan</label>
+                <input
+                  type="datetime-local"
+                  value={seg.departureDateTime ?? ""}
+                  onChange={(e) => updateSegment(seg.id, { departureDateTime: e.target.value })}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">Waktu Kedatangan</label>
+                <input
+                  type="datetime-local"
+                  value={seg.arrivalDateTime ?? ""}
+                  onChange={(e) => updateSegment(seg.id, { arrivalDateTime: e.target.value })}
+                  className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+              {transitDuration && next && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-3">
+                  <Clock className="size-4 text-[#C89B3C]" />
+                  <span className="text-xs font-medium text-[#6B7280]">
+                    Transit{transitLocation ? ` ${transitLocation}` : ""}
+                  </span>
+                  <span className="text-sm font-semibold text-[#0B3C6D]">
+                    Durasi Transit: {transitDuration}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={addSegment}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#C89B3C] px-4 py-2 text-sm font-medium text-[#C89B3C] hover:bg-[#C89B3C]/10 transition-colors"
+      >
+        <Plus className="size-4" /> Tambah Penerbangan
+      </button>
+    </div>
+  )
 }
 
 interface PackageFormProps {
@@ -134,6 +480,58 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   const [masterHotels, setMasterHotels] = useState<HotelListItem[]>([])
   const [masterCategories, setMasterCategories] = useState<PackageCategoryListItem[]>([])
   const [masterTypes, setMasterTypes] = useState<PackageTypeListItem[]>([])
+  const [masterAirlines, setMasterAirlines] = useState<AirlineListItem[]>([])
+
+  useEffect(() => {
+    getAirlines({ page: 1, limit: 100, status: "ACTIVE" })
+      .then((res) => setMasterAirlines((res.data ?? []) as unknown as AirlineListItem[]))
+      .catch(() => setMasterAirlines([]))
+  }, [])
+
+  // Flight itinerary state. Legacy packages without flight rows fall back to
+  // sensible Umroh defaults (Jakarta → Madinah outbound, Jeddah → Jakarta return).
+  const [flights, setFlights] = useState<FlightItem[]>(
+    initialData?.flights?.length
+      ? initialData.flights.map((f) => ({
+          ...f,
+          id: f.id ?? crypto.randomUUID(),
+          segments: (f.segments ?? []).map((s) => ({ ...s, id: s.id ?? crypto.randomUUID() })),
+        }))
+      : [
+      {
+        id: crypto.randomUUID(),
+        label: "Keberangkatan",
+        segments: [{
+          id: crypto.randomUUID(),
+          airlineId: null,
+          flightNumber: "",
+          aircraft: "",
+          departureCity: "Jakarta",
+          departureAirport: "CGK",
+          arrivalCity: "Madinah",
+          arrivalAirport: "MED",
+          departureDateTime: "",
+          arrivalDateTime: "",
+        }],
+      },
+      {
+        id: crypto.randomUUID(),
+        label: "Kepulangan",
+        segments: [{
+          id: crypto.randomUUID(),
+          airlineId: null,
+          flightNumber: "",
+          aircraft: "",
+          departureCity: "Jeddah",
+          departureAirport: "JED",
+          arrivalCity: "Jakarta",
+          arrivalAirport: "CGK",
+          departureDateTime: "",
+          arrivalDateTime: "",
+        }],
+      },
+        ]
+  )
 
   useEffect(() => {
     getHotels({ page: 1, limit: 100, status: "ACTIVE" })
@@ -168,6 +566,9 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           ...initialData,
           // Legacy enum field (no UI control): normalize out-of-enum/empty DB values.
           category: normalizeLegacyCategory(initialData.category),
+          // Normalize out-of-enum/legacy DB badge values to null ("No Badge") so
+          // the select binds correctly and the resolver accepts old packages.
+          badge: normalizeLegacyBadge(initialData.badge),
           hotels: initialData.hotels ?? [],
           // Normalize to yyyy-MM-dd and drop empty placeholder rows so the zod
           // resolver doesn't reject legacy packages (raw Date objects / empty rows).
@@ -187,9 +588,13 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           duration: 0,
           price: 0,
           promoPrice: null,
+          quadPrice: null,
+          triplePrice: null,
+          doublePrice: null,
           discount: 0,
           currency: "IDR",
           airline: "",
+          airlineId: null,
           quota: 0,
           seatFilled: 0,
           status: "DRAFT",
@@ -207,6 +612,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           facilities: [],
           itineraries: [],
           galleries: [],
+          flights: [],
         },
   })
 
@@ -243,7 +649,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     try {
       const fd = new FormData()
       Object.entries(data).forEach(([key, val]) => {
-        if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries") {
+        if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries" || key === "flights") {
           if (key === "facilities") {
             fd.append(key, JSON.stringify(facilities.map((f) => ({ name: f, icon: "" }))))
           } else if (key === "itineraries") {
@@ -252,11 +658,29 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
             fd.append(key, JSON.stringify(itineraries.filter((it) => (it.title ?? "").trim())))
           } else if (key === "galleries") {
             fd.append(key, JSON.stringify(galleries))
+          } else if (key === "flights") {
+            // Flight legs live in local state (not RHF-registered inputs); always
+            // submit the current local list. `id` (flight + segment) is client-only
+            // and stripped here; `aircraft` is UI-only and not persisted.
+            fd.append(key, JSON.stringify(flights.map((f) => ({
+              label: f.label,
+              segments: (f.segments ?? []).map((s) => ({
+                airlineId: s.airlineId ?? null,
+                flightNumber: s.flightNumber ?? "",
+                departureCity: s.departureCity ?? "",
+                departureAirport: s.departureAirport ?? "",
+                arrivalCity: s.arrivalCity ?? "",
+                arrivalAirport: s.arrivalAirport ?? "",
+                departureDateTime: s.departureDateTime || null,
+                arrivalDateTime: s.arrivalDateTime || null,
+              })),
+            }))))
           } else if (key === "hotels") {
-            // Only submit rows with the required fields filled (name, distance);
-            // skip empty placeholder rows so Zod doesn't reject the payload.
+            // Only submit rows with a master-data hotel selected (name is auto-filled
+            // on selection); skip empty placeholder rows so Zod doesn't reject the
+            // payload. Distance is optional per packageHotelSchema.
             fd.append(key, JSON.stringify(hotels
-              .filter((h) => (h.name ?? "").trim() && (h.distance ?? "").trim())
+              .filter((h) => (h.name ?? "").trim())
               .map((h) => ({
                 type: h.type,
                 hotelId: h.hotelId ?? null,
@@ -293,8 +717,14 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
         }
       })
       await action(fd)
-    } catch {
-      toast.error("Gagal menyimpan paket")
+    } catch (err) {
+      // A successful save ends with redirect() in the server action, which throws
+      // NEXT_REDIRECT — navigation is already in progress, so this is success.
+      if (isNextRedirect(err)) return
+      // Surface the real server error (validation field paths / DB errors)
+      // instead of silently swallowing it behind a generic toast.
+      console.error("PACKAGE SAVE FAILED", err)
+      toast.error(err instanceof Error && err.message ? err.message : "Gagal menyimpan paket")
     } finally {
       setIsSubmitting(false)
     }
@@ -333,8 +763,52 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
       stars: hotel.starRating,
       type,
       city: (hotel.city?.name ?? "") || (type === "MADINAH" ? "Madinah" : "Mekkah"),
+      // All hotel details come from Hotel Master Data (no manual inputs).
+      distance:
+        (type === "MADINAH" ? hotel.distanceToNabawi : hotel.distanceToHaram) ||
+        hotel.distanceToHaram ||
+        hotel.distanceToNabawi ||
+        "",
+      mapsUrl: hotel.mapsUrl || "",
       image: hotel.featuredMedia?.url || "",
     })
+  }
+
+  const addFlight = () => {
+    setFlights([...flights, {
+      id: crypto.randomUUID(),
+      label: "Keberangkatan",
+      segments: [{
+        id: crypto.randomUUID(),
+        airlineId: null,
+        flightNumber: "",
+        aircraft: "",
+        departureCity: "",
+        departureAirport: "",
+        arrivalCity: "",
+        arrivalAirport: "",
+        departureDateTime: "",
+        arrivalDateTime: "",
+      }],
+    }])
+  }
+
+  const removeFlight = (id: string) => {
+    setFlights(flights.filter((f) => f.id !== id))
+  }
+
+  const updateFlight = (id: string, patch: Partial<FlightItem>) => {
+    setFlights(flights.map((f) => (f.id === id ? { ...f, ...patch } : f)))
+  }
+
+  const moveFlight = (id: string, direction: -1 | 1) => {
+    const idx = flights.findIndex((f) => f.id === id)
+    if (idx < 0) return
+    const target = idx + direction
+    if (target < 0 || target >= flights.length) return
+    const next = [...flights]
+    ;[next[idx], next[target]] = [next[target], next[idx]]
+    setFlights(next)
   }
 
   const toggleFacility = (fac: string) => {
@@ -434,7 +908,36 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Maskapai</label>
-                <input {...register("airline")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
+                <Controller
+                  name="airlineId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const id = e.target.value || null
+                        field.onChange(id)
+                        // Keep the legacy free-text `airline` column in sync as a
+                        // display-name snapshot of the selected master airline.
+                        const m = masterAirlines.find((a) => a.id === id)
+                        if (m) setValue("airline", m.name)
+                      }}
+                      className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                    >
+                      <option value="">— Pilih maskapai dari master data —</option>
+                      {masterAirlines.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} {a.iataCode ? `(${a.iataCode})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.airline && <p className="mt-1 text-xs text-red-500">{errors.airline.message}</p>}
+                {/* Legacy free-text value is preserved until a master airline is chosen */}
+                {!watch("airlineId") && watch("airline") && (
+                  <p className="mt-1 text-xs text-[#9CA3AF]">Nilai lama: {watch("airline")}</p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Deskripsi Singkat</label>
@@ -500,6 +1003,18 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                 <input type="number" {...register("promoPrice")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
               </div>
               <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Harga Quad (4 orang) <span className="text-xs font-normal text-[#9CA3AF]">— opsional</span></label>
+                <input type="number" min="0" placeholder="Kosongkan jika tidak tersedia" {...register("quadPrice")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Harga Triple (3 orang) <span className="text-xs font-normal text-[#9CA3AF]">— opsional</span></label>
+                <input type="number" min="0" placeholder="Kosongkan jika tidak tersedia" {...register("triplePrice")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Harga Double (2 orang) <span className="text-xs font-normal text-[#9CA3AF]">— opsional</span></label>
+                <input type="number" min="0" placeholder="Kosongkan jika tidak tersedia" {...register("doublePrice")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
+              </div>
+              <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Diskon (%)</label>
                 <input type="number" {...register("discount")} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
               </div>
@@ -516,7 +1031,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
               <p className="text-sm text-[#6B7280]">
                 Harga Normal: <span className="font-semibold text-[#0B3C6D]">Rp {Number(watch("price")).toLocaleString("id-ID")}</span>
               </p>
-              {watch("promoPrice") && (
+              {Number(watch("promoPrice")) > 0 && (
                 <p className="text-sm text-[#6B7280]">
                   Harga Promo: <span className="font-semibold text-[#C89B3C]">Rp {Number(watch("promoPrice")).toLocaleString("id-ID")}</span>
                 </p>
@@ -543,7 +1058,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                     </button>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Pilih Hotel (Master Data)</label>
                       <select
                         value={h.hotelId ?? ""}
@@ -561,60 +1076,29 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                           </option>
                         ))}
                       </select>
-                      {sel && <p className="mt-1 text-xs text-[#9CA3AF]">Disalin dari master data: {sel.name}</p>}
                     </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Kota</label>
-                      <input
-                        value={h.city ?? ""}
-                        onChange={(e) => updateHotel(i, { city: e.target.value })}
-                        placeholder="Mekkah / Madinah"
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Nama Hotel <span className="text-red-500">*</span></label>
-                      <input
-                        value={h.name}
-                        onChange={(e) => updateHotel(i, { name: e.target.value })}
-                        placeholder="Nama hotel"
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Bintang</label>
-                      <select
-                        value={h.stars}
-                        onChange={(e) => updateHotel(i, { stars: Number(e.target.value) })}
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
-                      >
-                        {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{s} Bintang</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Jarak (dari Masjid) <span className="text-red-500">*</span></label>
-                      <input
-                        value={h.distance}
-                        onChange={(e) => updateHotel(i, { distance: e.target.value })}
-                        placeholder="250m"
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Google Maps URL</label>
-                      <input
-                        value={h.mapsUrl}
-                        onChange={(e) => updateHotel(i, { mapsUrl: e.target.value })}
-                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <ImageUpload
-                        value={h.image}
-                        onChange={(url) => updateHotel(i, { image: url })}
-                        label="Foto Hotel"
-                      />
-                    </div>
+                    {sel && (
+                      <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-4 sm:col-span-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-[#0B3C6D]">{sel.name}</p>
+                          <span className="rounded-full bg-[#0B3C6D]/5 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-[#0B3C6D] uppercase">
+                            {h.type === "MADINAH" ? "Madinah" : "Makkah"}
+                          </span>
+                          <span className="rounded-full bg-[#C89B3C]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#C89B3C]">
+                            {sel.starRating}★
+                          </span>
+                          {sel.city?.name && (
+                            <span className="text-xs text-[#6B7280]">{sel.city.name}</span>
+                          )}
+                          {h.distance && (
+                            <span className="text-xs text-[#6B7280]">• Jarak: {h.distance}</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-[#9CA3AF]">
+                          Detail hotel (nama, bintang, kota, jarak, foto) otomatis mengikuti Master Data Hotel.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -672,6 +1156,32 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
             ))}
             <button type="button" onClick={addSchedule} className="flex items-center gap-2 text-sm text-[#C89B3C] hover:text-[#B88A2E] transition-colors">
               <Plus className="size-4" /> Tambah Jadwal
+            </button>
+          </div>
+        )
+
+      case "penerbangan":
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-[#6B7280]">
+              Susun rute penerbangan jamaah — keberangkatan, transit (bila ada), hingga kepulangan.
+            </p>
+            {flights.map((f, index) => (
+              <FlightCard
+                key={f.id}
+                flight={f}
+                airlines={masterAirlines}
+                onChange={(patch) => updateFlight(f.id, patch)}
+                onRemove={() => removeFlight(f.id)}
+                canRemove={flights.length > 1}
+                onMoveUp={() => moveFlight(f.id, -1)}
+                onMoveDown={() => moveFlight(f.id, 1)}
+                canMoveUp={index > 0}
+                canMoveDown={index < flights.length - 1}
+              />
+            ))}
+            <button type="button" onClick={addFlight} className="flex items-center gap-2 text-sm text-[#C89B3C] hover:text-[#B88A2E] transition-colors">
+              <Plus className="size-4" /> Tambah Penerbangan
             </button>
           </div>
         )
@@ -760,9 +1270,11 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                         const updated = [...itineraries]; updated[i] = { ...updated[i], description: val }; setItineraries(updated)
                       }}
                       placeholder="Deskripsi kegiatan hari ini..."
+                      allowLists={false}
                     />
                     <ImageUpload
                       value={it.image}
+                      compact
                       onChange={(url) => {
                         const updated = [...itineraries]; updated[i] = { ...updated[i], image: url }; setItineraries(updated)
                       }}
@@ -889,12 +1401,15 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
 
   return (
     <form
- onSubmit={handleSubmit(
-   onSubmit,
-   (errors)=>{
-     console.log("FORM ERRORS", errors)
-   }
- )}
+      onSubmit={handleSubmit(
+        onSubmit,
+        (errors) => {
+          // Log the complete validation error paths before submit so legacy-data
+          // issues are visible, and tell the admin which fields failed.
+          console.error("FORM ERRORS", JSON.stringify(errors, null, 2))
+          toast.error(`Periksa kembali isian form: ${Object.keys(errors).join(", ")}`)
+        }
+      )}
 >
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -6,7 +6,9 @@ import { QuickInfo } from "@/components/packages/QuickInfo"
 import { Highlights } from "@/components/packages/Highlights"
 import { Timeline } from "@/components/packages/Timeline"
 import { Hotels } from "@/components/packages/Hotels"
+import { Flights } from "@/components/packages/Flights"
 import { Airlines } from "@/components/packages/Airlines"
+import { TermsConditions } from "@/components/packages/TermsConditions"
 import { IncludeExclude } from "@/components/packages/IncludeExclude"
 import { Gallery } from "@/components/packages/Gallery"
 import { Testimonials } from "@/components/packages/Testimonials"
@@ -24,12 +26,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pkg = pub?.card
   if (!pkg) return {}
 
+  // Enrich SEO with the primary flight leg (airline, flight number, airport
+  // route) when the package has a saved flight itinerary.
+  const leg = pub?.flights?.[0]
+  const flightInfo = leg
+    ? ` Penerbangan ${[leg.airlineName, leg.flightNumber].filter(Boolean).join(" ")} rute ${leg.departureCity} (${leg.departureAirport}) menuju ${leg.arrivalCity} (${leg.arrivalAirport}).`
+    : ""
+
   return {
     title: `${pkg.title} | Safiq Tour`,
-    description: `Paket Umroh ${pkg.title} dengan hotel pilihan, maskapai terbaik, pembimbing ibadah berpengalaman, harga kompetitif dan pelayanan amanah.`,
+    description: `Paket Umroh ${pkg.title} dengan hotel pilihan, maskapai terbaik, pembimbing ibadah berpengalaman, harga kompetitif dan pelayanan amanah.${flightInfo}`,
     openGraph: {
       title: `${pkg.title} | Safiq Tour`,
-      description: `Paket Umroh ${pkg.title} dengan ${pkg.duration}, ${pkg.hotelMekah} dan ${pkg.hotelMadinah}.`,
+      description: `Paket Umroh ${pkg.title} dengan ${pkg.duration}, ${pkg.hotelMekah} dan ${pkg.hotelMadinah}.${flightInfo}`,
       images: pkg.image ? [pkg.image] : [],
     },
   }
@@ -78,7 +87,14 @@ export default async function PackageDetailPage({ params }: Props) {
       <Highlights items={detail.highlights} />
       <Timeline days={detail.itinerary} durationLabel={pkg.duration} />
       <Hotels hotels={detail.hotels} />
-      <Airlines airlines={detail.airlines} />
+      {/* Flight itinerary legs when saved; legacy airline display as fallback */}
+      {pub.flights.length > 0 ? (
+        <Flights legs={pub.flights} />
+      ) : (
+        <Airlines airlines={detail.airlines} />
+      )}
+      {/* Static terms & conditions below the flight itinerary */}
+      <TermsConditions />
       <IncludeExclude included={detail.included} excluded={detail.excluded} />
       <Gallery />
       <Testimonials />
