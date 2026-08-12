@@ -56,7 +56,7 @@ function MarqueeRow({ row, reverse }: { row: typeof logos; reverse: boolean }) {
           <div
             key={half}
             aria-hidden={half === 1}
-            className="flex shrink-0 items-center gap-5 pr-5 sm:gap-14 sm:pr-14 lg:gap-16 lg:pr-16"
+            className="flex shrink-0 items-center gap-4 pr-4 sm:gap-14 sm:pr-14 lg:gap-16 lg:pr-16"
           >
             {row.map((logo) => (
               <LogoItem key={logo.src} src={logo.src} alt={logo.alt} />
