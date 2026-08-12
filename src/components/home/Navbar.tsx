@@ -83,15 +83,10 @@ export function Navbar() {
             </Link>
           ))}
           <Link
-            href="/packages"
-            className={cn(
-              "ml-3 inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:shadow-lg",
-              scrolled
-                ? "bg-[#C79A3B] text-white hover:bg-[#B8892E] hover:shadow-[#C79A3B]/30"
-                : "bg-[#C79A3B] text-white hover:bg-[#B8892E] hover:shadow-[#C79A3B]/30"
-            )}
+            href="/admin/login"
+            className="ml-3 inline-flex items-center rounded-full bg-[#C79A3B] px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#0F3D75] hover:shadow-lg hover:shadow-[#0F3D75]/30"
           >
-            Daftar Umroh
+            Sign In
           </Link>
         </nav>
 
@@ -132,11 +127,11 @@ export function Navbar() {
                 </Link>
               ))}
               <Link
-                href="/packages"
+                href="/admin/login"
                 onClick={() => setOpen(false)}
-                className="mt-2 inline-flex items-center justify-center rounded-full bg-[#C79A3B] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#B8892E]"
+                className="mt-2 inline-flex items-center justify-center rounded-full bg-[#C79A3B] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#0F3D75]"
               >
-                Daftar Umroh
+                Sign In
               </Link>
             </nav>
           </motion.div>

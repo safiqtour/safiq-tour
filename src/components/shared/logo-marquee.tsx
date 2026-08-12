@@ -1,6 +1,4 @@
-"use client"
-
-import { useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
 import { LogoItem } from "@/components/shared/logo-item"
 
 const logos = [
@@ -39,76 +37,32 @@ function splitIntoRows<T>(items: T[], cols: number): T[][] {
   return rows
 }
 
-function MarqueeRow({ logos: row, reverse }: { logos: typeof logos; reverse: boolean }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const pausedRef = useRef(false)
-
-  useEffect(() => {
-    let x = 0
-    let initialized = false
-
-    function animate() {
-      const el = trackRef.current
-      if (!el) return
-      if (!pausedRef.current) {
-        const speed = window.innerWidth < 768 ? 0.5 : 0.4
-        const trackWidth = el.scrollWidth / 2
-
-        if (!initialized) {
-          if (reverse) x = -trackWidth
-          initialized = true
-        }
-
-        x += reverse ? speed : -speed
-        if (reverse ? x >= 0 : Math.abs(x) >= trackWidth) {
-          x += reverse ? -trackWidth : trackWidth
-        }
-        el.style.transform = `translateX(${x}px)`
-      }
-      requestAnimationFrame(animate)
-    }
-
-    const frame = requestAnimationFrame(animate)
-
-    const el = trackRef.current
-    if (!el) return
-
-    const onEnter = () => { pausedRef.current = true }
-    const onLeave = () => { pausedRef.current = false }
-    el.addEventListener("mouseenter", onEnter)
-    el.addEventListener("mouseleave", onLeave)
-    el.addEventListener("touchstart", onEnter, { passive: true })
-    el.addEventListener("touchend", onLeave, { passive: true })
-
-    return () => {
-      cancelAnimationFrame(frame)
-      el.removeEventListener("mouseenter", onEnter)
-      el.removeEventListener("mouseleave", onLeave)
-      el.removeEventListener("touchstart", onEnter)
-      el.removeEventListener("touchend", onLeave)
-    }
-  }, [reverse])
-
+/**
+ * Pure CSS marquee row — no JS, no requestAnimationFrame, no layout reads.
+ * The track holds two identical halves; animating translateX from 0 to -50%
+ * (or the reverse) loops seamlessly. Each half ends with `pr-*` equal to its
+ * `gap-*`, so spacing stays uniform across the wrap point too.
+ */
+function MarqueeRow({ row, reverse }: { row: typeof logos; reverse: boolean }) {
   return (
-    <div className="relative flex overflow-x-hidden">
+    <div className="marquee-row relative overflow-x-hidden">
       <div
-        ref={trackRef}
-        className="marquee-track flex will-change-transform"
+        className={cn(
+          "marquee-track flex w-max items-center will-change-transform",
+          reverse ? "logo-track-right" : "logo-track-left"
+        )}
       >
-        <div className="flex shrink-0 items-center px-2 sm:px-4">
-          {row.map((logo, idx) => (
-            <div key={idx} className="flex shrink-0 items-center justify-center px-3 sm:px-4">
-              <LogoItem src={logo.src} alt={logo.alt} />
-            </div>
-          ))}
-        </div>
-        <div className="flex shrink-0 items-center px-2 sm:px-4">
-          {row.map((logo, idx) => (
-            <div key={`dup-${idx}`} className="flex shrink-0 items-center justify-center px-3 sm:px-4">
-              <LogoItem src={logo.src} alt={logo.alt} />
-            </div>
-          ))}
-        </div>
+        {[0, 1].map((half) => (
+          <div
+            key={half}
+            aria-hidden={half === 1}
+            className="flex shrink-0 items-center gap-5 pr-5 sm:gap-14 sm:pr-14 lg:gap-16 lg:pr-16"
+          >
+            {row.map((logo) => (
+              <LogoItem key={logo.src} src={logo.src} alt={logo.alt} />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -118,9 +72,9 @@ export function LogoMarquee() {
   const rows = splitIntoRows(logos, Math.ceil(logos.length / 2))
 
   return (
-    <div className="space-y-8 overflow-hidden">
+    <div className="space-y-6 overflow-x-hidden sm:space-y-8">
       {rows.map((row, i) => (
-        <MarqueeRow key={i} logos={row} reverse={i % 2 !== 0} />
+        <MarqueeRow key={i} row={row} reverse={i % 2 !== 0} />
       ))}
     </div>
   )

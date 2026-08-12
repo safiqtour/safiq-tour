@@ -80,7 +80,7 @@ export default async function Home() {
 
       <MuthawifTourLeaderSection />
 
-      <Section variant="muted">
+      <Section variant="muted" className="overflow-x-hidden">
         <Container>
           <div className="space-y-8">
             <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">

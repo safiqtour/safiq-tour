@@ -174,6 +174,72 @@
   to { transform: translateX(-50%); }
 }
 
+/* ---------------------------------------------------------------------------
+   "Mitra Resmi" logo marquee — pure CSS, GPU-composited via translate3d.
+   No JS per frame, so the motion stays smooth on low-end phones and never
+   resets mid-scroll while images finish loading. Each track holds two
+   identical halves, so animating between 0% and -50% loops seamlessly.
+--------------------------------------------------------------------------- */
+/* Keyframes are prefixed "logo-" so they can never collide with library
+   keyframes. The track holds two identical halves, so animating 0% → -50%
+   (or back) loops with zero visible restart — no pause, no jump. */
+@keyframes logo-scroll-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes logo-scroll-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.logo-track-left {
+  animation: logo-scroll-left 35s linear infinite;
+}
+
+.logo-track-right {
+  animation: logo-scroll-right 40s linear infinite;
+}
+
+/* Mobile: the track is longer (bigger logos), so slow the durations down to
+   keep the same calm, premium px/s pace instead of speeding up. */
+@media (max-width: 768px) {
+  .logo-track-left {
+    animation-duration: 45s;
+  }
+  .logo-track-right {
+    animation-duration: 50s;
+  }
+}
+
+/* Soft edge fade — tablet/desktop only. On mobile the mask forces the huge
+   animated layer to re-rasterize, which reads as a stutter at each loop;
+   dropping it keeps the motion perfectly fluid and lets logos fill the row. */
+@media (min-width: 768px) {
+  .marquee-row {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+}
+
+/* Pause on hover — desktop only. On mobile viewports the marquee must never
+   stop: sticky touch-hover (after the finger brushes the row) and mouse-based
+   mobile emulation both match hover media features, which would freeze the
+   loop and read as a random "pause". Scoped away with min-width: 768px. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .marquee-row:hover .logo-track-left,
+  .marquee-row:hover .logo-track-right {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-track-left,
+  .logo-track-right {
+    animation: none;
+  }
+}
+
 @media (max-width: 768px) {
   .animate-marquee {
     animation-duration: 8s;
@@ -196,6 +262,9 @@
   }
 
   .marquee-track,
+  .marquee-track *,
+  .logo-track-left,
+  .logo-track-right,
   .overflow-x-auto,
   .overflow-x-auto *,
   .overflow-x-scroll,
