@@ -277,6 +277,52 @@
   @apply text-justify;
 }
 
+/* Rich-text (HTML) articles authored in the admin CMS editor — comfortable
+   reading typography. Scoped to its own class so the markdown-rendered
+   articles (which carry per-element Tailwind classes) stay untouched. */
+.article-rich-text {
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+.article-rich-text p {
+  margin-bottom: 1rem;
+}
+.article-rich-text h2 {
+  @apply mt-10 mb-4 font-heading text-xl font-bold text-[#0B3C6D] md:text-2xl;
+}
+.article-rich-text h3 {
+  @apply mt-8 mb-4 font-heading text-lg font-bold text-[#0B3C6D];
+}
+.article-rich-text ul,
+.article-rich-text ol {
+  @apply mb-4 space-y-2 pl-5;
+  list-style: disc;
+}
+.article-rich-text ol {
+  list-style: decimal;
+}
+.article-rich-text li {
+  line-height: 1.75;
+}
+.article-rich-text strong {
+  @apply font-semibold text-[#0B3C6D];
+}
+.article-rich-text a {
+  @apply text-[#0B3C6D] underline;
+}
+.article-rich-text blockquote {
+  @apply my-4 border-l-4 border-[#C89B3C] pl-4 italic;
+}
+.article-rich-text img {
+  @apply my-6 rounded-xl;
+}
+@media (min-width: 768px) {
+  .article-rich-text {
+    font-size: 1rem;
+  }
+}
+
 @media print {
   nav, footer, .no-print {
     display: none !important;

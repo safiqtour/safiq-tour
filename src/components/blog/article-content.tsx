@@ -7,7 +7,15 @@ type ArticleContentProps = {
 }
 
 export function ArticleContent({ content }: ArticleContentProps) {
+  // Articles authored in the admin CMS rich-text editor are stored as HTML;
+  // older seeded articles are markdown. Detect once and render accordingly.
+  const isRichHtml = /<\/?(p|h[1-6]|ul|ol|li|img|strong|em|blockquote|br|figure)\b/i.test(content)
+
   const html = useMemo(() => {
+    if (isRichHtml) {
+      return content
+    }
+
     const lines = content.split("\n")
     let result = ""
     let inList = false
@@ -44,11 +52,11 @@ export function ArticleContent({ content }: ArticleContentProps) {
     if (inList) result += "</ul>\n"
 
     return result
-  }, [content])
+  }, [content, isRichHtml])
 
   return (
     <div
-      className="prose-content"
+      className={isRichHtml ? "prose-content article-rich-text" : "prose-content"}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )

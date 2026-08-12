@@ -32,6 +32,10 @@ import {
 import { cn } from "@/lib/utils"
 import { matchesPermission } from "@/providers/auth/resolvers/permission.resolver"
 
+// NOTE: Gallery, Jadwal, Testimoni, and FAQ carry `hidden: true` — they are
+// temporarily removed from the sidebar display only (features to be developed
+// later). Their routes, pages, components, and permissions remain fully
+// intact. Remove the `hidden` flag to restore a menu item.
 const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" },
   { href: "/admin/customers", label: "Customers", icon: Users, permission: "customer:read" },
@@ -56,11 +60,11 @@ const menuItems = [
   { href: "/admin/media", label: "Media Library", icon: Image, permission: "media:read" },
   { href: "/admin/packages", label: "Paket Umroh", icon: Package, permission: "package:read" },
   { href: "/admin/articles", label: "Artikel", icon: FileText, permission: "cms:read" },
-  { href: "/admin/gallery", label: "Gallery", icon: Image, permission: "media:read" },
-  { href: "/admin/schedule", label: "Jadwal", icon: Calendar, permission: "booking:read" },
+  { href: "/admin/gallery", label: "Gallery", icon: Image, permission: "media:read", hidden: true },
+  { href: "/admin/schedule", label: "Jadwal", icon: Calendar, permission: "booking:read", hidden: true },
   { href: "/admin/promo", label: "Promo", icon: Megaphone, permission: "marketing:read" },
-  { href: "/admin/testimonials", label: "Testimoni", icon: MessageSquare, permission: "cms:read" },
-  { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "cms:read" },
+  { href: "/admin/testimonials", label: "Testimoni", icon: MessageSquare, permission: "cms:read", hidden: true },
+  { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "cms:read", hidden: true },
   { href: "/admin/users", label: "Users", icon: Users, permission: "user:read" },
   { href: "/admin/settings", label: "Settings", icon: Settings, permission: "setting:read" },
 ]
@@ -128,6 +132,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, permis
 
       <nav className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide">
         {menuItems.filter((item) => {
+          if ("hidden" in item && item.hidden) return false
           if ("children" in item) {
             return item.children?.some((c) => canSee(c.permission))
           }

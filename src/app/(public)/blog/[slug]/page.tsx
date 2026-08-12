@@ -96,22 +96,22 @@ async function ArticlePage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-      <div className="relative h-[50vh] min-h-[350px] -mt-20 overflow-hidden">
-        <Image
-          src={post.frontmatter.featuredImage}
-          alt={post.frontmatter.title}
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[rgba(11,45,92,0.8)] to-[rgba(11,45,92,0.2)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,45,92,0.6)] via-transparent to-transparent" />
-      </div>
-
-      <Section className="-mt-32 relative z-10">
+      <Section>
         <Container size="md">
-          <div className="rounded-2xl bg-white p-6 shadow-xl md:p-10">
+          {/* Contained hero — never full-bleed. 16:6 on desktop, capped heights. */}
+          <div className="mx-auto max-w-[800px]">
+            <div className="relative aspect-[16/6] max-h-[220px] overflow-hidden rounded-2xl shadow-lg md:max-h-[420px]">
+              <Image
+                src={post.frontmatter.featuredImage}
+                alt={post.frontmatter.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 800px"
+              />
+            </div>
+          </div>
+          <div className="mx-auto mt-6 max-w-[800px] rounded-2xl bg-white p-6 shadow-xl md:p-10">
             <Breadcrumb
               items={[
                 { label: "Blog", href: "/blog" },
@@ -135,7 +135,7 @@ async function ArticlePage({ params }: Props) {
                 {post.frontmatter.readTime} menit baca
               </span>
             </div>
-            <h1 className="mt-4 font-heading text-2xl font-bold leading-tight text-[#0B3C6D] md:text-3xl lg:text-4xl">
+            <h1 className="mt-4 break-words font-heading text-xl font-bold leading-snug text-[#0B3C6D] line-clamp-4 md:text-2xl md:line-clamp-3 lg:text-3xl">
               {post.frontmatter.title}
             </h1>
             <div className="mt-6">
@@ -149,7 +149,7 @@ async function ArticlePage({ params }: Props) {
         <Container>
           <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
             <div>
-              <div className="mx-auto max-w-[800px] rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg md:p-10">
+              <div className="mx-auto max-w-[800px] rounded-2xl border border-[#E5E7EB] bg-white px-5 py-6 shadow-lg md:p-10">
                 <ArticleContent content={post.content} />
               </div>
               <div className="mx-auto mt-8 max-w-[800px]">
