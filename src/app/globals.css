@@ -201,6 +201,25 @@
   animation: logo-scroll-right 40s linear infinite;
 }
 
+/* ---------------------------------------------------------------------------
+   Mobile "Testimoni Jemaah" marquee. Rendered only below 768px (the desktop
+   section keeps its own JS marquee). The track holds two identical halves,
+   so animating translateX(0) to translateX(-50%) loops seamlessly: cards
+   enter from the right, drift left, and the loop restarts with no pause and
+   no visible jump. IMPORTANT: this animation must ALWAYS run on mobile -- it
+   is deliberately NOT disabled by prefers-reduced-motion (Android battery
+   saver / accessibility settings enable it and would freeze the row), and no
+   hover/touch pause is attached (sticky touch-hover reads as a random stop).
+--------------------------------------------------------------------------- */
+@keyframes testimonial-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-testimonial-scroll {
+  animation: testimonial-scroll 30s linear infinite;
+}
+
 /* Mobile: the track is longer (bigger logos), so slow the durations down to
    keep the same calm, premium px/s pace instead of speeding up. */
 @media (max-width: 768px) {
@@ -263,6 +282,8 @@
 
   .marquee-track,
   .marquee-track *,
+  .testimonial-track,
+  .testimonial-track *,
   .logo-track-left,
   .logo-track-right,
   .overflow-x-auto,
@@ -273,8 +294,19 @@
   }
 }
 
+.prose-content {
+  overflow-wrap: break-word;
+}
+
 .prose-content p {
   @apply text-justify;
+}
+
+/* Article images must stay inside the reading column and feel premium. */
+.prose-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
 }
 
 /* Rich-text (HTML) articles authored in the admin CMS editor — comfortable
@@ -315,7 +347,8 @@
   @apply my-4 border-l-4 border-[#C89B3C] pl-4 italic;
 }
 .article-rich-text img {
-  @apply my-6 rounded-xl;
+  @apply my-6 max-w-full rounded-2xl;
+  height: auto;
 }
 @media (min-width: 768px) {
   .article-rich-text {

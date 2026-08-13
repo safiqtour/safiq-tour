@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Section, SectionHeader, SectionTitle, SectionDescription } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
 
@@ -45,7 +45,7 @@ const testimonials = [
 
 function TestimonialCard({ item }: { item: typeof testimonials[number] }) {
   return (
-    <div className="flex-shrink-0 w-[85vw] sm:w-[calc(50vw-2rem)] lg:w-[calc(33.333vw-2.5rem)] max-w-md rounded-2xl border border-border/50 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/30 hover:shadow-md hover:shadow-[#D4AF37]/5">
+    <div className="w-[calc(100vw-40px)] max-w-full flex-shrink-0 rounded-xl border border-border/50 bg-white px-5 py-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/30 hover:shadow-md hover:shadow-[#D4AF37]/5 md:w-[calc(50vw-2rem)] md:max-w-md md:rounded-2xl lg:w-[calc(33.333vw-2.5rem)]">
       <div className="mb-4 flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <svg
@@ -79,15 +79,30 @@ function TestimonialCard({ item }: { item: typeof testimonials[number] }) {
 function TestimonialsSection() {
   const trackRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Track viewport so mobile renders its own continuous CSS marquee while
+  // desktop keeps the existing auto-scrolling marquee untouched.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [])
 
   useEffect(() => {
+    // This rAF marquee only runs on desktop; mobile uses its own pure-CSS
+    // marquee (.testimonial-track), so no JS animation is needed there.
+    if (isMobile) return
+
     let x = 0
 
     function animate() {
       const el = trackRef.current
       if (!el) return
       if (!pausedRef.current) {
-        const speed = window.innerWidth < 768 ? 1.5 : 0.3
+        const speed = 0.3
         x -= speed
         const trackWidth = el.scrollWidth / 2
         if (Math.abs(x) >= trackWidth) {
@@ -117,10 +132,10 @@ function TestimonialsSection() {
       el.removeEventListener("touchstart", onEnter)
       el.removeEventListener("touchend", onLeave)
     }
-  }, [])
+  }, [isMobile])
 
   return (
-    <Section variant="muted">
+    <Section variant="muted" className="overflow-x-hidden">
       <Container>
         <SectionHeader>
           <SectionTitle className="text-[#0F2D5C]">Testimoni Jemaah</SectionTitle>
@@ -134,23 +149,45 @@ function TestimonialsSection() {
         </SectionHeader>
       </Container>
 
-      <div className="overflow-hidden">
-        <div
-          ref={trackRef}
-          className="flex will-change-transform"
-        >
-          <div className="flex shrink-0 gap-6 px-4">
-            {testimonials.map((item) => (
-              <TestimonialCard key={item.name} item={item} />
-            ))}
-          </div>
-          <div className="flex shrink-0 gap-6 px-4">
-            {testimonials.map((item) => (
-              <TestimonialCard key={item.name} item={item} />
-            ))}
+      {isMobile ? (
+        // Mobile: continuous right-to-left infinite marquee. The track holds
+        // two identical halves, so the CSS animation (translateX 0% → -50%)
+        // loops seamlessly — no pause, no jump, no stacking, no horizontal
+        // scroll. Cards keep a fixed width of calc(100vw - 40px).
+        <div className="overflow-hidden">
+          <div className="testimonial-track animate-testimonial-scroll flex w-max will-change-transform">
+            <div className="flex shrink-0 gap-4 px-2">
+              {testimonials.map((item) => (
+                <TestimonialCard key={item.name} item={item} />
+              ))}
+            </div>
+            <div className="flex shrink-0 gap-4 px-2" aria-hidden="true">
+              {testimonials.map((item) => (
+                <TestimonialCard key={item.name} item={item} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        // Desktop: existing auto-scrolling marquee (unchanged).
+        <div className="overflow-hidden">
+          <div
+            ref={trackRef}
+            className="flex will-change-transform"
+          >
+            <div className="flex shrink-0 gap-6 px-4">
+              {testimonials.map((item) => (
+                <TestimonialCard key={item.name} item={item} />
+              ))}
+            </div>
+            <div className="flex shrink-0 gap-6 px-4" aria-hidden="true">
+              {testimonials.map((item) => (
+                <TestimonialCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </Section>
   )
 }

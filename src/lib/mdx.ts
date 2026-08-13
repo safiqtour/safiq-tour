@@ -1,4 +1,5 @@
 import type { BlogArticle, BlogCategory } from "./blog/types"
+import { getArticleImage } from "./blog/utils"
 import {
   getArticleBySlug,
   getAllArticleSlugs,
@@ -44,7 +45,7 @@ function toPost(article: DbArticle): BlogPost {
       author: article.author,
       category: article.category as BlogCategory,
       featured: article.featured,
-      featuredImage: article.featuredImage,
+      featuredImage: getArticleImage(article.featuredImage),
       readTime: article.readTime,
       tags: article.tags,
       keywords: article.keywords,

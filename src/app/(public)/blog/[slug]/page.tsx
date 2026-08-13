@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
+import { ArticleHero } from "@/components/blog/article-hero"
 import { Calendar, User, Clock, ChevronLeft } from "lucide-react"
 import { Section } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
@@ -96,60 +96,56 @@ async function ArticlePage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-      <Section>
-        <Container size="md">
-          {/* Contained hero — never full-bleed. 16:6 on desktop, capped heights. */}
-          <div className="mx-auto max-w-[800px]">
-            <div className="relative aspect-[16/6] max-h-[220px] overflow-hidden rounded-2xl shadow-lg md:max-h-[420px]">
-              <Image
-                src={post.frontmatter.featuredImage}
-                alt={post.frontmatter.title}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 768px) 100vw, 800px"
-              />
-            </div>
+      {/* Article hero — full-width Packages-style hero using this article's
+          featuredImage. Category badge, Featured badge, title and excerpt sit
+          over the navy-gradient overlay on the left. */}
+      <ArticleHero
+        image={post.frontmatter.featuredImage}
+        title={post.frontmatter.title}
+        category={post.frontmatter.category}
+        excerpt={post.frontmatter.description}
+        featured={post.frontmatter.featured}
+      />
+
+      {/* Article information card — overlaps the hero (packages-style -mt) and
+          holds the breadcrumb, metadata, and share buttons. Title + excerpt
+          now live inside the hero itself. */}
+      <Section className="relative z-10 -mt-12 pb-0 md:-mt-16">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm sm:p-6 md:p-8">
+          <Breadcrumb
+            items={[
+              { label: "Blog", href: "/blog" },
+              { label: post.frontmatter.title },
+            ]}
+          />
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Badge className="bg-[#C89B3C] text-white text-xs font-semibold">
+              {post.frontmatter.category}
+            </Badge>
+            <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
+              <Calendar className="size-3.5" />
+              {new Date(post.frontmatter.date).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })}
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
+              <Clock className="size-3.5" />
+              {post.frontmatter.readTime} menit baca
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
+              <User className="size-3.5" />
+              {post.frontmatter.author}
+            </span>
           </div>
-          <div className="mx-auto mt-6 max-w-[800px] rounded-2xl bg-white p-6 shadow-xl md:p-10">
-            <Breadcrumb
-              items={[
-                { label: "Blog", href: "/blog" },
-                { label: post.frontmatter.title },
-              ]}
-            />
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Badge className="bg-[#C89B3C] text-white text-xs font-semibold">
-                {post.frontmatter.category}
-              </Badge>
-              <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
-                <Calendar className="size-3.5" />
-                {new Date(post.frontmatter.date).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })}
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
-                <User className="size-3.5" />
-                {post.frontmatter.author}
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs text-[#6B7280]">
-                <Clock className="size-3.5" />
-                {post.frontmatter.readTime} menit baca
-              </span>
-            </div>
-            <h1 className="mt-4 break-words font-heading text-xl font-bold leading-snug text-[#0B3C6D] line-clamp-4 md:text-2xl md:line-clamp-3 lg:text-3xl">
-              {post.frontmatter.title}
-            </h1>
-            <div className="mt-6">
-              <SocialShare slug={post.slug} title={post.frontmatter.title} />
-            </div>
+          <div className="mt-6 border-t border-[#EEF1F4] pt-5">
+            <SocialShare slug={post.slug} title={post.frontmatter.title} />
           </div>
-        </Container>
+        </div>
       </Section>
 
-      <Section>
+      <Section className="pt-10 md:pt-14">
         <Container>
-          <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
-            <div>
-              <div className="mx-auto max-w-[800px] rounded-2xl border border-[#E5E7EB] bg-white px-5 py-6 shadow-lg md:p-10">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-12">
+            <div className="min-w-0">
+              <div className="mx-auto max-w-[800px] rounded-2xl border border-[#ECEFF2] bg-white px-5 py-7 shadow-[0_10px_36px_-16px_rgba(11,60,109,0.12)] md:p-10">
                 <ArticleContent content={post.content} />
               </div>
               <div className="mx-auto mt-8 max-w-[800px]">

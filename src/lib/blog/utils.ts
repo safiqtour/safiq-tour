@@ -1,3 +1,14 @@
+/**
+ * Fallback hero/thumbnail for articles whose `featuredImage` is empty.
+ * Uses an existing Safiq Tour asset so the UI never renders a broken image.
+ */
+export const ARTICLE_IMAGE_FALLBACK = "/images/Hero-Blog-Safiq-Tour.png"
+
+export function getArticleImage(src: string | null | undefined): string {
+  const trimmed = src?.trim()
+  return trimmed ? trimmed : ARTICLE_IMAGE_FALLBACK
+}
+
 export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("id-ID", {
     year: "numeric",

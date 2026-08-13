@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { extractHeadings, type ArticleHeading } from "@/lib/blog/headings"
 
-type TocItem = {
-  id: string
-  text: string
-  level: number
-}
+type TocItem = ArticleHeading
 
 type TableOfContentsProps = {
   content: string
@@ -17,17 +14,10 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   const [items, setItems] = useState<TocItem[]>([])
   const [activeId, setActiveId] = useState<string>("")
 
+  // Extract h2/h3 from BOTH TipTap HTML and legacy markdown so every article
+  // (CMS-created or seeded) produces a table of contents.
   useEffect(() => {
-    const headingRegex = /^(#{2,3})\s+(.+)$/gm
-    const toc: TocItem[] = []
-    let match
-    while ((match = headingRegex.exec(content)) !== null) {
-      const level = match[1].length
-      const text = match[2]
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
-      toc.push({ id, text, level })
-    }
-    setItems(toc)
+    setItems(extractHeadings(content))
   }, [content])
 
   useEffect(() => {

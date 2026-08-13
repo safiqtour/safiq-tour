@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { injectHeadingIds, isHtmlContent, slugifyHeading } from "@/lib/blog/headings"
 
 type ArticleContentProps = {
   content: string
@@ -9,11 +10,13 @@ type ArticleContentProps = {
 export function ArticleContent({ content }: ArticleContentProps) {
   // Articles authored in the admin CMS rich-text editor are stored as HTML;
   // older seeded articles are markdown. Detect once and render accordingly.
-  const isRichHtml = /<\/?(p|h[1-6]|ul|ol|li|img|strong|em|blockquote|br|figure)\b/i.test(content)
+  const isRichHtml = isHtmlContent(content)
 
   const html = useMemo(() => {
     if (isRichHtml) {
-      return content
+      // TipTap HTML headings lack id attributes — inject them so the Table of
+      // Contents anchor links work, mirroring the markdown path below.
+      return injectHeadingIds(content)
     }
 
     const lines = content.split("\n")
@@ -26,12 +29,12 @@ export function ArticleContent({ content }: ArticleContentProps) {
       if (trimmed.startsWith("### ")) {
         if (inList) { result += "</ul>\n"; inList = false }
         const text = trimmed.slice(4)
-        const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+        const id = slugifyHeading(text)
         result += `<h3 id="${id}" class="mt-8 mb-4 font-heading text-lg font-bold text-[#0B3C6D]">${escapeHtml(text)}</h3>\n`
       } else if (trimmed.startsWith("## ")) {
         if (inList) { result += "</ul>\n"; inList = false }
         const text = trimmed.slice(3)
-        const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+        const id = slugifyHeading(text)
         result += `<h2 id="${id}" class="mt-10 mb-4 font-heading text-xl font-bold text-[#0B3C6D] md:text-2xl">${escapeHtml(text)}</h2>\n`
       } else if (trimmed.startsWith("- ")) {
         if (!inList) { result += '<ul class="mb-4 space-y-2">\n'; inList = true }
@@ -45,7 +48,7 @@ export function ArticleContent({ content }: ArticleContentProps) {
       } else {
         if (inList) { result += "</ul>\n"; inList = false }
         if (trimmed) {
-          result += `<p class="mb-4 text-sm leading-relaxed text-[#4B5563] md:text-base">${parseInline(trimmed)}</p>\n`
+          result += `<p class="mb-4 text-sm leading-[1.8] text-[#4B5563] md:text-base">${parseInline(trimmed)}</p>\n`
         }
       }
     }
