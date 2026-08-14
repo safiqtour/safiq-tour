@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getPublicPackageBySlug } from "@/modules/public/packages"
+import { getWhatsAppNumber } from "@/lib/whatsapp.server"
 import { Hero } from "@/components/packages/Hero"
 import { QuickInfo } from "@/components/packages/QuickInfo"
 import { Highlights } from "@/components/packages/Highlights"
@@ -54,6 +55,7 @@ export default async function PackageDetailPage({ params }: Props) {
   if (!detail) notFound()
 
   const cat = pkg.category
+  const whatsappNumber = await getWhatsAppNumber()
 
   const hotelStarMap: Record<string, number> = {
     zamzam: 3,
@@ -78,6 +80,7 @@ export default async function PackageDetailPage({ params }: Props) {
         heroImage={detail.heroImage}
         description={detail.description}
         hotelStars={hotelStarMap[cat] || 3}
+        whatsappNumber={whatsappNumber}
       />
       <QuickInfo
         duration={pkg.duration}

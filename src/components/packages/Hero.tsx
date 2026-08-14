@@ -7,6 +7,7 @@ import Link from "next/link"
 import { formatPrice } from "@/data/packages"
 import type { Package } from "@/data/packages"
 import { normalizeImageUrl } from "@/lib/utils"
+import { buildWhatsAppUrl, buildPackageConsultationMessage } from "@/lib/whatsapp"
 
 // Formatting tags allowed in TipTap-produced HTML descriptions. Every other
 // tag — and ALL attributes — is stripped, following the project's hand-rolled
@@ -30,9 +31,10 @@ type HeroProps = {
   heroImage: string
   description: string
   hotelStars: number
+  whatsappNumber: string
 }
 
-export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
+export function Hero({ pkg, heroImage, description, hotelStars, whatsappNumber }: HeroProps) {
   // TipTap saves the description as HTML; plain-text (legacy) descriptions
   // keep the original <p> rendering below.
   const descriptionHasHtml = /<[a-z][\s\S]*?>/i.test(description)
@@ -44,6 +46,9 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
     { label: "Double", desc: "2 orang", value: pkg.doublePrice },
   ].filter((r): r is { label: string; desc: string; value: number } => typeof r.value === "number" && r.value > 0)
   const hasRoomPrices = roomPrices.length > 0
+  const consultationUrl = buildWhatsAppUrl(whatsappNumber, buildPackageConsultationMessage(pkg.title))
+  const brochureUrl = `/api/packages/${pkg.slug}/brochure`
+  const registerUrl = `/daftar/${pkg.slug}`
   return (
     <section className="relative z-10 -mt-20 flex min-h-0 md:min-h-[650px] items-start md:items-center overflow-hidden pb-24 md:pb-24 bg-[#0B2D5C]">
       <Image
@@ -122,21 +127,23 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.7 }}
               className="relative z-20 mt-8 mb-12 md:mb-0 flex flex-col md:flex-row items-center gap-4"
             >
-              <Link
-                href="#cta"
+              <a
+                href={consultationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group inline-flex w-full md:flex-1 min-h-14 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 text-xs font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25 sm:px-7 sm:text-sm"
               >
                 Konsultasi Sekarang
                 <ArrowRight className="size-3.5 sm:size-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
+              </a>
 
-              <Link
-                href="#"
+              <a
+                href={brochureUrl}
                 className="group inline-flex w-full md:flex-1 min-h-14 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 text-xs font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-[#D4AF37]/50 hover:bg-white/10 sm:px-7 sm:text-sm"
               >
                 <Download className="size-4 text-[#D4AF37]" />
                 Download Brosur
-              </Link>
+              </a>
             </motion.div>
           </motion.div>
 
@@ -210,7 +217,7 @@ export function Hero({ pkg, heroImage, description, hotelStars }: HeroProps) {
                 </div>
 
                 <Link
-                  href="#cta"
+                  href={registerUrl}
                   className="mt-4 flex h-12 md:h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#0B2D5C] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
                 >
                   Daftar Umroh

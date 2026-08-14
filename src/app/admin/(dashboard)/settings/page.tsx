@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Save } from "lucide-react"
+import { getWhatsAppSetting, saveWhatsAppSetting } from "@/actions/settings"
 
 export default function SettingsPage() {
   const [form, setForm] = useState({
     siteName: "Safiq Tour",
     logo: "/images/logo-safiq.png",
-    whatsapp: "+6281234567890",
+    whatsapp: "",
     email: "info@safiq-tour.com",
     address: "Jl. Contoh No. 123, Jakarta",
     facebook: "https://facebook.com/safiq.tour",
@@ -17,13 +18,32 @@ export default function SettingsPage() {
     tiktok: "https://tiktok.com/@safiq.tour",
     youtube: "https://youtube.com/@safiq.tour",
   })
+  const [saving, setSaving] = useState(false)
+
+  // Load the persisted WhatsApp number from BusinessSetting on mount so the
+  // field reflects the saved value after refresh/navigation.
+  useEffect(() => {
+    getWhatsAppSetting()
+      .then((value) => setForm((prev) => ({ ...prev, whatsapp: value })))
+      .catch(() => {
+        /* leave empty on failure */
+      })
+  }, [])
 
   function handleChange(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleSave() {
-    toast.success("Pengaturan berhasil disimpan")
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await saveWhatsAppSetting(form.whatsapp)
+      toast.success("Pengaturan berhasil disimpan")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan pengaturan")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -128,10 +148,11 @@ export default function SettingsPage() {
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 rounded-xl bg-[#0B3C6D] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0B3C6D]/20 transition-all hover:bg-[#0B2D52]"
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-[#0B3C6D] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0B3C6D]/20 transition-all hover:bg-[#0B2D52] disabled:opacity-60"
         >
           <Save className="size-4" />
-          Simpan Pengaturan
+          {saving ? "Menyimpan..." : "Simpan Pengaturan"}
         </button>
       </div>
     </motion.div>
