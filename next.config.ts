@@ -20,7 +20,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  transpilePackages: ["@react-pdf/renderer"],
+  serverExternalPackages: ["@react-pdf/renderer", "@react-pdf/reconciler"],
+  transpilePackages: ["@react-pdf/font", "@react-pdf/layout", "@react-pdf/pdfkit", "@react-pdf/primitives", "@react-pdf/render", "@react-pdf/stylesheet"],
 };
 
 export default nextConfig;
