@@ -42,3 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Development logs
+_dev_err.txt
+_dev_out.txt
+
+# Photoshop / design source
+*.psd
