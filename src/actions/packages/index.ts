@@ -157,6 +157,28 @@ function flightSegments(segments: Array<{
   }))
 }
 
+/**
+ * Resolve a slug that is unique across the `packages` table. `Package.slug` has
+ * a unique index, so writing a slug already owned by ANOTHER package fails with
+ * a P2002 constraint error. When `excludeId` is supplied (update flow), the
+ * record being edited is ignored so a title-only edit that keeps its slug stays
+ * idempotent; a real collision with a different package auto-suffixes the slug
+ * (e.g. zamzam-express -> zamzam-express-2 -> zamzam-express-3 -> ...).
+ */
+async function resolveUniqueSlug(base: string, excludeId?: string): Promise<string> {
+  let candidate = base
+  let n = 2
+  while (true) {
+    const existing = await db.package.findFirst({
+      where: excludeId ? { slug: candidate, id: { not: excludeId } } : { slug: candidate },
+      select: { id: true },
+    })
+    if (!existing) return candidate
+    candidate = `${base}-${n}`
+    n += 1
+  }
+}
+
 export async function createPackage(formData: FormData) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
@@ -212,6 +234,10 @@ export async function createPackage(formData: FormData) {
   }
   const parsed = createResult.data
 
+  // A duplicate title would otherwise collide on the unique slug index; resolve
+  // a unique slug before the write so two packages can share a title safely.
+  const finalSlug = await resolveUniqueSlug(parsed.slug)
+
   // Create the package (with nested relations), capture its id, then persist the
   // generated public payload so the published public page can render it.
   // Same nested-create shape as updatePackage: allow up to 15s on slow connections.
@@ -219,7 +245,7 @@ export async function createPackage(formData: FormData) {
     const pkg = await tx.package.create({
       data: {
         title: parsed.title,
-        slug: parsed.slug,
+        slug: finalSlug,
         excerpt: parsed.excerpt,
         description: parsed.description,
         category: parsed.category,
@@ -299,7 +325,7 @@ export async function createPackage(formData: FormData) {
     const publicContent = buildPublicContent({
       id: pkg.id,
       title: parsed.title,
-      slug: parsed.slug,
+      slug: finalSlug,
       category: parsed.category,
       packageCategoryName: packageCategory?.name ?? null,
       duration: parsed.duration,
@@ -336,7 +362,11 @@ export async function updatePackage(id: string, formData: FormData) {
 
   const raw: Record<string, unknown> = {
     title: formData.get("title"),
-    slug: formData.get("slug"),
+    // Slug is always re-derived from the title on update. The form's slug field
+    // can hold a stale value after a rename (it is only auto-filled on create),
+    // so trusting it verbatim would either keep an outdated slug or collide with
+    // another package's slug. resolveUniqueSlug() below then guarantees uniqueness.
+    slug: slugify(formData.get("title") as string),
     excerpt: formData.get("excerpt"),
     description: formData.get("description") ?? "",
     category: formData.get("category") ?? "REGULAR",
@@ -385,6 +415,11 @@ export async function updatePackage(id: string, formData: FormData) {
   }
   const parsed = updateResult.data
 
+  // Resolve a slug that is unique across packages, ignoring the record being
+  // edited so a title-only edit that keeps its slug stays idempotent and a real
+  // collision with another package auto-suffixes (zamzam-express-2, ...).
+  const finalSlug = await resolveUniqueSlug(parsed.slug, id)
+
   // Resolve the master category so the public payload can use PackageCategory.name
   // as its primary category source (legacy regex remains the fallback).
   const packageCategory = parsed.packageCategoryId
@@ -396,7 +431,7 @@ export async function updatePackage(id: string, formData: FormData) {
   const publicContent = buildPublicContent({
     id,
     title: parsed.title,
-    slug: parsed.slug,
+    slug: finalSlug,
     category: parsed.category,
     packageCategoryName: packageCategory?.name ?? null,
     duration: parsed.duration,
@@ -463,7 +498,7 @@ export async function updatePackage(id: string, formData: FormData) {
       where: { id },
       data: {
         title: parsed.title,
-        slug: parsed.slug,
+        slug: finalSlug,
         excerpt: parsed.excerpt,
         description: parsed.description,
         category: parsed.category,
