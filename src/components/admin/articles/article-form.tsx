@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Save, ImageIcon, X, Star } from "lucide-react"
+import { Save, ImageIcon, X, Star, Lock, Unlock } from "lucide-react"
 import { createArticle, updateArticle } from "@/actions/articles"
 import { MediaPicker } from "@/components/admin/media/media-picker"
 import { TipTapEditor } from "@/components/admin/packages/tiptap-editor"
 import { BLOG_CATEGORIES } from "@/lib/blog/types"
+import { generateArticleSlug } from "@/lib/blog/slug"
 
 export type ArticleFormInitial = {
   id: string
@@ -46,7 +47,7 @@ export function ArticleForm({ initial }: { initial?: ArticleFormInitial }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [slugTouched, setSlugTouched] = useState(isEdit)
+  const [slugLocked, setSlugLocked] = useState(true)
   const [form, setForm] = useState({
     title: initial?.title ?? "",
     slug: initial?.slug ?? "",
@@ -72,8 +73,20 @@ export function ArticleForm({ initial }: { initial?: ArticleFormInitial }) {
     setForm((prev) => ({
       ...prev,
       title: value,
-      slug: slugTouched ? prev.slug : slugifyLocal(value),
+      // A locked slug never follows the title on edit (stable URL). On create the
+      // locked slug acts as a live SEO suggestion derived from the title.
+      slug: slugLocked && !isEdit ? generateArticleSlug(value) : prev.slug,
     }))
+  }
+
+  const toggleSlugLock = () => {
+    const next = !slugLocked
+    setSlugLocked(next)
+    // When unlocking on create with no slug yet, seed it with the SEO suggestion
+    // so the admin has a starting point to edit.
+    if (next && !form.slug.trim()) {
+      set("slug", generateArticleSlug(form.title))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +100,9 @@ export function ArticleForm({ initial }: { initial?: ArticleFormInitial }) {
 
     const payload = {
       title: form.title.trim(),
-      slug: form.slug.trim() || undefined,
+      // Locked slugs are server-owned: create derives the SEO slug from the title,
+      // edit preserves the existing slug. Only an unlocked manual value is sent.
+      slug: slugLocked ? undefined : (form.slug.trim() || undefined),
       excerpt: form.excerpt.trim(),
       content: form.content,
       category: form.category,
@@ -151,16 +166,30 @@ export function ArticleForm({ initial }: { initial?: ArticleFormInitial }) {
             </div>
             <div>
               <label className={LABEL_CLASS}>Slug</label>
-              <input
-                type="text"
-                value={form.slug}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  set("slug", slugifyLocal(e.target.value))
-                }}
-                className={INPUT_CLASS}
-                placeholder="otomatis dari judul"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={form.slug}
+                  readOnly={slugLocked}
+                  onChange={(e) => set("slug", slugifyLocal(e.target.value))}
+                  className={`${INPUT_CLASS} ${slugLocked ? "bg-gray-50 text-gray-500" : ""}`}
+                  placeholder="otomatis dari judul"
+                />
+                <button
+                  type="button"
+                  onClick={toggleSlugLock}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                  title={slugLocked ? "Unlock slug untuk edit manual" : "Kunci slug"}
+                >
+                  {slugLocked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
+                  {slugLocked ? "Unlock" : "Lock"}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                {slugLocked
+                  ? "🔒 Slug terkunci — tidak berubah saat judul diubah."
+                  : "🔓 Slug terbuka — dapat diedit manual."}
+              </p>
               <p className="mt-1 text-xs text-gray-400">URL: /blog/{form.slug || "..."}</p>
             </div>
             <div>

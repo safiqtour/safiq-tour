@@ -1,8 +1,25 @@
-import slugify from "slugify"
+import { generateArticleSlug } from "@/lib/blog/slug"
 
 import { articleRepository } from "@/repositories/article.repository"
 import { logActivity } from "@/services/audit.service"
 import type { CreateArticleInput, UpdateArticleInput } from "@/validations/article.schema"
+
+/**
+ * Resolve a slug that is unique across articles (including soft-deleted rows,
+ * which still hold their unique slug). When `excludeId` is given, that record
+ * is ignored so a no-op save stays idempotent; a real collision auto-suffixes
+ * the slug (e.g. panduan-persiapan-umroh -> panduan-persiapan-umroh-2).
+ */
+async function resolveUniqueSlug(base: string, excludeId?: string): Promise<string> {
+  let candidate = base
+  let n = 2
+  while (true) {
+    const existing = await articleRepository.findBySlug(candidate)
+    if (!existing || (excludeId && existing.id === excludeId)) return candidate
+    candidate = `${base}-${n}`
+    n += 1
+  }
+}
 
 export const articleService = {
   async findAll(params: Parameters<typeof articleRepository.findAll>[0]) {
@@ -14,10 +31,10 @@ export const articleService = {
   },
 
   async create(data: CreateArticleInput) {
-    const slug = data.slug?.trim() || slugify(data.title, { lower: true, strict: true })
-
-    const existing = await articleRepository.findBySlug(slug)
-    if (existing) throw new Error(`Artikel dengan slug "${slug}" sudah ada`)
+    // Derive a short, SEO-friendly slug from the title, then guarantee uniqueness
+    // by auto-suffixing (-2, -3, ...) when another article already holds it.
+    const baseSlug = data.slug?.trim() || generateArticleSlug(data.title)
+    const slug = await resolveUniqueSlug(baseSlug)
 
     const article = await articleRepository.create({
       title: data.title,
@@ -54,15 +71,15 @@ export const articleService = {
     const existing = await articleRepository.findById(id)
     if (!existing) throw new Error("Artikel tidak ditemukan")
 
-    // Guard slug uniqueness when the client moves it to a different value.
-    if (data.slug && data.slug !== existing.slug) {
-      const taken = await articleRepository.findBySlug(data.slug)
-      if (taken && taken.id !== id) {
-        throw new Error(`Slug "${data.slug}" sudah digunakan artikel lain`)
-      }
-    }
-
     const updateData: Record<string, unknown> = { ...data }
+
+    // Only touch the slug when the client explicitly sent a different value.
+    // A locked (absent) slug leaves the existing slug untouched so renaming the
+    // title never breaks the published URL. A collision with another article is
+    // resolved by auto-suffixing instead of throwing.
+    if (data.slug && data.slug !== existing.slug) {
+      updateData.slug = await resolveUniqueSlug(data.slug, id)
+    }
     // Auto-stamp publishedAt on the first transition into PUBLISHED.
     if (
       data.status === "PUBLISHED" &&
