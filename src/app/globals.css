@@ -289,9 +289,19 @@
   .overflow-x-auto,
   .overflow-x-auto *,
   .overflow-x-scroll,
-  .overflow-x-scroll * {
+  .overflow-x-scroll *,
+  .scrollbar-hide,
+  .scrollbar-hide * {
     max-width: none;
   }
+}
+/* Hide scrollbar utility — keeps containers scrollable but keeps them clean. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 .prose-content {

@@ -18,12 +18,14 @@ type PackageFilterProps = {
   onSelect: (value: string) => void
   className?: string
   allowedCategories?: string[]
+  /** Optional pre-built filter list. When provided, supersedes the hardcoded FILTERS + allowedCategories logic. */
+  filters?: readonly { value: string; label: string }[]
 }
 
-function PackageFilter({ active, onSelect, className, allowedCategories }: PackageFilterProps) {
-  const filters = allowedCategories
+function PackageFilter({ active, onSelect, className, allowedCategories, filters }: PackageFilterProps) {
+  const resolved = filters ?? (allowedCategories
     ? FILTERS.filter((f) => f.value === "all" || allowedCategories.includes(f.value))
-    : FILTERS
+    : FILTERS)
   return (
     <div
       className={cn(
@@ -31,7 +33,7 @@ function PackageFilter({ active, onSelect, className, allowedCategories }: Packa
         className
       )}
     >
-      {filters.map((f) => (
+      {resolved.map((f) => (
         <button
           key={f.value}
           onClick={() => onSelect(f.value)}

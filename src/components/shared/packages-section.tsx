@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 import { Section, SectionHeader, SectionTitle, SectionDescription } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
@@ -26,6 +27,12 @@ type PackagesSectionProps = {
   onSearchChange?: (value: string) => void
   onSortChange?: (value: SortKey) => void
   hideFilter?: boolean
+}
+
+/** Human-friendly label for a category value (e.g. "zamzam" -> "Zamzam"). Pure, no hardcoded category list. */
+export function categoryLabel(value: string): string {
+  if (value === "all") return "Semua"
+  return value.charAt(0).toUpperCase() + value.slice(1).replace(/[-_]/g, " ")
 }
 
 function PackagesSection({
@@ -98,6 +105,21 @@ function PackagesSection({
     return result
   }, [filter, search, sort, allowedCategories, packages])
 
+  // Derive category tabs dynamically from the published packages actually present.
+  // Falls back to allowedCategories when provided (backward compat).
+  const categoryFilters = useMemo(() => {
+    const allowed = allowedCategories ? new Set(allowedCategories) : null
+    const list: { value: string; label: string }[] = [{ value: "all", label: "Semua" }]
+    const seen = new Set<string>(["all"])
+    for (const p of packages) {
+      if (seen.has(p.category)) continue
+      if (allowed && !allowed.has(p.category)) continue
+      seen.add(p.category)
+      list.push({ value: p.category, label: categoryLabel(p.category) })
+    }
+    return list
+  }, [packages, allowedCategories])
+
   return (
     <Section variant="muted">
       <Container>
@@ -113,9 +135,29 @@ function PackagesSection({
           </SectionHeader>
         )}
 
+        {/* Mobile: category tabs (horizontal scroll) */}
+        <div className="mb-4 md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
+          <div className="flex gap-2 whitespace-nowrap pb-1 min-w-0">
+            {categoryFilters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={cn(
+                  "shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200",
+                  filter === f.value
+                    ? "bg-[#D4AF37] text-white shadow-sm"
+                    : "bg-white/80 text-muted-foreground border border-border hover:bg-[#D4AF37]/10 hover:text-[#0F2D5C]"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {!hideFilter && (
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <PackageFilter active={filter} onSelect={setFilter} allowedCategories={allowedCategories} />
+          <div className="mb-8 hidden md:flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <PackageFilter active={filter} onSelect={setFilter} filters={categoryFilters} />
             <div className="flex items-center gap-3">
               <PackageSearch value={search} onChange={setSearch} className="w-64" />
               <select
@@ -132,7 +174,7 @@ function PackagesSection({
           </div>
         )}
 
-        <PackageGrid packages={filtered} maxItems={maxItems} />
+        <PackageGrid packages={filtered} maxItems={maxItems} mobileCarousel />
 
         {(showAllPackagesButton || showConsultationButton) && (
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">

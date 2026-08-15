@@ -138,7 +138,6 @@ export async function getPublicPackages(params?: {
   const rows = await db.package.findMany({
     where: { status: PUBLISHED },
     orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
-    take: 100,
   })
 
   const packages = rows

@@ -8,9 +8,11 @@ type PackageGridProps = {
   packages: Package[]
   maxItems?: number
   className?: string
+  /** When true, renders as a horizontal snap-scroll carousel (mobile). Defaults to false — desktop grid. */
+  mobileCarousel?: boolean
 }
 
-function PackageGrid({ packages, maxItems, className }: PackageGridProps) {
+function PackageGrid({ packages, maxItems, className, mobileCarousel = false }: PackageGridProps) {
   const displayed = maxItems ? packages.slice(0, maxItems) : packages
   if (packages.length === 0) {
     return (
@@ -35,22 +37,42 @@ function PackageGrid({ packages, maxItems, className }: PackageGridProps) {
   }
 
   return (
-    <div
-      className={cn(
-        "grid gap-6 sm:grid-cols-2 lg:grid-cols-3",
-        className
-      )}
-    >
-      {displayed.map((pkg, index) => (
-        <div
-          key={pkg.id}
-          className="flex animate-[fade-up_0.6s_ease-out_forwards] opacity-0"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-          <PackageCard pkg={pkg} className="flex-1" />
-        </div>
-      ))}
-    </div>
+    <>
+      {/* Mobile: horizontal snap-scroll carousel */}
+      <div
+        className={cn(
+          "flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 pb-2 md:hidden",
+          className
+        )}
+      >
+        {displayed.map((pkg) => (
+          <div
+            key={pkg.id}
+            className="snap-start shrink-0 w-[80vw] max-w-[300px]"
+          >
+            <PackageCard pkg={pkg} />
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: grid layout (unchanged) */}
+      <div
+        className={cn(
+          "hidden md:grid gap-6 sm:grid-cols-2 lg:grid-cols-3",
+          className
+        )}
+      >
+        {displayed.map((pkg, index) => (
+          <div
+            key={pkg.id}
+            className="flex animate-[fade-up_0.6s_ease-out_forwards] opacity-0"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <PackageCard pkg={pkg} className="flex-1" />
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
