@@ -138,7 +138,7 @@ function TestimonialsSection() {
     <Section variant="muted" className="overflow-x-hidden">
       <Container>
         <SectionHeader>
-          <SectionTitle className="text-[#0F2D5C]">Testimoni Jemaah</SectionTitle>
+          <SectionTitle className="text-[#0F2D5C] sm:text-3xl md:text-4xl">Testimoni Jemaah</SectionTitle>
           <SectionDescription>
             Pengalaman Nyata dari Para Jemaah Safiq Tour
           </SectionDescription>

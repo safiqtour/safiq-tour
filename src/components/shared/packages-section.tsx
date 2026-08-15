@@ -125,7 +125,7 @@ function PackagesSection({
       <Container>
         {!hideTitle && (
           <SectionHeader>
-            <SectionTitle className="text-[#0F2D5C]">
+            <SectionTitle className="text-[#0F2D5C] sm:text-3xl md:text-4xl">
               Pilih Paket Umroh Terbaik
             </SectionTitle>
             <SectionDescription>

@@ -11,20 +11,29 @@ type ArticleCardProps = {
 }
 
 function ArticleCard({ article, className }: ArticleCardProps) {
+  const hasImage = Boolean(article.image)
+
   return (
-    <Link href={`/blog/${article.slug}`} className={cn("group block", className)}>
-      <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-        {article.image && (
-          <div className="relative h-48 w-full overflow-hidden">
+    <Link href={`/blog/${article.slug}`} className={cn("group block h-full", className)}>
+      <Card
+        className={cn(
+          "flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10",
+          hasImage && "pt-0"
+        )}
+      >
+        {hasImage && (
+          <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden">
             <Image
-              src={article.image}
+              src={article.image as string}
               alt={article.title}
               fill
-              className="object-fill transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
         )}
-        <CardHeader>
+
+        <CardHeader className="gap-2">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Calendar className="size-3" />
@@ -39,12 +48,13 @@ function ArticleCard({ article, className }: ArticleCardProps) {
               {article.author}
             </span>
           </div>
-          <CardTitle className="text-base leading-snug group-hover:text-[#D4AF37]">
+          <CardTitle className="font-heading text-lg font-bold leading-snug text-[#0F2D5C] transition-colors group-hover:text-[#D4AF37] sm:text-xl">
             {article.title}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+
+        <CardContent className="grow">
+          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
             {article.excerpt}
           </p>
         </CardContent>

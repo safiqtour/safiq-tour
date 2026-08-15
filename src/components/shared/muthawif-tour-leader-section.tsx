@@ -97,11 +97,11 @@ function MuthawifTourLeaderSection() {
   return (
     <Section variant="muted">
       <Container>
-        <div className="space-y-2 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
+        <div className="space-y-2 text-left">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F2D5C] sm:text-3xl md:text-4xl">
             Muthawif / Tour Leader
           </h2>
-          <p className="text-center text-base text-muted-foreground md:text-lg">
+          <p className="text-sm text-muted-foreground sm:text-base md:text-lg">
             Didampingi oleh Muthawif dan Tour Leader yang berkompeten dan berpengalaman
           </p>
         </div>

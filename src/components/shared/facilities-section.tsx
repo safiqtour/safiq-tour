@@ -54,7 +54,7 @@ function FacilitiesSection() {
     <Section>
       <Container>
         <SectionHeader>
-          <SectionTitle className="text-[#0F2D5C]">Fasilitas Jemaah</SectionTitle>
+          <SectionTitle className="text-[#0F2D5C] sm:text-3xl md:text-4xl">Fasilitas Jemaah</SectionTitle>
           <SectionDescription>
             Semua Kebutuhan Perjalanan Ibadah Anda Telah Kami Persiapkan
           </SectionDescription>
