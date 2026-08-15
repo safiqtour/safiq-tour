@@ -20,32 +20,13 @@ export default async function Home() {
     <>
       <Hero />
 
-      <Section>
-        <Container>
-          <div className="space-y-6 leading-relaxed">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
-              Tentang Safiq Tour
-            </h2>
-            <p className="text-base text-muted-foreground md:text-lg">
-              Sejak berdiri pada tahun 2019, PT. Safiq Oto Mandiri (Safiq Tour) berkomitmen menjadi sahabat perjalanan
-              ibadah yang amanah, profesional, dan dekat dengan jamaah. Kami percaya bahwa ibadah Umroh bukan sekadar
-              perjalanan ke Tanah Suci, tetapi merupakan panggilan mulia yang harus dipersiapkan dengan pelayanan
-              terbaik dan penuh tanggung jawab.
-            </p>
-            <p className="text-base text-muted-foreground md:text-lg">
-              Sebagai Penyelenggara Perjalanan Ibadah Umroh (PPIU) resmi yang terdaftar di Kementerian Agama Republik
-              Indonesia dengan Nomor Izin PPIU: 91202132200280002, kami memberikan rasa aman dan kepastian kepada setiap
-              jamaah sejak proses pendaftaran hingga kembali ke Tanah Air.
-            </p>
-          </div>
-        </Container>
-      </Section>
+      <PackagesSection packages={allPackages} showAllPackagesButton={false} />
 
       <Section>
         <Container>
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="space-y-6 leading-relaxed">
-              <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
+              <h2 className="text-2xl font-bold tracking-tight text-[#0F2D5C] sm:text-3xl md:text-4xl">
                 Pelayanan Ramah dan Responsif
               </h2>
               <p className="text-base font-semibold text-[#D4AF37] md:text-lg">
@@ -83,7 +64,7 @@ export default async function Home() {
       <Section variant="muted" className="overflow-x-hidden">
         <Container>
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F2D5C] md:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-[#0F2D5C] sm:text-3xl md:text-4xl">
               Mitra Resmi
             </h2>
             <LogoMarquee />
@@ -91,11 +72,9 @@ export default async function Home() {
         </Container>
       </Section>
 
-      <PackagesSection packages={allPackages} showAllPackagesButton={false} />
+      <TestimonialsSection />
 
       <FacilitiesSection />
-
-      <TestimonialsSection />
 
       <BlogSection />
     </>
