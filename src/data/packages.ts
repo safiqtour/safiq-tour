@@ -18,6 +18,8 @@
   hotelMekah: string
   hotelMadinah: string
   maskapai: string
+  /** Optional first departure date (ISO "YYYY-MM-DD" or "YYYY-MM"). Card-only, display-only. */
+  departureDate?: string | null
 }
 
 export const categories = [
