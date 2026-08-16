@@ -404,3 +404,57 @@
     @apply text-justify;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Package carousel (Swiper) — premium travel style.
+   Scoped under `.package-carousel` so it never leaks into other Swiper usage.
+   Keeps every slide equal height and aligned top/bottom so the price + CTA
+   rows line up across all visible cards.
+--------------------------------------------------------------------------- */
+.package-carousel .swiper {
+  padding-bottom: 2.75rem; /* room for pagination dots below the cards */
+}
+
+/* Wrapper stretches so all slides share the same height. */
+.package-carousel .swiper-wrapper {
+  align-items: stretch;
+}
+
+/* Slides are flex containers; each card fills the slide. */
+.package-carousel .swiper-slide {
+  height: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.package-carousel .swiper-slide > .group {
+  height: 100%;
+  width: 100%;
+}
+
+/* Pagination dots — brand accent, clickable. Sits below the cards (relative)
+   with a clear gap so it never touches/overlaps the card bottom. */
+.package-carousel .swiper-pagination {
+  position: relative;
+  margin-top: 1.5rem; /* ≈24px breathing room below the last card edge */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.package-carousel .swiper-pagination-bullet {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #d4af37;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+}
+
+.package-carousel .swiper-pagination-bullet-active {
+  width: 1.5rem;
+  border-radius: 9999px;
+  background: #d4af37;
+  opacity: 1;
+}
