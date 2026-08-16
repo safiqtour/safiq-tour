@@ -8,7 +8,7 @@ import { Section, SectionHeader, SectionTitle, SectionDescription } from "@/comp
 import { Container } from "@/components/ui/container"
 import { PackageFilter } from "./package-filter"
 import { PackageSearch } from "./package-search"
-import { PackageGrid } from "./package-grid"
+import { PackageCarousel } from "./package-carousel"
 import type { Package } from "@/data/packages"
 
 type SortKey = "popular" | "price-asc" | "price-desc" | "duration"
@@ -174,7 +174,7 @@ function PackagesSection({
           </div>
         )}
 
-        <PackageGrid packages={filtered} maxItems={maxItems} mobileCarousel />
+        <PackageCarousel packages={filtered} maxItems={maxItems} />
 
         {(showAllPackagesButton || showConsultationButton) && (
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">

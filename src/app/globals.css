@@ -418,6 +418,8 @@
 /* Wrapper stretches so all slides share the same height. */
 .package-carousel .swiper-wrapper {
   align-items: stretch;
+  /* Natural, premium easing — smooth glide, no "steppy" jumps between cards. */
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* Slides are flex containers; each card fills the slide. */
