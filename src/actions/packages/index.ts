@@ -1,0 +1,703 @@
+"use server"
+
+import { db } from "@/lib/prisma/db"
+import { requirePermission } from "@/modules/business/lib/permission"
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+import { packageFormSchema } from "@/lib/packages/schema"
+import { buildPublicContent } from "@/lib/packages/public-content"
+import { slugify, wallClockToDate } from "@/lib/packages/utils"
+import type { PackageStatus } from "@/lib/packages/types"
+
+export async function getPackages(params: {
+  search?: string
+  category?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}) {
+  await requirePermission("package:read")
+
+  const { search = "", category = "", status = "", page = 1, pageSize = 10 } = params
+
+  const where: Record<string, unknown> = {}
+
+  if (search) {
+    where.OR = [
+      { title: { contains: search } },
+      { country: { contains: search } },
+      { airline: { contains: search } },
+      { city: { contains: search } },
+    ]
+  }
+
+  if (category) {
+    where.category = category
+  }
+
+  if (status) {
+    where.status = status
+  }
+
+  const [data, total] = await Promise.all([
+    db.package.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        hotels: true,
+        schedules: true,
+        facilities: true,
+        itineraries: { orderBy: { day: "asc" } },
+        galleries: { orderBy: { sortOrder: "asc" } },
+      },
+    }),
+    db.package.count({ where }),
+  ])
+
+  return {
+    data: data.map((p) => ({
+      ...p,
+      publishedAt: p.publishedAt?.toISOString() ?? null,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    })),
+    total,
+    page,
+    totalPages: Math.ceil(total / pageSize),
+  }
+}
+
+export async function getPackageById(id: string) {
+  await requirePermission("package:read")
+
+  const pkg = await db.package.findUnique({
+    where: { id },
+    include: {
+      hotels: true,
+      schedules: true,
+      facilities: true,
+      itineraries: { orderBy: { day: "asc" } },
+      galleries: { orderBy: { sortOrder: "asc" } },
+      flights: { include: { segments: { orderBy: { segmentOrder: "asc" } } } },
+    },
+  })
+
+  if (!pkg) return null
+
+  return {
+    ...pkg,
+    publishedAt: pkg.publishedAt?.toISOString() ?? null,
+    createdAt: pkg.createdAt.toISOString(),
+    updatedAt: pkg.updatedAt.toISOString(),
+  }
+}
+
+/**
+ * Fetch departure schedules for a specific package (future dates only, ascending).
+ * Used by the booking flow to populate the schedule selector after a package is chosen.
+ */
+export async function getPackageSchedules(packageId: string) {
+  await requirePermission("package:read")
+  if (!packageId) return []
+
+  const now = new Date()
+  const schedules = await db.packageSchedule.findMany({
+    where: {
+      packageId,
+      departureDate: { gt: now },
+    },
+    orderBy: { departureDate: "asc" },
+    select: {
+      id: true,
+      departureDate: true,
+      returnDate: true,
+      meetingPoint: true,
+      seat: true,
+      seatFilled: true,
+    },
+  })
+
+  return schedules.map((s) => ({
+    ...s,
+    departureDate: s.departureDate.toISOString(),
+    returnDate: s.returnDate?.toISOString() ?? null,
+  }))
+}
+
+/**
+ * Build the PackageFlightSegment rows for a flight leg from the form's segment
+ * list. Each hop of a leg maps 1:1 to a PackageFlightSegment (a direct leg has
+ * one segment; a transit leg has several). `aircraft` is UI-only and is not
+ * carried over here — the segment row has no such column.
+ */
+function flightSegments(segments: Array<{
+  airlineId?: string | null
+  flightNumber?: string
+  departureCity?: string
+  departureAirport?: string
+  arrivalCity?: string
+  arrivalAirport?: string
+  departureDateTime?: string | null
+  arrivalDateTime?: string | null
+}>) {
+  return (segments ?? []).map((s, i) => ({
+    airlineId: s.airlineId || null,
+    flightNumber: s.flightNumber ?? "",
+    departureCity: s.departureCity ?? "",
+    departureAirport: s.departureAirport ?? "",
+    arrivalCity: s.arrivalCity ?? "",
+    arrivalAirport: s.arrivalAirport ?? "",
+    departureDateTime: wallClockToDate(s.departureDateTime),
+    arrivalDateTime: wallClockToDate(s.arrivalDateTime),
+    segmentOrder: i,
+  }))
+}
+
+/**
+ * Resolve a slug that is unique across the `packages` table. `Package.slug` has
+ * a unique index, so writing a slug already owned by ANOTHER package fails with
+ * a P2002 constraint error. When `excludeId` is supplied (update flow), the
+ * record being edited is ignored so a title-only edit that keeps its slug stays
+ * idempotent; a real collision with a different package auto-suffixes the slug
+ * (e.g. zamzam-express -> zamzam-express-2 -> zamzam-express-3 -> ...).
+ */
+async function resolveUniqueSlug(base: string, excludeId?: string): Promise<string> {
+  let candidate = base
+  let n = 2
+  while (true) {
+    const existing = await db.package.findFirst({
+      where: excludeId ? { slug: candidate, id: { not: excludeId } } : { slug: candidate },
+      select: { id: true },
+    })
+    if (!existing) return candidate
+    candidate = `${base}-${n}`
+    n += 1
+  }
+}
+
+export async function createPackage(formData: FormData) {
+  await requirePermission("package:create")
+
+  const raw: Record<string, unknown> = {
+    title: formData.get("title"),
+    slug: formData.get("slug") || slugify(formData.get("title") as string),
+    excerpt: formData.get("excerpt"),
+    description: formData.get("description") ?? "",
+    category: formData.get("category") ?? "REGULAR",
+    packageCategoryId: (formData.get("packageCategoryId") as string | null) ?? null,
+    packageTypeId: (formData.get("packageTypeId") as string | null) ?? null,
+    country: formData.get("country"),
+    city: formData.get("city"),
+    duration: formData.get("duration") ? Number(formData.get("duration")) : 0,
+    price: formData.get("price") ? Number(formData.get("price")) : 0,
+    // Empty promo price must be stored as null, never 0 — the string "0" is
+    // truthy, so a truthiness check alone would wrongly persist 0.
+    promoPrice: Number(formData.get("promoPrice")) > 0 ? Number(formData.get("promoPrice")) : null,
+    // Optional room prices: raw value — the schema preprocess converts ""/null
+    // to null and rejects NaN/negatives.
+    quadPrice: formData.get("quadPrice"),
+    triplePrice: formData.get("triplePrice"),
+    doublePrice: formData.get("doublePrice"),
+    discount: formData.get("discount") ? Number(formData.get("discount")) : 0,
+    currency: formData.get("currency") ?? "IDR",
+    airline: formData.get("airline"),
+    airlineId: formData.get("airlineId"),
+
+    quota: formData.get("quota") ? Number(formData.get("quota")) : 0,
+    seatFilled: formData.get("seatFilled") ? Number(formData.get("seatFilled")) : 0,
+    status: formData.get("status") ?? "DRAFT",
+    featured: formData.get("featured") === "true",
+    badge: formData.get("badge") || null,
+    thumbnail: formData.get("thumbnail") ?? "",
+    heroImage: formData.get("heroImage") ?? "",
+    metaTitle: formData.get("metaTitle") ?? "",
+    metaDescription: formData.get("metaDescription") ?? "",
+    keywords: formData.get("keywords") ?? "",
+    hotels: formData.get("hotels") ? JSON.parse(formData.get("hotels") as string) : [],
+    schedules: formData.get("schedules") ? JSON.parse(formData.get("schedules") as string) : [],
+    facilities: formData.get("facilities") ? JSON.parse(formData.get("facilities") as string) : [],
+    itineraries: formData.get("itineraries") ? JSON.parse(formData.get("itineraries") as string) : [],
+    galleries: formData.get("galleries") ? JSON.parse(formData.get("galleries") as string) : [],
+    flights: formData.get("flights") ? JSON.parse(formData.get("flights") as string) : [],
+  }
+
+  const createResult = packageFormSchema.safeParse(raw)
+  if (!createResult.success) {
+    // Log the complete failing field paths so legacy-data incompatibilities are debuggable.
+    console.error("[createPackage] validation failed:", JSON.stringify(createResult.error.issues, null, 2))
+    throw new Error(`Validasi gagal: ${createResult.error.issues.map((i) => `${i.path.join(".") || "(form)"}: ${i.message}`).join("; ")}`)
+  }
+  const parsed = createResult.data
+
+  // A duplicate title would otherwise collide on the unique slug index; resolve
+  // a unique slug before the write so two packages can share a title safely.
+  const finalSlug = await resolveUniqueSlug(parsed.slug)
+
+  // Create the package (with nested relations), capture its id, then persist the
+  // generated public payload so the published public page can render it.
+  // Same nested-create shape as updatePackage: allow up to 15s on slow connections.
+  await db.$transaction(async (tx) => {
+    const pkg = await tx.package.create({
+      data: {
+        title: parsed.title,
+        slug: finalSlug,
+        excerpt: parsed.excerpt,
+        description: parsed.description,
+        category: parsed.category,
+        // Relation FKs use connect and are only sent when a value is selected
+        // (never sends undefined or an empty connect).
+        ...(parsed.packageCategoryId
+          ? { packageCategory: { connect: { id: parsed.packageCategoryId } } }
+          : {}),
+        ...(parsed.packageTypeId
+          ? { packageType: { connect: { id: parsed.packageTypeId } } }
+          : {}),
+        country: parsed.country,
+        city: parsed.city,
+        duration: parsed.duration,
+        price: parsed.price,
+        promoPrice: parsed.promoPrice,
+        quadPrice: parsed.quadPrice ?? null,
+        triplePrice: parsed.triplePrice ?? null,
+        doublePrice: parsed.doublePrice ?? null,
+        discount: parsed.discount,
+        currency: parsed.currency,
+        airline: parsed.airline,
+        ...(parsed.airlineId
+          ? { masterAirline: { connect: { id: parsed.airlineId } } }
+          : {}),
+
+        quota: parsed.quota,
+        seatFilled: parsed.seatFilled,
+        status: parsed.status,
+        featured: parsed.featured,
+        badge: parsed.badge,
+        thumbnail: parsed.thumbnail,
+        heroImage: parsed.heroImage,
+        metaTitle: parsed.metaTitle,
+        metaDescription: parsed.metaDescription,
+        keywords: parsed.keywords,
+        publishedAt: parsed.status === "PUBLISHED" ? new Date() : null,
+        hotels: {
+          create: parsed.hotels,
+        },
+        schedules: {
+          create: parsed.schedules.map((s) => ({
+            departureDate: new Date(s.departureDate),
+            returnDate: s.returnDate ? new Date(s.returnDate) : null,
+            meetingPoint: s.meetingPoint,
+            seat: s.seat,
+            seatFilled: s.seatFilled,
+          })),
+        },
+        facilities: {
+          create: parsed.facilities,
+        },
+        itineraries: {
+          create: parsed.itineraries,
+        },
+        galleries: {
+          create: parsed.galleries,
+        },
+        flights: {
+          create: parsed.flights.map((f) => ({
+            // Direction grouping: the leg home is RETURN; every other leg
+            // (outbound, transit, side trips) belongs to the DEPARTURE group.
+            direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
+            label: f.label,
+            segments: {
+              create: flightSegments(f.segments ?? []),
+            },
+          })),
+        },
+      },
+    })
+
+    const packageCategory = parsed.packageCategoryId
+      ? await tx.packageCategory.findUnique({ where: { id: parsed.packageCategoryId } })
+      : null
+
+    const publicContent = buildPublicContent({
+      id: pkg.id,
+      title: parsed.title,
+      slug: finalSlug,
+      category: parsed.category,
+      packageCategoryName: packageCategory?.name ?? null,
+      duration: parsed.duration,
+      price: parsed.price,
+      quadPrice: parsed.quadPrice,
+      triplePrice: parsed.triplePrice,
+      doublePrice: parsed.doublePrice,
+      description: parsed.description,
+      excerpt: parsed.excerpt,
+      airline: parsed.airline,
+      featured: parsed.featured,
+      badge: parsed.badge,
+      thumbnail: parsed.thumbnail,
+      heroImage: parsed.heroImage,
+      keywords: parsed.keywords,
+      facilities: parsed.facilities,
+      hotels: parsed.hotels,
+      schedules: parsed.schedules,
+      itineraries: parsed.itineraries,
+      galleries: parsed.galleries,
+    })
+
+    await tx.package.update({ where: { id: pkg.id }, data: { publicContent: JSON.parse(JSON.stringify(publicContent)) } })
+  }, { timeout: 15000 })
+
+
+  revalidatePath("/admin/packages")
+  redirect("/admin/packages")
+}
+
+export async function updatePackage(id: string, formData: FormData) {
+  await requirePermission("package:update")
+
+  const raw: Record<string, unknown> = {
+    title: formData.get("title"),
+    // Slug is always re-derived from the title on update. The form's slug field
+    // can hold a stale value after a rename (it is only auto-filled on create),
+    // so trusting it verbatim would either keep an outdated slug or collide with
+    // another package's slug. resolveUniqueSlug() below then guarantees uniqueness.
+    slug: slugify(formData.get("title") as string),
+    excerpt: formData.get("excerpt"),
+    description: formData.get("description") ?? "",
+    category: formData.get("category") ?? "REGULAR",
+    packageCategoryId: (formData.get("packageCategoryId") as string | null) ?? null,
+    packageTypeId: (formData.get("packageTypeId") as string | null) ?? null,
+    country: formData.get("country"),
+    city: formData.get("city"),
+    duration: formData.get("duration") ? Number(formData.get("duration")) : 0,
+    price: formData.get("price") ? Number(formData.get("price")) : 0,
+    // Empty promo price must be stored as null, never 0 — the string "0" is
+    // truthy, so a truthiness check alone would wrongly persist 0.
+    promoPrice: Number(formData.get("promoPrice")) > 0 ? Number(formData.get("promoPrice")) : null,
+    // Optional room prices: raw value — the schema preprocess converts ""/null
+    // to null and rejects NaN/negatives.
+    quadPrice: formData.get("quadPrice"),
+    triplePrice: formData.get("triplePrice"),
+    doublePrice: formData.get("doublePrice"),
+    discount: formData.get("discount") ? Number(formData.get("discount")) : 0,
+    currency: formData.get("currency") ?? "IDR",
+    airline: formData.get("airline"),
+    airlineId: formData.get("airlineId"),
+
+    quota: formData.get("quota") ? Number(formData.get("quota")) : 0,
+    seatFilled: formData.get("seatFilled") ? Number(formData.get("seatFilled")) : 0,
+    status: formData.get("status") ?? "DRAFT",
+    featured: formData.get("featured") === "true",
+    badge: formData.get("badge") || null,
+    thumbnail: formData.get("thumbnail") ?? "",
+    heroImage: formData.get("heroImage") ?? "",
+    metaTitle: formData.get("metaTitle") ?? "",
+    metaDescription: formData.get("metaDescription") ?? "",
+    keywords: formData.get("keywords") ?? "",
+    hotels: formData.get("hotels") ? JSON.parse(formData.get("hotels") as string) : [],
+    schedules: formData.get("schedules") ? JSON.parse(formData.get("schedules") as string) : [],
+    facilities: formData.get("facilities") ? JSON.parse(formData.get("facilities") as string) : [],
+    itineraries: formData.get("itineraries") ? JSON.parse(formData.get("itineraries") as string) : [],
+    galleries: formData.get("galleries") ? JSON.parse(formData.get("galleries") as string) : [],
+    flights: formData.get("flights") ? JSON.parse(formData.get("flights") as string) : [],
+  }
+
+  const updateResult = packageFormSchema.safeParse(raw)
+  if (!updateResult.success) {
+    // Log the complete failing field paths so legacy-data incompatibilities are debuggable.
+    console.error(`[updatePackage] validation failed for id=${id}:`, JSON.stringify(updateResult.error.issues, null, 2))
+    throw new Error(`Validasi gagal: ${updateResult.error.issues.map((i) => `${i.path.join(".") || "(form)"}: ${i.message}`).join("; ")}`)
+  }
+  const parsed = updateResult.data
+
+  // Resolve a slug that is unique across packages, ignoring the record being
+  // edited so a title-only edit that keeps its slug stays idempotent and a real
+  // collision with another package auto-suffixes (zamzam-express-2, ...).
+  const finalSlug = await resolveUniqueSlug(parsed.slug, id)
+
+  // Resolve the master category so the public payload can use PackageCategory.name
+  // as its primary category source (legacy regex remains the fallback).
+  const packageCategory = parsed.packageCategoryId
+    ? await db.packageCategory.findUnique({ where: { id: parsed.packageCategoryId } })
+    : null
+
+  // Regenerate the public payload from the submitted form data so the published
+  // public page reflects the latest CMS content.
+  const publicContent = buildPublicContent({
+    id,
+    title: parsed.title,
+    slug: finalSlug,
+    category: parsed.category,
+    packageCategoryName: packageCategory?.name ?? null,
+    duration: parsed.duration,
+    price: parsed.price,
+    quadPrice: parsed.quadPrice,
+    triplePrice: parsed.triplePrice,
+    doublePrice: parsed.doublePrice,
+    description: parsed.description,
+    excerpt: parsed.excerpt,
+    airline: parsed.airline,
+    featured: parsed.featured,
+    badge: parsed.badge,
+    thumbnail: parsed.thumbnail,
+    heroImage: parsed.heroImage,
+    keywords: parsed.keywords,
+    facilities: parsed.facilities,
+    hotels: parsed.hotels,
+    schedules: parsed.schedules,
+    itineraries: parsed.itineraries,
+    galleries: parsed.galleries,
+  })
+
+  // Read-only booking lookups run OUTSIDE the transaction: an interactive
+  // transaction has a limited time budget, and these round-trips don't need it.
+  // PackageSchedule is referenced by Booking (onDelete: Restrict), so a schedule
+  // already used by a booking cannot be deleted. Preserve those rows (and their
+  // seat-lifecycle counters) and only recreate the rest.
+  const existingSchedules = await db.packageSchedule.findMany({
+    where: { packageId: id },
+    select: { id: true, departureDate: true },
+  })
+  const bookedRows = await db.booking.findMany({
+    where: { scheduleId: { in: existingSchedules.map((s) => s.id) } },
+    select: { scheduleId: true },
+    distinct: ["scheduleId"],
+  })
+  const bookedIds = new Set(bookedRows.map((b) => b.scheduleId))
+  const lockedDates = new Set(
+    existingSchedules
+      .filter((s) => bookedIds.has(s.id))
+      .map((s) => s.departureDate.toISOString())
+  )
+
+  // All writes stay atomic in a single transaction; allow up to 15s for the
+  // delete + nested recreate of every package relation on slow connections.
+  await db.$transaction(async (tx) => {
+    await tx.packageHotel.deleteMany({ where: { packageId: id } })
+    await tx.packageSchedule.deleteMany({
+      where: { packageId: id, id: { notIn: [...bookedIds] } },
+    })
+    await tx.packageFacility.deleteMany({ where: { packageId: id } })
+    await tx.packageItinerary.deleteMany({ where: { packageId: id } })
+    await tx.packageGallery.deleteMany({ where: { packageId: id } })
+    // Flight segments are removed by the package_flights FK ON DELETE CASCADE.
+    await tx.packageFlight.deleteMany({ where: { packageId: id } })
+
+    // Keep locked schedules untouched and only create new ones (avoid duplicating
+    // the departure dates of schedules that had to be preserved).
+    const schedulesToCreate = parsed.schedules.filter(
+      (s) => !lockedDates.has(new Date(s.departureDate).toISOString())
+    )
+
+    await tx.package.update({
+      where: { id },
+      data: {
+        title: parsed.title,
+        slug: finalSlug,
+        excerpt: parsed.excerpt,
+        description: parsed.description,
+        category: parsed.category,
+        // Relation FK updates use connect/disconnect — an empty value explicitly
+        // disconnects the optional relation (never sends undefined).
+        packageCategory: parsed.packageCategoryId
+          ? { connect: { id: parsed.packageCategoryId } }
+          : { disconnect: true },
+        packageType: parsed.packageTypeId
+          ? { connect: { id: parsed.packageTypeId } }
+          : { disconnect: true },
+        country: parsed.country,
+        city: parsed.city,
+        duration: parsed.duration,
+        price: parsed.price,
+        promoPrice: parsed.promoPrice,
+        quadPrice: parsed.quadPrice ?? null,
+        triplePrice: parsed.triplePrice ?? null,
+        doublePrice: parsed.doublePrice ?? null,
+        discount: parsed.discount,
+        currency: parsed.currency,
+        airline: parsed.airline,
+        masterAirline: parsed.airlineId
+          ? { connect: { id: parsed.airlineId } }
+          : { disconnect: true },
+
+        quota: parsed.quota,
+        seatFilled: parsed.seatFilled,
+        status: parsed.status,
+        featured: parsed.featured,
+        badge: parsed.badge,
+        thumbnail: parsed.thumbnail,
+        heroImage: parsed.heroImage,
+        metaTitle: parsed.metaTitle,
+        metaDescription: parsed.metaDescription,
+        keywords: parsed.keywords,
+        publishedAt: parsed.status === "PUBLISHED" ? new Date() : null,
+        publicContent: JSON.parse(JSON.stringify(publicContent)),
+
+        hotels: {
+          create: parsed.hotels,
+        },
+        schedules: {
+          create: schedulesToCreate.map((s) => ({
+            departureDate: new Date(s.departureDate),
+            returnDate: s.returnDate ? new Date(s.returnDate) : null,
+            meetingPoint: s.meetingPoint,
+            seat: s.seat,
+            seatFilled: s.seatFilled,
+          })),
+        },
+        facilities: {
+          create: parsed.facilities,
+        },
+        itineraries: {
+          create: parsed.itineraries,
+        },
+        galleries: {
+          create: parsed.galleries,
+        },
+        flights: {
+          create: parsed.flights.map((f) => ({
+            // Direction grouping: the leg home is RETURN; every other leg
+            // (outbound, transit, side trips) belongs to the DEPARTURE group.
+            direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
+            label: f.label,
+            segments: {
+              create: flightSegments(f.segments ?? []),
+            },
+          })),
+        },
+      },
+    })
+  }, { timeout: 15000 })
+
+  revalidatePath("/admin/packages")
+  redirect("/admin/packages")
+}
+
+export async function deletePackage(id: string) {
+  await requirePermission("package:delete")
+
+  // Booking.packageId uses onDelete: Restrict, so deleting a package that still
+  // has bookings violates the FK (500). Fail fast with a clear message instead.
+  const bookingCount = await db.booking.count({ where: { packageId: id } })
+  if (bookingCount > 0) {
+    console.error(`[deletePackage] blocked: package ${id} still has ${bookingCount} booking(s)`)
+    throw new Error(`Paket tidak bisa dihapus karena masih memiliki ${bookingCount} booking. Hapus booking terlebih dahulu.`)
+  }
+
+  try {
+    // Child rows (hotels, schedules, facilities, itineraries, galleries, flights
+    // + segments) are all ON DELETE CASCADE, so a single delete is sufficient.
+    // deleteMany is idempotent: a duplicate request (double click) or an
+    // already-deleted row yields count=0 instead of throwing P2025.
+    const { count } = await db.package.deleteMany({ where: { id } })
+    if (count === 0) {
+      console.warn(`[deletePackage] id=${id} matched no record (already deleted?) — treating as no-op success`)
+    }
+    revalidatePath("/admin/packages")
+  } catch (error) {
+    // Debug logging: surface the real cause (missing id, FK, connection, ...).
+    console.error(`[deletePackage] failed for id=${id}:`, error)
+    throw error instanceof Error ? error : new Error("Gagal menghapus paket")
+  }
+}
+
+export async function duplicatePackage(id: string) {
+  await requirePermission("package:create")
+
+  const original = await db.package.findUnique({
+    where: { id },
+    include: {
+      hotels: true,
+      schedules: true,
+      facilities: true,
+      itineraries: true,
+      galleries: true,
+      flights: { include: { segments: true } },
+    },
+  })
+
+  if (!original) throw new Error("Package not found")
+
+  const newSlug = `${original.slug}-copy`
+  const newTitle = `${original.title} (Copy)`
+
+  await db.package.create({
+    data: {
+      title: newTitle,
+      slug: newSlug,
+      excerpt: original.excerpt,
+      description: original.description,
+      category: original.category,
+      country: original.country,
+      city: original.city,
+      duration: original.duration,
+      price: original.price,
+      promoPrice: original.promoPrice,
+      discount: original.discount,
+      currency: original.currency,
+      airline: original.airline,
+      airlineId: original.airlineId,
+
+      quota: original.quota,
+      seatFilled: 0,
+      status: "DRAFT",
+      featured: false,
+      badge: null,
+      thumbnail: original.thumbnail,
+      heroImage: original.heroImage,
+      metaTitle: original.metaTitle,
+      metaDescription: original.metaDescription,
+      keywords: original.keywords,
+      packageCategoryId: original.packageCategoryId,
+      packageTypeId: original.packageTypeId,
+      hotels: { create: original.hotels.map((h) => ({ type: h.type, name: h.name, stars: h.stars, distance: h.distance, mapsUrl: h.mapsUrl, image: h.image })) },
+      schedules: { create: original.schedules.map((s) => ({ departureDate: s.departureDate, returnDate: s.returnDate, meetingPoint: s.meetingPoint, seat: s.seat, seatFilled: 0 })) },
+      facilities: { create: original.facilities.map((f) => ({ name: f.name, icon: f.icon })) },
+      itineraries: { create: original.itineraries.map((i) => ({ day: i.day, title: i.title, description: i.description, image: i.image })) },
+      galleries: { create: original.galleries.map((g) => ({ url: g.url, alt: g.alt, sortOrder: g.sortOrder })) },
+      flights: {
+        create: original.flights.map((f) => ({
+          direction: f.direction,
+          label: f.label,
+          segments: {
+            create: f.segments.map((s) => ({
+              airlineId: s.airlineId,
+              flightNumber: s.flightNumber,
+              departureCity: s.departureCity,
+              departureAirport: s.departureAirport,
+              arrivalCity: s.arrivalCity,
+              arrivalAirport: s.arrivalAirport,
+              departureDateTime: s.departureDateTime,
+              arrivalDateTime: s.arrivalDateTime,
+              segmentOrder: s.segmentOrder,
+            })),
+          },
+        })),
+      },
+    },
+  })
+
+  revalidatePath("/admin/packages")
+}
+
+export async function updatePackageStatus(id: string, status: PackageStatus) {
+  await requirePermission("package:update")
+
+  await db.package.update({
+    where: { id },
+    data: {
+      status,
+      publishedAt: status === "PUBLISHED" ? new Date() : null,
+    },
+  })
+
+  revalidatePath("/admin/packages")
+}
+
+export async function toggleFeatured(id: string, featured: boolean) {
+  await requirePermission("package:update")
+
+  await db.package.update({ where: { id }, data: { featured } })
+  revalidatePath("/admin/packages")
+}

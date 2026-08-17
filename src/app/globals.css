@@ -1,0 +1,462 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-cinzel);
+  --font-cinzel: var(--font-cinzel);
+  --font-playfair: var(--font-playfair);
+  --font-inter: var(--font-inter);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --container-max: 1280px;
+  --container-wide: 1440px;
+  --spacing-section: 3rem;
+  --spacing-section-sm: 1.5rem;
+  --animate-marquee: marquee 50s linear infinite;
+  --animate-marquee-testimonial: marquee-testimonial 40s linear infinite;
+}
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #0B3C6D;
+  --card: #FFFFFF;
+  --card-foreground: #0B3C6D;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B3C6D;
+  --primary: #0B3C6D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #C89B3C;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #6B7280;
+  --accent: #C89B3C;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #C89B3C;
+  --chart-1: #0B3C6D;
+  --chart-2: #C89B3C;
+  --chart-3: #059669;
+  --chart-4: #7C3AED;
+  --chart-5: #DC2626;
+  --radius: 0.625rem;
+  --sidebar: #0B3C6D;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #C89B3C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(255,255,255,0.1);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-ring: #C89B3C;
+  --brand-50: #EFF6FF;
+  --brand-100: #DBEAFE;
+  --brand-200: #BFDBFE;
+  --brand-300: #93C5FD;
+  --brand-400: #60A5FA;
+  --brand-500: #3B82F6;
+  --brand-600: #2563EB;
+  --brand-700: #1D4ED8;
+  --brand-800: #1E40AF;
+  --brand-900: #1E3A5F;
+  --brand-950: #0B3C6D;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.65 0.12 160);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.3 0.06 160);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.65 0.12 160);
+  --chart-1: oklch(0.65 0.12 160);
+  --chart-2: oklch(0.6 0.10 175);
+  --chart-3: oklch(0.55 0.08 190);
+  --chart-4: oklch(0.7 0.15 150);
+  --chart-5: oklch(0.75 0.18 140);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.12 160);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.3 0.06 160);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.65 0.12 160);
+  --brand-50: oklch(0.15 0.05 160);
+  --brand-100: oklch(0.23 0.08 160);
+  --brand-200: oklch(0.31 0.10 160);
+  --brand-300: oklch(0.39 0.12 160);
+  --brand-400: oklch(0.47 0.14 160);
+  --brand-500: oklch(0.55 0.15 160);
+  --brand-600: oklch(0.65 0.12 160);
+  --brand-700: oklch(0.76 0.09 160);
+  --brand-800: oklch(0.85 0.06 160);
+  --brand-900: oklch(0.92 0.04 160);
+  --brand-950: oklch(0.97 0.02 160);
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ---------------------------------------------------------------------------
+   "Mitra Resmi" logo marquee — pure CSS, GPU-composited via translate3d.
+   No JS per frame, so the motion stays smooth on low-end phones and never
+   resets mid-scroll while images finish loading. Each track holds two
+   identical halves, so animating between 0% and -50% loops seamlessly.
+--------------------------------------------------------------------------- */
+/* Keyframes are prefixed "logo-" so they can never collide with library
+   keyframes. The track holds two identical halves, so animating 0% → -50%
+   (or back) loops with zero visible restart — no pause, no jump. */
+@keyframes logo-scroll-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes logo-scroll-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.logo-track-left {
+  animation: logo-scroll-left 35s linear infinite;
+}
+
+.logo-track-right {
+  animation: logo-scroll-right 40s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile "Testimoni Jemaah" marquee. Rendered only below 768px (the desktop
+   section keeps its own JS marquee). The track holds two identical halves,
+   so animating translateX(0) to translateX(-50%) loops seamlessly: cards
+   enter from the right, drift left, and the loop restarts with no pause and
+   no visible jump. IMPORTANT: this animation must ALWAYS run on mobile -- it
+   is deliberately NOT disabled by prefers-reduced-motion (Android battery
+   saver / accessibility settings enable it and would freeze the row), and no
+   hover/touch pause is attached (sticky touch-hover reads as a random stop).
+--------------------------------------------------------------------------- */
+@keyframes testimonial-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-testimonial-scroll {
+  animation: testimonial-scroll 30s linear infinite;
+}
+
+/* Mobile: the track is longer (bigger logos), so slow the durations down to
+   keep the same calm, premium px/s pace instead of speeding up. */
+@media (max-width: 768px) {
+  .logo-track-left {
+    animation-duration: 45s;
+  }
+  .logo-track-right {
+    animation-duration: 50s;
+  }
+}
+
+/* Soft edge fade — tablet/desktop only. On mobile the mask forces the huge
+   animated layer to re-rasterize, which reads as a stutter at each loop;
+   dropping it keeps the motion perfectly fluid and lets logos fill the row. */
+@media (min-width: 768px) {
+  .marquee-row {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+}
+
+/* Pause on hover — desktop only. On mobile viewports the marquee must never
+   stop: sticky touch-hover (after the finger brushes the row) and mouse-based
+   mobile emulation both match hover media features, which would freeze the
+   loop and read as a random "pause". Scoped away with min-width: 768px. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .marquee-row:hover .logo-track-left,
+  .marquee-row:hover .logo-track-right {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-track-left,
+  .logo-track-right {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation-duration: 8s;
+  }
+}
+
+/* Mobile: the page may only scroll vertically — nothing may exceed the
+   viewport width. Elements that intentionally scroll horizontally inside
+   their own container (carousels, admin tables, marquee track) are exempted
+   below so their inner scrolling keeps working. */
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  * {
+    max-width: 100%;
+  }
+
+  .marquee-track,
+  .marquee-track *,
+  .testimonial-track,
+  .testimonial-track *,
+  .logo-track-left,
+  .logo-track-right,
+  .overflow-x-auto,
+  .overflow-x-auto *,
+  .overflow-x-scroll,
+  .overflow-x-scroll *,
+  .scrollbar-hide,
+  .scrollbar-hide * {
+    max-width: none;
+  }
+}
+/* Hide scrollbar utility — keeps containers scrollable but keeps them clean. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.prose-content {
+  overflow-wrap: break-word;
+}
+
+.prose-content p {
+  @apply text-justify;
+}
+
+/* Article images must stay inside the reading column and feel premium. */
+.prose-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+}
+
+/* Rich-text (HTML) articles authored in the admin CMS editor — comfortable
+   reading typography. Scoped to its own class so the markdown-rendered
+   articles (which carry per-element Tailwind classes) stay untouched. */
+.article-rich-text {
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+.article-rich-text p {
+  margin-bottom: 1rem;
+}
+.article-rich-text h2 {
+  @apply mt-10 mb-4 font-heading text-xl font-bold text-[#0B3C6D] md:text-2xl;
+}
+.article-rich-text h3 {
+  @apply mt-8 mb-4 font-heading text-lg font-bold text-[#0B3C6D];
+}
+.article-rich-text ul,
+.article-rich-text ol {
+  @apply mb-4 space-y-2 pl-5;
+  list-style: disc;
+}
+.article-rich-text ol {
+  list-style: decimal;
+}
+.article-rich-text li {
+  line-height: 1.75;
+}
+.article-rich-text strong {
+  @apply font-semibold text-[#0B3C6D];
+}
+.article-rich-text a {
+  @apply text-[#0B3C6D] underline;
+}
+.article-rich-text blockquote {
+  @apply my-4 border-l-4 border-[#C89B3C] pl-4 italic;
+}
+.article-rich-text img {
+  @apply my-6 max-w-full rounded-2xl;
+  height: auto;
+}
+@media (min-width: 768px) {
+  .article-rich-text {
+    font-size: 1rem;
+  }
+}
+
+@media print {
+  nav, footer, .no-print {
+    display: none !important;
+  }
+  .prose-content {
+    font-size: 12pt;
+    line-height: 1.8;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-balance;
+  }
+  p {
+    @apply text-justify;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Package carousel (Swiper) — premium travel style.
+   Scoped under `.package-carousel` so it never leaks into other Swiper usage.
+   Keeps every slide equal height and aligned top/bottom so the price + CTA
+   rows line up across all visible cards.
+--------------------------------------------------------------------------- */
+.package-carousel .swiper {
+  padding-bottom: 2.75rem; /* room for pagination dots below the cards */
+}
+
+/* Wrapper stretches so all slides share the same height. */
+.package-carousel .swiper-wrapper {
+  align-items: stretch;
+  /* Natural, premium easing — smooth glide, no "steppy" jumps between cards. */
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Slides are flex containers; each card fills the slide. */
+.package-carousel .swiper-slide {
+  height: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.package-carousel .swiper-slide > .group {
+  height: 100%;
+  width: 100%;
+}
+
+/* Pagination dots — brand accent, clickable. Sits below the cards (relative)
+   with a clear gap so it never touches/overlaps the card bottom. */
+.package-carousel .swiper-pagination {
+  position: relative;
+  margin-top: 1.5rem; /* ≈24px breathing room below the last card edge */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.package-carousel .swiper-pagination-bullet {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #d4af37;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+}
+
+.package-carousel .swiper-pagination-bullet-active {
+  width: 1.5rem;
+  border-radius: 9999px;
+  background: #d4af37;
+  opacity: 1;
+}
