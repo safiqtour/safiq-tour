@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { db } from "@/lib/prisma/db"
 import type { Package } from "@/data/packages"
 import type { PackageDetail } from "@/data/packages-detail"
@@ -131,10 +132,10 @@ function parseContent(raw: unknown): { card: Package; detail: PackageDetail | nu
   return { card: content.card, detail: content.detail ?? null }
 }
 
-export async function getPublicPackages(params?: {
+export const getPublicPackages = cache(async (params?: {
   category?: string
   featuredOnly?: boolean
-}): Promise<Package[]> {
+}): Promise<Package[]> => {
   const rows = await db.package.findMany({
     where: { status: PUBLISHED },
     orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
@@ -151,9 +152,9 @@ export async function getPublicPackages(params?: {
     return packages.filter((p) => p.featured)
   }
   return packages
-}
+})
 
-export async function getPublicPackageBySlug(slug: string): Promise<PublicPackage | null> {
+export const getPublicPackageBySlug = cache(async (slug: string): Promise<PublicPackage | null> => {
   const row = await db.package.findUnique({
     where: { slug },
     include: {
@@ -217,7 +218,7 @@ export async function getPublicPackageBySlug(slug: string): Promise<PublicPackag
     })
 
   return { ...parsed, flights }
-}
+})
 
 export async function getAllPackageSlugs(): Promise<string[]> {
   const rows = await db.package.findMany({

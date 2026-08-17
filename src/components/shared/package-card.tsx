@@ -120,6 +120,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
             alt={pkg.title}
             width={800}
             height={500}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="aspect-[16/10] w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         </div>
