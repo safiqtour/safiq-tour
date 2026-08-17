@@ -132,6 +132,91 @@ function parseContent(raw: unknown): { card: Package; detail: PackageDetail | nu
   return { card: content.card, detail: content.detail ?? null }
 }
 
+const PUBLIC_CATEGORY_BY_NAME: Record<string, Package["category"]> = {
+  zamzam: "zamzam",
+  thaibah: "thaibah",
+  rawdah: "rawdah",
+  firdaus: "firdaus",
+  ramadhan: "ramadhan",
+  arbain: "arbain",
+  private: "private",
+}
+
+function mapCategory(
+  title: string,
+  slug: string,
+  category: string,
+  packageCategoryName?: string | null
+): Package["category"] {
+  const master = (packageCategoryName ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+  if (master && master in PUBLIC_CATEGORY_BY_NAME) {
+    return PUBLIC_CATEGORY_BY_NAME[master]
+  }
+
+  const hay = `${title} ${slug} ${category}`.toLowerCase()
+  if (/ramadh/.test(hay)) return "ramadhan"
+  if (/rawdah|raudhah/.test(hay)) return "rawdah"
+  if (/thaibah|thoybah|toybah/.test(hay)) return "thaibah"
+  if (/firdaus|firdous/.test(hay)) return "firdaus"
+  if (/arba'?in|arbain/.test(hay)) return "arbain"
+  if (/private/.test(hay)) return "private"
+  return "zamzam"
+}
+
+const BADGE_LABEL: Record<string, string> = {
+  BEST_SELLER: "Best Seller",
+  NEW: "Baru",
+  PROMO: "Promo",
+}
+
+type PackageListRow = {
+  id: string
+  title: string
+  slug: string
+  category: string
+  duration: number
+  price: number
+  quadPrice: number | null
+  triplePrice: number | null
+  doublePrice: number | null
+  badge: string | null
+  featured: boolean
+  thumbnail: string
+  heroImage: string
+  airline: string
+  packageCategory: { name: string | null } | null
+  facilities: { name: string }[]
+  hotels: { type: string | null; name: string | null }[]
+}
+
+function buildPublicCard(row: PackageListRow): Package {
+  const mekkahHotel = row.hotels.find((h) => h.type === "MEKKAH")
+  const madinahHotel = row.hotels.find((h) => h.type === "MADINAH")
+  const facilities = row.facilities.map((f) => (f.name ?? "").trim()).filter(Boolean)
+  const airline = (row.airline ?? "").trim()
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    category: mapCategory(row.title, row.slug, row.category, row.packageCategory?.name ?? null),
+    duration: row.duration > 0 ? `${row.duration} Hari` : "Flexibel",
+    price: row.price,
+    quadPrice: row.quadPrice && row.quadPrice > 0 ? row.quadPrice : null,
+    triplePrice: row.triplePrice && row.triplePrice > 0 ? row.triplePrice : null,
+    doublePrice: row.doublePrice && row.doublePrice > 0 ? row.doublePrice : null,
+    badge: (row.badge && BADGE_LABEL[row.badge]) || "",
+    featured: Boolean(row.featured),
+    image: row.thumbnail || row.heroImage || undefined,
+    features: facilities,
+    hotelMekah: mekkahHotel?.name ?? "Hotel Mekkah",
+    hotelMadinah: madinahHotel?.name ?? "Hotel Madinah",
+    maskapai: airline || "Maskapai Mitra",
+  }
+}
+
 export const getPublicPackages = cache(async (params?: {
   category?: string
   featuredOnly?: boolean
@@ -139,11 +224,28 @@ export const getPublicPackages = cache(async (params?: {
   const rows = await db.package.findMany({
     where: { status: PUBLISHED },
     orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      category: true,
+      duration: true,
+      price: true,
+      quadPrice: true,
+      triplePrice: true,
+      doublePrice: true,
+      badge: true,
+      featured: true,
+      thumbnail: true,
+      heroImage: true,
+      airline: true,
+      packageCategory: { select: { name: true } },
+      facilities: { select: { name: true } },
+      hotels: { select: { type: true, name: true } },
+    },
   })
 
-  const packages = rows
-    .map((row) => parseContent(row.publicContent)?.card)
-    .filter((p): p is Package => Boolean(p))
+  const packages = rows.map(buildPublicCard)
 
   if (params?.category && params.category !== "all") {
     return packages.filter((p) => p.category === params.category)
