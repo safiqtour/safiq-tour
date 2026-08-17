@@ -50,8 +50,8 @@ export function PublicRegistrationForm({ pkg, whatsappNumber }: Props) {
   const followUpUrl = buildWhatsAppUrl(whatsappNumber, followUpMessage)
 
   return (
-    <section className="relative min-h-screen bg-[#0B2D5C]">
-      <div className="mx-auto max-w-(--container-max) px-4 py-12 sm:px-6 lg:px-8">
+    <section className="relative -mt-20 min-h-screen bg-[#0B2D5C]">
+      <div className="mx-auto max-w-(--container-max) px-4 pb-12 pt-20 sm:px-6 sm:pt-28 lg:px-8">
         <div className="mx-auto max-w-2xl">
           {status === "success" ? (
             <motion.div
