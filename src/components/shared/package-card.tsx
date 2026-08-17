@@ -3,6 +3,7 @@
 import { Fragment } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { Calendar } from "lucide-react"
 import { cn, normalizeImageUrl } from "@/lib/utils"
 import type { Package } from "@/data/packages"
 
@@ -63,11 +64,15 @@ function durationNumber(value: string): string | null {
  * Human-friendly departure schedule.
  * - Full date "2026-11-15"  -> "15 November 2026"
  * - Year-month "2026-11"    -> "November 2026"
+ * - Year only "2026"        -> "2026"
  * - Empty / invalid         -> null (section hidden)
  */
 function formatScheduleLabel(value?: string | null): string | null {
   if (!value || !value.trim()) return null
   const s = value.trim()
+
+  const y = s.match(/^(\d{4})$/)
+  if (y) return y[1]
 
   const ym = s.match(/^(\d{4})-(\d{1,2})$/)
   if (ym) {
@@ -127,7 +132,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
       )}
 
       <div className="flex flex-1 flex-col gap-4 p-6">
-        {/* 2. HEADER — name + duration */}
+        {/* 2. HEADER — name */}
         <div className="space-y-2">
           <h3
             className="line-clamp-2 break-words font-heading text-xl font-bold leading-tight text-[#0F2D5C]"
@@ -135,35 +140,34 @@ function PackageCard({ pkg, className }: PackageCardProps) {
           >
             {pkg.title}
           </h3>
-          <p className="flex items-baseline gap-1.5 text-[#0F2D5C]">
+        </div>
+
+        {/* 3. DURASI + TRANSPORT — one row: duration | transport logos */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-baseline gap-1.5 text-[#0F2D5C]">
             {durNum ? (
               <>
-                <span className="text-2xl font-bold leading-none">{durNum}</span>
-                <span className="text-xs font-semibold uppercase tracking-[0.2em]">Hari</span>
+                <span className="text-3xl font-bold leading-none">{durNum}</span>
+                <span className="text-sm font-semibold uppercase tracking-[0.15em]">Hari</span>
               </>
             ) : (
               <span className="text-sm font-semibold">{pkg.duration}</span>
             )}
-          </p>
-        </div>
-
-        {/* 3. TRANSPORTASI — transparent logos only, "|" separator */}
-        {transportLogos.length > 0 && (
-          <div className="flex items-center gap-2.5">
-            {transportLogos.map((src, i) => (
-              <Fragment key={`${src}-${i}`}>
-                {i > 0 && <span aria-hidden="true" className="h-5 w-px shrink-0 bg-black/20" />}
-                <Image
-                  src={src}
-                  alt={src === HARAMAIN_LOGO ? "Haramain Express" : pkg.maskapai}
-                  width={72}
-                  height={28}
-                  className="h-7 w-auto object-contain"
-                />
-              </Fragment>
-            ))}
           </div>
-        )}
+
+          {transportLogos.map((src, i) => (
+            <Fragment key={`${src}-${i}`}>
+              <span aria-hidden="true" className="h-9 w-px shrink-0 bg-black/20 sm:h-10" />
+              <Image
+                src={src}
+                alt={src === HARAMAIN_LOGO ? "Haramain Express" : pkg.maskapai}
+                width={72}
+                height={28}
+                className="h-9 w-auto object-contain sm:h-11"
+              />
+            </Fragment>
+          ))}
+        </div>
 
         {/* 4. JADWAL KEBERANGKATAN — only when a schedule exists */}
         {scheduleLabel && (
@@ -172,21 +176,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
               Jadwal Keberangkatan
             </p>
             <p className="flex items-center gap-2 text-sm font-semibold text-[#0F2D5C]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-4 shrink-0 text-[#D4AF37]"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4" />
-                <path d="M8 2v4" />
-                <path d="M3 10h18" />
-              </svg>
+              <Calendar className="size-4 shrink-0 text-[#D4AF37]" />
               {scheduleLabel}
             </p>
           </div>

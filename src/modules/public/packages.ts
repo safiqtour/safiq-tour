@@ -189,6 +189,7 @@ type PackageListRow = {
   packageCategory: { name: string | null } | null
   facilities: { name: string }[]
   hotels: { type: string | null; name: string | null }[]
+  schedules: { departureDate: Date }[]
 }
 
 function buildPublicCard(row: PackageListRow): Package {
@@ -214,6 +215,7 @@ function buildPublicCard(row: PackageListRow): Package {
     hotelMekah: mekkahHotel?.name ?? "Hotel Mekkah",
     hotelMadinah: madinahHotel?.name ?? "Hotel Madinah",
     maskapai: airline || "Maskapai Mitra",
+    departureDate: row.schedules[0]?.departureDate.toISOString().slice(0, 10) ?? null,
   }
 }
 
@@ -242,6 +244,12 @@ export const getPublicPackages = cache(async (params?: {
       packageCategory: { select: { name: true } },
       facilities: { select: { name: true } },
       hotels: { select: { type: true, name: true } },
+      schedules: {
+        where: { departureDate: { gt: new Date() } },
+        orderBy: { departureDate: "asc" },
+        take: 1,
+        select: { departureDate: true },
+      },
     },
   })
 
