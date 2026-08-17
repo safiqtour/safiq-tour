@@ -7,7 +7,7 @@ import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { VideoGallery } from "@/components/gallery/VideoGallery"
 import { Timeline } from "@/components/gallery/Timeline"
 import { Testimonials } from "@/components/gallery/Testimonials"
-import { FloatingWhatsapp } from "@/components/shared/FloatingWhatsapp"
+import { FloatingWhatsapp } from "@/components/gallery/FloatingWhatsapp"
 import type { GalleryPhoto, GalleryVideo } from "@/modules/public/gallery"
 
 type GalleryPageClientProps = {

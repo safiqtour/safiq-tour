@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/prisma/db"
-import { requirePermission } from "@/modules/business/lib/permission"
+import { getWritableSession } from "@/services/auth.integration.service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { packageFormSchema } from "@/lib/packages/schema"
@@ -16,7 +16,8 @@ export async function getPackages(params: {
   page?: number
   pageSize?: number
 }) {
-  await requirePermission("package:read")
+  const session = await getWritableSession()
+  if (!session?.user?.id) return { data: [], total: 0, page: 1, totalPages: 1 }
 
   const { search = "", category = "", status = "", page = 1, pageSize = 10 } = params
 
@@ -70,7 +71,8 @@ export async function getPackages(params: {
 }
 
 export async function getPackageById(id: string) {
-  await requirePermission("package:read")
+  const session = await getWritableSession()
+  if (!session?.user?.id) return null
 
   const pkg = await db.package.findUnique({
     where: { id },
@@ -99,8 +101,8 @@ export async function getPackageById(id: string) {
  * Used by the booking flow to populate the schedule selector after a package is chosen.
  */
 export async function getPackageSchedules(packageId: string) {
-  await requirePermission("package:read")
-  if (!packageId) return []
+  const session = await getWritableSession()
+  if (!session?.user?.id || !packageId) return []
 
   const now = new Date()
   const schedules = await db.packageSchedule.findMany({
@@ -178,7 +180,8 @@ async function resolveUniqueSlug(base: string, excludeId?: string): Promise<stri
 }
 
 export async function createPackage(formData: FormData) {
-  await requirePermission("package:create")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   const raw: Record<string, unknown> = {
     title: formData.get("title"),
@@ -354,7 +357,8 @@ export async function createPackage(formData: FormData) {
 }
 
 export async function updatePackage(id: string, formData: FormData) {
-  await requirePermission("package:update")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   const raw: Record<string, unknown> = {
     title: formData.get("title"),
@@ -575,7 +579,8 @@ export async function updatePackage(id: string, formData: FormData) {
 }
 
 export async function deletePackage(id: string) {
-  await requirePermission("package:delete")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   // Booking.packageId uses onDelete: Restrict, so deleting a package that still
   // has bookings violates the FK (500). Fail fast with a clear message instead.
@@ -603,7 +608,8 @@ export async function deletePackage(id: string) {
 }
 
 export async function duplicatePackage(id: string) {
-  await requirePermission("package:create")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   const original = await db.package.findUnique({
     where: { id },
@@ -682,7 +688,8 @@ export async function duplicatePackage(id: string) {
 }
 
 export async function updatePackageStatus(id: string, status: PackageStatus) {
-  await requirePermission("package:update")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   await db.package.update({
     where: { id },
@@ -696,7 +703,8 @@ export async function updatePackageStatus(id: string, status: PackageStatus) {
 }
 
 export async function toggleFeatured(id: string, featured: boolean) {
-  await requirePermission("package:update")
+  const session = await getWritableSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
 
   await db.package.update({ where: { id }, data: { featured } })
   revalidatePath("/admin/packages")

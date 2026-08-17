@@ -9,7 +9,7 @@ export async function getCountries(params: unknown) {
   const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
-  const canView = can(session.user.role, "master.country:read")
+  const canView = can(session.user.role, "master.country:view")
   if (!canView) throw new Error("Forbidden")
 
   const query = countryQuerySchema.parse(params)
@@ -20,7 +20,7 @@ export async function getCountry(id: string) {
   const session = await getWritableSession()
   if (!session?.user?.role) throw new Error("Unauthorized")
 
-  const canView = can(session.user.role, "master.country:read")
+  const canView = can(session.user.role, "master.country:view")
   if (!canView) throw new Error("Forbidden")
 
   return countryService.findById(id)

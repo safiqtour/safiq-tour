@@ -4,7 +4,7 @@ import { ContactCards } from "@/components/contact/ContactCards"
 import { ContactForm } from "@/components/contact/ContactForm"
 import { GoogleMap } from "@/components/contact/GoogleMap"
 import { SocialLinks } from "@/components/contact/SocialLinks"
-import { FloatingWhatsapp } from "@/components/shared/FloatingWhatsapp"
+import { FloatingWhatsapp } from "@/components/contact/FloatingWhatsapp"
 
 export const metadata: Metadata = {
   title: "Kontak Safiq Tour | Konsultasi Umroh",

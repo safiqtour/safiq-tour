@@ -1,12 +1,9 @@
 "use server"
 
 import { db } from "@/lib/prisma/db"
-import { requirePermission } from "@/modules/business/lib/permission"
 import { getRecentActivityLogs } from "@/services/audit.service"
 
 export async function getDashboardStats() {
-  await requirePermission("dashboard:read")
-
   const [
     totalPackages,
     draftPackages,

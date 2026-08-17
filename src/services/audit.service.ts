@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma/db"
-import { getUser } from "@/services/auth.integration.service"
+import { auth } from "@/lib/auth/auth"
 
 export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN" | "LOGOUT" | "VERIFY" | "REJECT" | "APPROVE" | "CANCEL" | "FEATURE" | "UNFEATURE"
 
@@ -9,8 +9,8 @@ export async function logActivity(params: {
   resourceId?: string
   metadata?: Record<string, unknown>
 }) {
-  const user = await getUser()
-  const userId = user?.id
+  const session = await auth()
+  const userId = session?.user?.id
 
   const metadataStr = params.metadata ? JSON.stringify(params.metadata) : null
 
