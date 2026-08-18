@@ -40,6 +40,8 @@ import { getPackageCategories } from "@/modules/business/package-category/action
 import { getPackageTypes } from "@/modules/business/package-type/actions/package-type"
 import type { PackageCategoryListItem } from "@/modules/business/package-category/types"
 import type { PackageTypeListItem } from "@/modules/business/package-type/types"
+import { getFacilities } from "@/modules/business/facility/actions/facility"
+import type { FacilityListItem } from "@/modules/business/facility/types"
 
 const tabs = [
   { id: "general", label: "General", icon: Info },
@@ -67,11 +69,16 @@ interface HotelRow {
   city?: string
 }
 
-const defaultFacilities = [
-  "Visa", "Hotel", "Makan", "Transportasi", "Bus AC", "Zamzam",
-  "Perlengkapan", "Handling", "Asuransi", "Tour Leader", "Muthowif",
-  "City Tour", "Kereta Cepat", "Laundry", "SIM Card", "Air Mineral",
-]
+/**
+ * One selected package facility. `facilityId` links to the Facility master data
+ * (null for legacy snapshots and custom facilities, which are stored as a
+ * package-local name/icon snapshot only — never auto-created in master data).
+ */
+interface FacilityRow {
+  facilityId: string | null
+  name: string
+  icon: string
+}
 
 const LEGACY_CATEGORIES: PackageCategory[] = ["REGULAR", "PLUS", "EXECUTIVE", "LUXURY", "PRIVATE"]
 
@@ -433,8 +440,12 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   const [itineraries, setItineraries] = useState(
     initialData?.itineraries ?? [{ day: 1, title: "", description: "", image: "" }]
   )
-  const [facilities, setFacilities] = useState<string[]>(
-    initialData?.facilities?.map((f) => f.name) ?? []
+  const [facilities, setFacilities] = useState<FacilityRow[]>(
+    (initialData?.facilities ?? []).map((f) => ({
+      facilityId: f.facilityId ?? null,
+      name: f.name,
+      icon: f.icon ?? "",
+    }))
   )
   const [galleries, setGalleries] = useState(
     initialData?.galleries ?? []
@@ -481,11 +492,35 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   const [masterCategories, setMasterCategories] = useState<PackageCategoryListItem[]>([])
   const [masterTypes, setMasterTypes] = useState<PackageTypeListItem[]>([])
   const [masterAirlines, setMasterAirlines] = useState<AirlineListItem[]>([])
+  const [masterFacilities, setMasterFacilities] = useState<FacilityListItem[]>([])
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true)
+  const [facilitiesError, setFacilitiesError] = useState(false)
 
   useEffect(() => {
     getAirlines({ page: 1, limit: 100, status: "ACTIVE" })
       .then((res) => setMasterAirlines((res.data ?? []) as unknown as AirlineListItem[]))
       .catch(() => setMasterAirlines([]))
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    getFacilities({ page: 1, limit: 100, status: "ACTIVE" })
+      .then((res) => {
+        if (cancelled) return
+        setMasterFacilities((res.data ?? []) as unknown as FacilityListItem[])
+        setFacilitiesError(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setMasterFacilities([])
+        setFacilitiesError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setFacilitiesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Flight itinerary state. Legacy packages without flight rows fall back to
@@ -651,7 +686,11 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
       Object.entries(data).forEach(([key, val]) => {
         if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries" || key === "flights") {
           if (key === "facilities") {
-            fd.append(key, JSON.stringify(facilities.map((f) => ({ name: f, icon: "" }))))
+            fd.append(key, JSON.stringify(facilities.map((f) => ({
+              facilityId: f.facilityId ?? null,
+              name: f.name,
+              icon: f.icon ?? "",
+            }))))
           } else if (key === "itineraries") {
             // Only submit rows with a title; skip empty placeholder rows so Zod
             // doesn't reject the payload (title is required in the schema).
@@ -811,13 +850,33 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     setFlights(next)
   }
 
-  const toggleFacility = (fac: string) => {
-    setFacilities((prev) => prev.includes(fac) ? prev.filter((f) => f !== fac) : [...prev, fac])
+  // Master facilities are identified by facilityId; legacy name-only snapshots
+  // (facilityId null) match by name so old packages stay selected/editable.
+  const isFacilitySelected = (fac: FacilityListItem): boolean =>
+    facilities.some((f) => (f.facilityId ? f.facilityId === fac.id : f.name === fac.name))
+
+  const toggleMasterFacility = (fac: FacilityListItem) => {
+    setFacilities((prev) => {
+      const exists = prev.some((f) =>
+        f.facilityId ? f.facilityId === fac.id : f.name === fac.name
+      )
+      if (exists) {
+        return prev.filter((f) => !(f.facilityId ? f.facilityId === fac.id : f.name === fac.name))
+      }
+      return [...prev, { facilityId: fac.id, name: fac.name, icon: fac.icon }]
+    })
+  }
+
+  const removeFacility = (row: FacilityRow) => {
+    setFacilities((prev) =>
+      prev.filter((f) => (row.facilityId ? f.facilityId !== row.facilityId : f.name !== row.name))
+    )
   }
 
   const addCustomFacility = () => {
-    if (customFacility && !facilities.includes(customFacility)) {
-      setFacilities([...facilities, customFacility])
+    const name = customFacility.trim()
+    if (name && !facilities.some((f) => f.name === name)) {
+      setFacilities([...facilities, { facilityId: null, name, icon: "" }])
       setCustomFacility("")
     }
   }
@@ -1189,22 +1248,32 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
       case "facilities":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {defaultFacilities.map((fac) => (
-                <button
-                  key={fac}
-                  type="button"
-                  onClick={() => toggleFacility(fac)}
-                  className={`rounded-xl border px-3 py-2 text-sm transition-all ${
-                    facilities.includes(fac)
-                      ? "border-[#C89B3C] bg-[#C89B3C]/10 text-[#C89B3C] font-medium"
-                      : "border-[#E5E7EB] text-[#6B7280] hover:border-[#C89B3C]/30 hover:bg-[#F8FAFC]"
-                  }`}
-                >
-                  {fac}
-                </button>
-              ))}
-            </div>
+            {facilitiesLoading ? (
+              <div className="flex items-center gap-2 rounded-xl bg-[#F8FAFC] px-4 py-3 text-sm text-[#6B7280]">
+                <Loader2 className="size-4 animate-spin" /> Memuat fasilitas...
+              </div>
+            ) : facilitiesError ? (
+              <div className="rounded-xl bg-[#F8FAFC] px-4 py-3 text-sm text-[#6B7280]">
+                Fasilitas belum dapat dimuat.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {masterFacilities.map((fac) => (
+                  <button
+                    key={fac.id}
+                    type="button"
+                    onClick={() => toggleMasterFacility(fac)}
+                    className={`rounded-xl border px-3 py-2 text-sm transition-all ${
+                      isFacilitySelected(fac)
+                        ? "border-[#C89B3C] bg-[#C89B3C]/10 text-[#C89B3C] font-medium"
+                        : "border-[#E5E7EB] text-[#6B7280] hover:border-[#C89B3C]/30 hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    {fac.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2">
               <input
                 value={customFacility}
@@ -1220,9 +1289,9 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
             {facilities.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {facilities.map((fac) => (
-                  <span key={fac} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#0B3C6D] border border-[#E5E7EB]">
-                    {fac}
-                    <button type="button" onClick={() => setFacilities(facilities.filter((f) => f !== fac))} className="text-[#9CA3AF] hover:text-red-500">
+                  <span key={fac.facilityId ?? fac.name} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-[#0B3C6D] border border-[#E5E7EB]">
+                    {fac.name}
+                    <button type="button" onClick={() => removeFacility(fac)} className="text-[#9CA3AF] hover:text-red-500">
                       <Trash2 className="size-3" />
                     </button>
                   </span>

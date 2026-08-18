@@ -23,6 +23,10 @@ export const packageScheduleSchema = z.object({
 export const packageFacilitySchema = z.object({
   name: z.string().min(1, "Nama fasilitas wajib diisi"),
   icon: z.string().optional().default(""),
+  // Optional link to the Facility master data. Null/absent = legacy or custom
+  // facility (stored as a package-local snapshot); non-null = linked to a
+  // Facility master row. Existing payloads without this key stay valid.
+  facilityId: z.string().nullable().optional(),
 })
 
 /**

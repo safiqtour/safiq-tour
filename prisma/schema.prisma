@@ -518,12 +518,20 @@ model PackageSchedule {
 }
 
 model PackageFacility {
-  id        String  @id @default(uuid())
-  packageId String
-  name      String  @default("")
-  icon      String  @default("")
-  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  packageId  String
+  // Optional link to the Facility master data. The `name`/`icon` snapshot is kept
+  // so package rows remain readable even when facilityId is NULL (legacy/custom
+  // facilities). Deleting a master facility only clears the link (SET NULL) and
+  // leaves the snapshot intact.
+  facilityId String?
+  name       String    @default("")
+  icon       String    @default("")
+  package    Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  facility   Facility? @relation(fields: [facilityId], references: [id], onDelete: SetNull)
 
+  @@index([packageId])
+  @@index([facilityId])
   @@map("package_facilities")
 }
 
@@ -758,6 +766,8 @@ model Facility {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+
+  packageFacilities PackageFacility[]
 
   @@index([status])
   @@index([category])

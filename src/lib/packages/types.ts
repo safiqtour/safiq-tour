@@ -69,6 +69,8 @@ export interface PackageScheduleData {
 
 export interface PackageFacilityData {
   id?: string
+  // Optional link to the Facility master data (null for legacy/custom facilities).
+  facilityId?: string | null
   name: string
   icon: string
 }

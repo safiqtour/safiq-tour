@@ -296,7 +296,11 @@ export async function createPackage(formData: FormData) {
           })),
         },
         facilities: {
-          create: parsed.facilities,
+          create: parsed.facilities.map((f) => ({
+            facilityId: f.facilityId ?? null,
+            name: f.name,
+            icon: f.icon,
+          })),
         },
         itineraries: {
           create: parsed.itineraries,
@@ -551,7 +555,11 @@ export async function updatePackage(id: string, formData: FormData) {
           })),
         },
         facilities: {
-          create: parsed.facilities,
+          create: parsed.facilities.map((f) => ({
+            facilityId: f.facilityId ?? null,
+            name: f.name,
+            icon: f.icon,
+          })),
         },
         itineraries: {
           create: parsed.itineraries,
@@ -659,7 +667,7 @@ export async function duplicatePackage(id: string) {
       packageTypeId: original.packageTypeId,
       hotels: { create: original.hotels.map((h) => ({ type: h.type, name: h.name, stars: h.stars, distance: h.distance, mapsUrl: h.mapsUrl, image: h.image })) },
       schedules: { create: original.schedules.map((s) => ({ departureDate: s.departureDate, returnDate: s.returnDate, meetingPoint: s.meetingPoint, seat: s.seat, seatFilled: 0 })) },
-      facilities: { create: original.facilities.map((f) => ({ name: f.name, icon: f.icon })) },
+      facilities: { create: original.facilities.map((f) => ({ facilityId: f.facilityId ?? null, name: f.name, icon: f.icon })) },
       itineraries: { create: original.itineraries.map((i) => ({ day: i.day, title: i.title, description: i.description, image: i.image })) },
       galleries: { create: original.galleries.map((g) => ({ url: g.url, alt: g.alt, sortOrder: g.sortOrder })) },
       flights: {
