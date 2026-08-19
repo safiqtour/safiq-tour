@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Star,
 } from "lucide-react"
-import { formatPrice, formatDate } from "@/lib/packages/utils"
+import { formatPrice, formatDepartureLabel } from "@/lib/packages/utils"
 import { normalizeImageUrl } from "@/lib/utils"
 import type { PackageStatus } from "@/lib/packages/types"
 
@@ -37,7 +37,7 @@ interface PackageListItem {
   quota: number
   seatFilled: number
   createdAt: string
-  schedules: { departureDate: string }[]
+  schedules: { departureLabel: string | null; departureDate: string | Date | null }[]
 }
 
 interface DataTableProps {
@@ -205,7 +205,9 @@ export function DataTable({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-[#6B7280]">
-                      {pkg.schedules[0] ? formatDate(pkg.schedules[0].departureDate) : "-"}
+                      {formatDepartureLabel(
+                        pkg.schedules[0]?.departureLabel ?? pkg.schedules[0]?.departureDate
+                      ) ?? "-"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">

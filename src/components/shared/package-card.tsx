@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Calendar } from "lucide-react"
 import { cn, normalizeImageUrl } from "@/lib/utils"
+import { formatDepartureLabel } from "@/lib/packages/utils"
 import type { Package } from "@/data/packages"
 
 type PackageCardProps = {
@@ -60,37 +61,6 @@ function durationNumber(value: string): string | null {
   return m ? m[0] : null
 }
 
-/**
- * Human-friendly departure schedule.
- * - Full date "2026-11-15"  -> "15 November 2026"
- * - Year-month "2026-11"    -> "November 2026"
- * - Year only "2026"        -> "2026"
- * - Empty / invalid         -> null (section hidden)
- */
-function formatScheduleLabel(value?: string | null): string | null {
-  if (!value || !value.trim()) return null
-  const s = value.trim()
-
-  const y = s.match(/^(\d{4})$/)
-  if (y) return y[1]
-
-  const ym = s.match(/^(\d{4})-(\d{1,2})$/)
-  if (ym) {
-    const d = new Date(Date.UTC(Number(ym[1]), Number(ym[2]) - 1, 1))
-    if (Number.isNaN(d.getTime())) return null
-    return d.toLocaleDateString("id-ID", { month: "long", year: "numeric", timeZone: "UTC" })
-  }
-
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  })
-}
-
 /** Compact premium price in "juta": 27900000 -> "Rp 27,9 Juta", 35000000 -> "Rp 35 Juta". */
 function formatPriceJuta(price: number): string {
   const juta = price / 1_000_000
@@ -106,7 +76,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
   const hasHaramain = hasHaramainExpress(pkg)
   // Transport logos only: airlines first, then Haramain Express (if present).
   const transportLogos = hasHaramain ? [...logos, HARAMAIN_LOGO] : logos
-  const scheduleLabel = formatScheduleLabel(pkg.departureDate)
+  const scheduleLabel = formatDepartureLabel(pkg.departureDate)
   const durNum = durationNumber(pkg.duration)
 
   return (

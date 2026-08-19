@@ -60,7 +60,12 @@ export interface PackageHotelData {
 
 export interface PackageScheduleData {
   id?: string
-  departureDate: string
+  // Canonical user-facing departure label: "YYYY-MM-DD" (full date),
+  // "YYYY-MM" (month + year), or "YYYY" (year only). Empty = no departure info.
+  departureLabel: string
+  // Concrete departure date (yyyy-MM-dd) when a full date was given; null/absent
+  // for partial (month/year) labels. Kept for booking & ordering logic.
+  departureDate?: string | null
   returnDate: string | null
   meetingPoint: string
   seat: number

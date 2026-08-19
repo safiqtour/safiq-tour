@@ -26,7 +26,7 @@ export interface InvoiceViewData {
     currency: string
   }
   schedule: {
-    departureDate: Date
+    departureDate: Date | null
     returnDate: Date | null
     meetingPoint: string
   }

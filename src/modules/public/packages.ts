@@ -189,7 +189,42 @@ type PackageListRow = {
   packageCategory: { name: string | null } | null
   facilities: { name: string }[]
   hotels: { type: string | null; name: string | null }[]
-  schedules: { departureDate: Date }[]
+  schedules: { departureLabel: string | null; departureDate: Date | null }[]
+}
+
+/** Canonical departure label of a schedule row (label wins, legacy date falls back). */
+function departureLabelOf(s: { departureLabel: string | null; departureDate: Date | null }): string | null {
+  return s.departureLabel ?? (s.departureDate ? s.departureDate.toISOString().slice(0, 10) : null)
+}
+
+/**
+ * A departure label counts as "upcoming" when its granularity value is still in
+ * the future (or today). Full dates compare by day, months by year-month, and
+ * years by year — so partial labels are never padded to a fake day.
+ */
+function isUpcomingDeparture(label: string, now: Date): boolean {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(label)) {
+    const [y, m, d] = label.split("-").map(Number)
+    return Date.UTC(y, m - 1, d) >= Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  }
+  if (/^\d{4}-\d{2}$/.test(label)) {
+    const [y, m] = label.split("-").map(Number)
+    return y * 12 + (m - 1) >= now.getUTCFullYear() * 12 + now.getUTCMonth()
+  }
+  if (/^\d{4}$/.test(label)) {
+    return Number(label) >= now.getUTCFullYear()
+  }
+  return false
+}
+
+/** Soonest upcoming departure label of a package (labels sort chronologically). */
+function upcomingDeparture(row: PackageListRow): string | null {
+  const now = new Date()
+  const labels = row.schedules
+    .map(departureLabelOf)
+    .filter((l): l is string => !!l && isUpcomingDeparture(l, now))
+    .sort()
+  return labels[0] ?? null
 }
 
 function buildPublicCard(row: PackageListRow): Package {
@@ -215,7 +250,7 @@ function buildPublicCard(row: PackageListRow): Package {
     hotelMekah: mekkahHotel?.name ?? "Hotel Mekkah",
     hotelMadinah: madinahHotel?.name ?? "Hotel Madinah",
     maskapai: airline || "Maskapai Mitra",
-    departureDate: row.schedules[0]?.departureDate.toISOString().slice(0, 10) ?? null,
+    departureDate: upcomingDeparture(row),
   }
 }
 
@@ -245,10 +280,9 @@ export const getPublicPackages = cache(async (params?: {
       facilities: { select: { name: true } },
       hotels: { select: { type: true, name: true } },
       schedules: {
-        where: { departureDate: { gt: new Date() } },
-        orderBy: { departureDate: "asc" },
-        take: 1,
-        select: { departureDate: true },
+        orderBy: { departureLabel: "asc" },
+        take: 10,
+        select: { departureLabel: true, departureDate: true },
       },
     },
   })

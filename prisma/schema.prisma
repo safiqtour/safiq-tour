@@ -506,13 +506,18 @@ model PackageFlightSegment {
 model PackageSchedule {
   id            String    @id @default(uuid())
   packageId     String
-  departureDate DateTime
-  returnDate    DateTime?
-  meetingPoint  String    @default("")
-  seat          Int       @default(0)
-  seatFilled    Int       @default(0)
-  package       Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  bookings      Booking[]
+  // Canonical user-facing departure label: "YYYY-MM-DD" (full date),
+  // "YYYY-MM" (month + year), or "YYYY" (year only). Legacy rows are backfilled
+  // from `departureDate`. Partial labels keep `departureDate` NULL so no fake
+  // day is ever invented just to satisfy a full-date column.
+  departureLabel String?
+  departureDate  DateTime?
+  returnDate     DateTime?
+  meetingPoint   String    @default("")
+  seat           Int       @default(0)
+  seatFilled     Int       @default(0)
+  package        Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
 
   @@map("package_schedules")
 }

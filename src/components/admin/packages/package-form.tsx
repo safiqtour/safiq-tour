@@ -80,6 +80,40 @@ interface FacilityRow {
   icon: string
 }
 
+/**
+ * Departure granularity: a full date (date), a month + year (month), or a year
+ * only (year). The canonical label stored is "YYYY-MM-DD", "YYYY-MM", or "YYYY"
+ * respectively — partial labels are never padded to a fake day.
+ */
+type DepartureGranularity = "date" | "month" | "year"
+
+interface ScheduleRow {
+  departureLabel: string
+  departureMode: DepartureGranularity
+  returnDate: string
+  meetingPoint: string
+  seat: number
+  seatFilled: number
+}
+
+function departureGranularityOf(label: string): DepartureGranularity | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(label)) return "date"
+  if (/^\d{4}-\d{2}$/.test(label)) return "month"
+  if (/^\d{4}$/.test(label)) return "year"
+  return null
+}
+
+/**
+ * Re-derive the canonical label after a granularity switch, keeping only what
+ * the target granularity can represent. Switching to a MORE precise mode never
+ * fabricates a day/month — the missing part stays empty for the user to fill.
+ */
+function relabelDeparture(current: string, mode: DepartureGranularity): string {
+  if (mode === "year") return /^\d{4}/.test(current) ? current.slice(0, 4) : ""
+  if (mode === "month") return /^\d{4}-\d{2}/.test(current) ? current.slice(0, 7) : ""
+  return /^\d{4}-\d{2}-\d{2}$/.test(current) ? current : ""
+}
+
 const LEGACY_CATEGORIES: PackageCategory[] = ["REGULAR", "PLUS", "EXECUTIVE", "LUXURY", "PRIVATE"]
 
 // `category` is a hidden legacy field (no UI control). Normalize legacy DB values to one
@@ -473,19 +507,25 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   }
 
   // Schedules from Prisma arrive as Date objects (or ISO strings with time). Normalize
-  // them ONCE to a single yyyy-MM-dd string shared by both the rendered inputs and the
-  // RHF defaultValues (which zodResolver validates). This prevents the resolver from
-  // failing on raw Date objects for legacy packages that have schedules.
-  const normalizedSchedules = (initialData?.schedules ?? []).map((s) => ({
-    ...s,
-    departureDate: toDateInputValue(s.departureDate),
-    returnDate: toDateInputValue(s.returnDate),
-  }))
+  // them ONCE to canonical departure labels + yyyy-MM-dd strings shared by both the
+  // rendered inputs and the RHF defaultValues (which zodResolver validates). This
+  // prevents the resolver from failing on raw Date objects for legacy packages.
+  const normalizedSchedules: ScheduleRow[] = (initialData?.schedules ?? []).map((s) => {
+    const label = s.departureLabel ?? (s.departureDate ? toDateInputValue(s.departureDate) : "")
+    return {
+      departureLabel: label,
+      departureMode: departureGranularityOf(label) ?? "date",
+      returnDate: s.returnDate ? toDateInputValue(s.returnDate) : "",
+      meetingPoint: s.meetingPoint,
+      seat: s.seat,
+      seatFilled: s.seatFilled,
+    }
+  })
 
-  const [schedules, setSchedules] = useState(
+  const [schedules, setSchedules] = useState<ScheduleRow[]>(
     initialData?.schedules
       ? normalizedSchedules
-      : [{ departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
+      : [{ departureLabel: "", departureMode: "date", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }]
   )
   const [customFacility, setCustomFacility] = useState("")
   const [masterHotels, setMasterHotels] = useState<HotelListItem[]>([])
@@ -607,7 +647,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           hotels: initialData.hotels ?? [],
           // Normalize to yyyy-MM-dd and drop empty placeholder rows so the zod
           // resolver doesn't reject legacy packages (raw Date objects / empty rows).
-          schedules: normalizedSchedules.filter((s) => (s.departureDate ?? "").trim()),
+          schedules: normalizedSchedules.filter((s) => (s.departureLabel ?? "").trim()),
           facilities: initialData.facilities ?? [],
           itineraries: initialData.itineraries ?? [],
           galleries: initialData.galleries ?? [],
@@ -732,12 +772,12 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           } else if (key === "schedules") {
             // seatFilled is system-controlled (managed by booking seat lifecycle);
             // never send it from the UI. Only seat (capacity) is editable.
-            // Skip empty placeholder rows so Zod (departureDate is required)
+            // Skip empty placeholder rows so Zod (departureLabel is required)
             // doesn't reject the payload on save.
             fd.append(key, JSON.stringify(schedules
-              .filter((s) => (s.departureDate ?? "").trim())
+              .filter((s) => (s.departureLabel ?? "").trim())
               .map((s) => ({
-                departureDate: s.departureDate,
+                departureLabel: s.departureLabel,
                 returnDate: s.returnDate,
                 meetingPoint: s.meetingPoint,
                 seat: s.seat,
@@ -778,7 +818,23 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
   }
 
   const addSchedule = () => {
-    setSchedules([...schedules, { departureDate: "", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }])
+    setSchedules([...schedules, { departureLabel: "", departureMode: "date", returnDate: "", meetingPoint: "", seat: 0, seatFilled: 0 }])
+  }
+
+  // Update one schedule's departure input. Switching granularity re-derives the
+  // canonical label via relabelDeparture (never fabricates a day/month); typing
+  // in the active input stores the canonical string directly.
+  const updateScheduleDeparture = (idx: number, next: string, kind: "mode" | "value") => {
+    setSchedules((prev) =>
+      prev.map((r, i) => {
+        if (i !== idx) return r
+        if (kind === "mode") {
+          const mode = next as DepartureGranularity
+          return { ...r, departureMode: mode, departureLabel: relabelDeparture(r.departureLabel, mode) }
+        }
+        return { ...r, departureLabel: next }
+      })
+    )
   }
 
   const addHotel = () => {
@@ -1186,11 +1242,44 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
                   )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
+                  <div className="space-y-2">
                     <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Tanggal Berangkat</label>
-                    <input type="date" value={s.departureDate} onChange={(e) => {
-                      const updated = [...schedules]; updated[i] = { ...updated[i], departureDate: e.target.value }; setSchedules(updated)
-                    }} className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all" />
+                    <select
+                      value={s.departureMode}
+                      onChange={(e) => updateScheduleDeparture(i, e.target.value, "mode")}
+                      className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                    >
+                      <option value="date">Tanggal Lengkap</option>
+                      <option value="month">Bulan + Tahun</option>
+                      <option value="year">Tahun</option>
+                    </select>
+                    {s.departureMode === "date" && (
+                      <input
+                        type="date"
+                        value={s.departureLabel}
+                        onChange={(e) => updateScheduleDeparture(i, e.target.value, "value")}
+                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                      />
+                    )}
+                    {s.departureMode === "month" && (
+                      <input
+                        type="month"
+                        value={s.departureLabel}
+                        onChange={(e) => updateScheduleDeparture(i, e.target.value, "value")}
+                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] outline-none focus:border-[#C89B3C] transition-all"
+                      />
+                    )}
+                    {s.departureMode === "year" && (
+                      <input
+                        type="number"
+                        min={1900}
+                        max={2100}
+                        placeholder="2026"
+                        value={s.departureLabel ? Number(s.departureLabel) : ""}
+                        onChange={(e) => updateScheduleDeparture(i, e.target.value, "value")}
+                        className="w-full rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm text-[#0B3C6D] placeholder:text-[#9CA3AF] outline-none focus:border-[#C89B3C] transition-all"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-[#6B7280]">Tanggal Pulang</label>

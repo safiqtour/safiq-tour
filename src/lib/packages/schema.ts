@@ -13,7 +13,16 @@ export const packageHotelSchema = z.object({
 })
 
 export const packageScheduleSchema = z.object({
-  departureDate: z.string().min(1, "Tanggal keberangkatan wajib diisi"),
+  // Canonical user-facing departure label. The form writes exactly one of
+  // "YYYY-MM-DD", "YYYY-MM", or "YYYY" — partial labels are never padded to a
+  // full date, so the card can render them at their real granularity.
+  departureLabel: z
+    .string()
+    .min(1, "Tanggal keberangkatan wajib diisi")
+    .regex(/^\d{4}(-\d{2})?(-\d{2})?$/, "Format tanggal keberangkatan tidak valid"),
+  // Optional concrete date (yyyy-MM-dd) for full-date labels; kept for
+  // backward-compatible payloads. The server derives it from departureLabel.
+  departureDate: z.string().optional().nullable(),
   returnDate: z.string().optional().nullable(),
   meetingPoint: z.string().optional().default(""),
   seat: z.coerce.number().min(0),

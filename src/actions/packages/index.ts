@@ -123,9 +123,21 @@ export async function getPackageSchedules(packageId: string) {
 
   return schedules.map((s) => ({
     ...s,
-    departureDate: s.departureDate.toISOString(),
+    departureDate: s.departureDate?.toISOString() ?? null,
     returnDate: s.returnDate?.toISOString() ?? null,
   }))
+}
+
+/**
+ * Derive the concrete departure DateTime from a canonical departure label.
+ * Only a full-date label ("YYYY-MM-DD") maps to a real date (UTC midnight, the
+ * same instant the legacy `new Date("YYYY-MM-DD")` produced). Partial labels
+ * (month/year) return null — their departureDate column stays NULL and no fake
+ * day is ever invented.
+ */
+function departureDateFromLabel(label: string | null | undefined): Date | null {
+  if (label && /^\d{4}-\d{2}-\d{2}$/.test(label)) return new Date(`${label}T00:00:00Z`)
+  return null
 }
 
 /**
@@ -288,7 +300,8 @@ export async function createPackage(formData: FormData) {
         },
         schedules: {
           create: parsed.schedules.map((s) => ({
-            departureDate: new Date(s.departureDate),
+            departureLabel: s.departureLabel,
+            departureDate: departureDateFromLabel(s.departureLabel),
             returnDate: s.returnDate ? new Date(s.returnDate) : null,
             meetingPoint: s.meetingPoint,
             seat: s.seat,
@@ -465,7 +478,7 @@ export async function updatePackage(id: string, formData: FormData) {
   // seat-lifecycle counters) and only recreate the rest.
   const existingSchedules = await db.packageSchedule.findMany({
     where: { packageId: id },
-    select: { id: true, departureDate: true },
+    select: { id: true, departureLabel: true, departureDate: true },
   })
   const bookedRows = await db.booking.findMany({
     where: { scheduleId: { in: existingSchedules.map((s) => s.id) } },
@@ -473,10 +486,11 @@ export async function updatePackage(id: string, formData: FormData) {
     distinct: ["scheduleId"],
   })
   const bookedIds = new Set(bookedRows.map((b) => b.scheduleId))
-  const lockedDates = new Set(
+  const lockedLabels = new Set(
     existingSchedules
       .filter((s) => bookedIds.has(s.id))
-      .map((s) => s.departureDate.toISOString())
+      .map((s) => s.departureLabel ?? (s.departureDate ? s.departureDate.toISOString().slice(0, 10) : null))
+      .filter((l): l is string => !!l)
   )
 
   // All writes stay atomic in a single transaction; allow up to 15s for the
@@ -493,9 +507,9 @@ export async function updatePackage(id: string, formData: FormData) {
     await tx.packageFlight.deleteMany({ where: { packageId: id } })
 
     // Keep locked schedules untouched and only create new ones (avoid duplicating
-    // the departure dates of schedules that had to be preserved).
+    // the departure labels of schedules that had to be preserved).
     const schedulesToCreate = parsed.schedules.filter(
-      (s) => !lockedDates.has(new Date(s.departureDate).toISOString())
+      (s) => !lockedLabels.has(s.departureLabel)
     )
 
     await tx.package.update({
@@ -547,7 +561,8 @@ export async function updatePackage(id: string, formData: FormData) {
         },
         schedules: {
           create: schedulesToCreate.map((s) => ({
-            departureDate: new Date(s.departureDate),
+            departureLabel: s.departureLabel,
+            departureDate: departureDateFromLabel(s.departureLabel),
             returnDate: s.returnDate ? new Date(s.returnDate) : null,
             meetingPoint: s.meetingPoint,
             seat: s.seat,
@@ -666,7 +681,7 @@ export async function duplicatePackage(id: string) {
       packageCategoryId: original.packageCategoryId,
       packageTypeId: original.packageTypeId,
       hotels: { create: original.hotels.map((h) => ({ type: h.type, name: h.name, stars: h.stars, distance: h.distance, mapsUrl: h.mapsUrl, image: h.image })) },
-      schedules: { create: original.schedules.map((s) => ({ departureDate: s.departureDate, returnDate: s.returnDate, meetingPoint: s.meetingPoint, seat: s.seat, seatFilled: 0 })) },
+      schedules: { create: original.schedules.map((s) => ({ departureLabel: s.departureLabel, departureDate: s.departureDate, returnDate: s.returnDate, meetingPoint: s.meetingPoint, seat: s.seat, seatFilled: 0 })) },
       facilities: { create: original.facilities.map((f) => ({ facilityId: f.facilityId ?? null, name: f.name, icon: f.icon })) },
       itineraries: { create: original.itineraries.map((i) => ({ day: i.day, title: i.title, description: i.description, image: i.image })) },
       galleries: { create: original.galleries.map((g) => ({ url: g.url, alt: g.alt, sortOrder: g.sortOrder })) },
