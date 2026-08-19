@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
@@ -41,6 +41,48 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+        setSearchOpen(false)
+        setNotifOpen(false)
+        setProfileOpen(false)
+      }
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSearchOpen(false)
+        setNotifOpen(false)
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [])
+
+  const toggleSearch = () => {
+    setSearchOpen((prev) => !prev)
+    setNotifOpen(false)
+    setProfileOpen(false)
+  }
+
+  const toggleNotif = () => {
+    setNotifOpen((prev) => !prev)
+    setProfileOpen(false)
+    setSearchOpen(false)
+  }
+
+  const toggleProfile = () => {
+    setProfileOpen((prev) => !prev)
+    setNotifOpen(false)
+    setSearchOpen(false)
+  }
 
   const segments = pathname.split("/").filter(Boolean)
   const currentLabel = segments.length > 1 ? breadcrumbMap[segments[1]] ?? segments[1] : ""
@@ -68,9 +110,9 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div ref={actionsRef} className="flex items-center gap-2">
           <button
-            onClick={() => setSearchOpen(!searchOpen)}
+            onClick={toggleSearch}
             className="relative flex size-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#0B3C6D] transition-colors"
           >
             <Search className="size-4" />
@@ -79,7 +121,7 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
 
           <div className="relative">
             <button
-              onClick={() => setNotifOpen(!notifOpen)}
+              onClick={toggleNotif}
               className="relative flex size-9 items-center justify-center rounded-xl text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#0B3C6D] transition-colors"
             >
               <Bell className="size-4" />
@@ -91,7 +133,7 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl"
+                  className="fixed inset-x-4 top-16 z-50 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl sm:left-auto sm:right-4 sm:w-96 lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mt-2 lg:w-80"
                 >
                   <div className="border-b border-[#E5E7EB] px-4 py-3">
                     <p className="text-sm font-semibold text-[#0B3C6D]">Notifikasi</p>
@@ -106,7 +148,7 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
 
           <div className="relative">
             <button
-              onClick={() => setProfileOpen(!profileOpen)}
+              onClick={toggleProfile}
               className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-[#F8FAFC] transition-colors"
             >
               <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B3C6D] to-[#C89B3C] text-xs font-bold text-white">
@@ -126,7 +168,7 @@ export function Topbar({ onMenuClick, user }: TopbarProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl"
+                  className="fixed inset-x-4 top-16 z-50 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl sm:left-auto sm:right-4 sm:w-56 lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mt-2 lg:w-56"
                 >
                   <div className="p-2">
                     <Link

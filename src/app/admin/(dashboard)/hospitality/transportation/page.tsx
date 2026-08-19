@@ -60,13 +60,16 @@ export default function TransportationPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-xl font-bold text-[#0B3C6D]">Transportation</h1>
-          <p className="text-sm text-[#9CA3AF]">Manage transportation master data</p>
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-heading text-lg font-bold text-[#0B3C6D] lg:text-xl">Transportation</h1>
+          <p className="mt-0.5 text-xs text-[#9CA3AF] lg:mt-0 lg:text-sm">Manage transportation master data</p>
         </div>
-        <Link href="/admin/hospitality/transportation/new" className="flex items-center gap-2 rounded-xl bg-[#0B3C6D] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0B3C6D]/20 transition-all hover:bg-[#0B2D52]">
-          <Plus className="size-4" /> Add Transportation
+        <Link
+          href="/admin/hospitality/transportation/new"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#0B3C6D] px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-[#0B3C6D]/20 transition-all hover:bg-[#0B2D52] lg:gap-2 lg:rounded-xl lg:px-4 lg:py-2.5 lg:text-sm"
+        >
+          <Plus className="size-3.5 lg:size-4" /> Add Transportation
         </Link>
       </div>
 
