@@ -27,6 +27,22 @@ function isBase64Image(v: unknown): v is string {
   return typeof v === "string" && v.startsWith("data:image/")
 }
 
+/**
+ * Production-safe guard: backfill output must be reachable from Vercel, so a
+ * local provider (URLs like /uploads/root/...) is never acceptable.
+ */
+function resolveStorageProviderName(): string {
+  const name = (process.env.STORAGE_PROVIDER ?? "local").toLowerCase()
+  if (name === "local") {
+    throw new Error(
+      "Provider 'local' menghasilkan URL /uploads/... yang tidak tersedia di Vercel. " +
+        "Jalankan skrip dengan STORAGE_PROVIDER=supabase (plus SUPABASE_STORAGE_BUCKET, " +
+        "SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL) agar URL valid di production."
+    )
+  }
+  return name
+}
+
 async function uploadDataUrl(dataUrl: string, caption: string) {
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
   if (!match) throw new Error("Bukan data URL base64 yang valid")
@@ -50,14 +66,16 @@ async function uploadDataUrl(dataUrl: string, caption: string) {
     height: result.height,
     url: result.url,
     thumbnailUrl: result.thumbnailUrl,
-    storageProvider: process.env.STORAGE_PROVIDER ?? "local",
+    storageProvider: process.env.STORAGE_PROVIDER!,
     storagePath: result.storagePath,
     caption,
   })
 }
 
 async function main() {
-  console.log("=== Backfill Base64 Itinerary Images ===\n")
+  const storageProvider = resolveStorageProviderName()
+  console.log("=== Backfill Base64 Itinerary Images ===")
+  console.log(`Storage provider: ${storageProvider}\n`)
 
   // 1. Rows in the PackageItinerary table.
   const rows = await db.packageItinerary.findMany({

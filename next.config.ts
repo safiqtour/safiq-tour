@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
       {
+        // Supabase Storage public bucket (STMS). Object path under /stms/.
+        protocol: "https",
+        hostname: "fwmgpkxemtsasmbrddmo.supabase.co",
+        pathname: "/storage/v1/object/public/stms/**",
+      },
+      {
         // Locally uploaded files served by the app itself (e.g. /uploads/...).
         protocol: "http",
         hostname: "localhost",
