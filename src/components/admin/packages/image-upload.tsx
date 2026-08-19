@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Upload, X, Plus } from "lucide-react"
+import { Upload, X, Plus, Loader2, AlertCircle } from "lucide-react"
 import Image from "next/image"
 
 interface ImageUploadProps {
@@ -16,15 +16,30 @@ export function ImageUpload({ value, onChange, label, compact = false }: ImageUp
   const [preview, setPreview] = useState(value)
   const [url, setUrl] = useState(value)
   const [mode, setMode] = useState<"upload" | "url">(value ? "url" : "upload")
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
-  const handleFile = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      setPreview(dataUrl)
-      onChange(dataUrl)
+  // Upload via the media API so only a URL is persisted (never a base64 blob).
+  const handleFile = useCallback(async (file: File) => {
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/api/admin/media/upload", { method: "POST", body: formData })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || "Upload gagal")
+      }
+      const mediaUrl = (json.data?.url as string) ?? ""
+      if (!mediaUrl) throw new Error("Upload gagal: URL tidak valid")
+      setPreview(mediaUrl)
+      onChange(mediaUrl)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload gagal")
+    } finally {
+      setUploading(false)
     }
-    reader.readAsDataURL(file)
   }, [onChange])
 
   const handleUrlSubmit = () => {
@@ -49,6 +64,11 @@ export function ImageUpload({ value, onChange, label, compact = false }: ImageUp
                 className="object-cover"
                 sizes="400px"
               />
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="size-6 animate-spin text-white" />
+                </div>
+              )}
             </div>
             <div className="mt-2 flex items-center gap-4">
               <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[#C89B3C] transition-colors hover:text-[#B88A2E]">
@@ -57,34 +77,57 @@ export function ImageUpload({ value, onChange, label, compact = false }: ImageUp
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  disabled={uploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) handleFile(file)
+                    e.target.value = ""
                   }}
                 />
               </label>
               <button
                 type="button"
-                onClick={() => { setPreview(""); onChange("") }}
-                className="inline-flex items-center gap-1 text-xs font-medium text-red-500 transition-colors hover:text-red-700"
+                onClick={() => { setPreview(""); onChange(""); setUploadError(null) }}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 text-xs font-medium text-red-500 transition-colors hover:text-red-700 disabled:opacity-50"
               >
                 <X className="size-3.5" /> Hapus
               </button>
             </div>
+            {uploadError && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+                <AlertCircle className="size-3.5" /> {uploadError}
+              </p>
+            )}
           </div>
         ) : (
-          <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#C89B3C] px-4 text-sm font-medium text-[#C89B3C] transition-colors hover:bg-[#C89B3C]/10">
-            <Plus className="size-4" /> Upload Gambar
+          <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#C89B3C] px-4 text-sm font-medium text-[#C89B3C] transition-colors hover:bg-[#C89B3C]/10 disabled:opacity-60">
+            {uploading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> Uploading...
+              </>
+            ) : (
+              <>
+                <Plus className="size-4" /> Upload Gambar
+              </>
+            )}
             <input
               type="file"
               accept="image/*"
               className="hidden"
+              disabled={uploading}
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) handleFile(file)
+                e.target.value = ""
               }}
             />
           </label>
+        )}
+        {!preview && uploadError && (
+          <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+            <AlertCircle className="size-3.5" /> {uploadError}
+          </p>
         )}
       </div>
     )
@@ -121,28 +164,50 @@ export function ImageUpload({ value, onChange, label, compact = false }: ImageUp
                 className="object-cover"
                 sizes="400px"
               />
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="size-6 animate-spin text-white" />
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => { setPreview(""); onChange("") }}
-                className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                onClick={() => { setPreview(""); onChange(""); setUploadError(null) }}
+                disabled={uploading}
+                className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors disabled:opacity-50"
               >
                 <X className="size-4" />
               </button>
             </div>
           ) : (
-            <label className="flex cursor-pointer flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-[#E5E7EB] bg-[#F8FAFC] hover:border-[#C89B3C] hover:bg-[#C89B3C]/5 transition-all">
-              <Upload className="size-6 text-[#9CA3AF]" />
-              <p className="mt-2 text-xs text-[#9CA3AF]">Klik untuk upload gambar</p>
+            <label className="flex cursor-pointer flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-[#E5E7EB] bg-[#F8FAFC] hover:border-[#C89B3C] hover:bg-[#C89B3C]/5 transition-all disabled:cursor-not-allowed">
+              {uploading ? (
+                <>
+                  <Loader2 className="size-6 animate-spin text-[#C89B3C]" />
+                  <p className="mt-2 text-xs text-[#9CA3AF]">Uploading...</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="size-6 text-[#9CA3AF]" />
+                  <p className="mt-2 text-xs text-[#9CA3AF]">Klik untuk upload gambar</p>
+                </>
+              )}
               <input
                 type="file"
                 accept="image/*"
                 className="hidden"
+                disabled={uploading}
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   if (file) handleFile(file)
+                  e.target.value = ""
                 }}
               />
             </label>
+          )}
+          {uploadError && (
+            <p className="mt-2 flex items-center gap-1 text-xs text-red-500">
+              <AlertCircle className="size-3.5" /> {uploadError}
+            </p>
           )}
         </div>
       ) : (

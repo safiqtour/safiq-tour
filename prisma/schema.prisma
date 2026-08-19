@@ -462,6 +462,7 @@ model PackageHotel {
   package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
   hotel     Hotel?  @relation(fields: [hotelId], references: [id], onDelete: SetNull)
 
+  @@index([packageId])
   @@map("package_hotels")
 }
 
@@ -519,6 +520,7 @@ model PackageSchedule {
   package        Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
   bookings       Booking[]
 
+  @@index([packageId])
   @@map("package_schedules")
 }
 
@@ -549,6 +551,7 @@ model PackageItinerary {
   image       String  @default("")
   package     Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
+  @@index([packageId])
   @@map("package_itineraries")
 }
 
@@ -560,6 +563,7 @@ model PackageGallery {
   sortOrder Int     @default(0)
   package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
+  @@index([packageId])
   @@map("package_galleries")
 }
 

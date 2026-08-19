@@ -250,9 +250,9 @@ export async function createPackage(formData: FormData) {
   // a unique slug before the write so two packages can share a title safely.
   const finalSlug = await resolveUniqueSlug(parsed.slug)
 
-  // Create the package (with nested relations), capture its id, then persist the
-  // generated public payload so the published public page can render it.
-  // Same nested-create shape as updatePackage: allow up to 15s on slow connections.
+  // Create the package (scalar columns only), capture its id, then persist the
+  // generated public payload and bulk-create child collections so the published
+  // public page can render it. Child rows use createMany to avoid N+1 inserts.
   await db.$transaction(async (tx) => {
     const pkg = await tx.package.create({
       data: {
@@ -295,43 +295,6 @@ export async function createPackage(formData: FormData) {
         metaDescription: parsed.metaDescription,
         keywords: parsed.keywords,
         publishedAt: parsed.status === "PUBLISHED" ? new Date() : null,
-        hotels: {
-          create: parsed.hotels,
-        },
-        schedules: {
-          create: parsed.schedules.map((s) => ({
-            departureLabel: s.departureLabel,
-            departureDate: departureDateFromLabel(s.departureLabel),
-            returnDate: s.returnDate ? new Date(s.returnDate) : null,
-            meetingPoint: s.meetingPoint,
-            seat: s.seat,
-            seatFilled: s.seatFilled,
-          })),
-        },
-        facilities: {
-          create: parsed.facilities.map((f) => ({
-            facilityId: f.facilityId ?? null,
-            name: f.name,
-            icon: f.icon,
-          })),
-        },
-        itineraries: {
-          create: parsed.itineraries,
-        },
-        galleries: {
-          create: parsed.galleries,
-        },
-        flights: {
-          create: parsed.flights.map((f) => ({
-            // Direction grouping: the leg home is RETURN; every other leg
-            // (outbound, transit, side trips) belongs to the DEPARTURE group.
-            direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
-            label: f.label,
-            segments: {
-              create: flightSegments(f.segments ?? []),
-            },
-          })),
-        },
       },
     })
 
@@ -366,6 +329,68 @@ export async function createPackage(formData: FormData) {
     })
 
     await tx.package.update({ where: { id: pkg.id }, data: { publicContent: JSON.parse(JSON.stringify(publicContent)) } })
+
+    // Bulk-create child collections with createMany instead of nested creates to
+    // cut round-trips (each nested create used to run its own INSERT).
+    if (parsed.hotels.length > 0) {
+      await tx.packageHotel.createMany({
+        data: parsed.hotels.map((h) => ({ packageId: pkg.id, ...h })),
+      })
+    }
+    if (parsed.schedules.length > 0) {
+      await tx.packageSchedule.createMany({
+        data: parsed.schedules.map((s) => ({
+          packageId: pkg.id,
+          departureLabel: s.departureLabel,
+          departureDate: departureDateFromLabel(s.departureLabel),
+          returnDate: s.returnDate ? new Date(s.returnDate) : null,
+          meetingPoint: s.meetingPoint,
+          seat: s.seat,
+          seatFilled: s.seatFilled,
+        })),
+      })
+    }
+    if (parsed.facilities.length > 0) {
+      await tx.packageFacility.createMany({
+        data: parsed.facilities.map((f) => ({
+          packageId: pkg.id,
+          facilityId: f.facilityId ?? null,
+          name: f.name,
+          icon: f.icon,
+        })),
+      })
+    }
+    if (parsed.itineraries.length > 0) {
+      await tx.packageItinerary.createMany({
+        data: parsed.itineraries.map((i) => ({ packageId: pkg.id, ...i })),
+      })
+    }
+    if (parsed.galleries.length > 0) {
+      await tx.packageGallery.createMany({
+        data: parsed.galleries.map((g) => ({ packageId: pkg.id, ...g })),
+      })
+    }
+    if (parsed.flights.length > 0) {
+      const createdFlights = await tx.packageFlight.createManyAndReturn({
+        data: parsed.flights.map((f) => ({
+          packageId: pkg.id,
+          // Direction grouping: the leg home is RETURN; every other leg
+          // (outbound, transit, side trips) belongs to the DEPARTURE group.
+          direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
+          label: f.label,
+        })),
+        select: { id: true },
+      })
+      const segmentRows = createdFlights.flatMap((f, i) =>
+        flightSegments(parsed.flights[i].segments ?? []).map((s) => ({
+          flightId: f.id,
+          ...s,
+        }))
+      )
+      if (segmentRows.length > 0) {
+        await tx.packageFlightSegment.createMany({ data: segmentRows })
+      }
+    }
   }, { timeout: 15000 })
 
 
@@ -494,24 +519,26 @@ export async function updatePackage(id: string, formData: FormData) {
   )
 
   // All writes stay atomic in a single transaction; allow up to 15s for the
-  // delete + nested recreate of every package relation on slow connections.
+  // delete + bulk recreate of every package relation on slow connections.
   await db.$transaction(async (tx) => {
-    await tx.packageHotel.deleteMany({ where: { packageId: id } })
-    await tx.packageSchedule.deleteMany({
-      where: { packageId: id, id: { notIn: [...bookedIds] } },
-    })
-    await tx.packageFacility.deleteMany({ where: { packageId: id } })
-    await tx.packageItinerary.deleteMany({ where: { packageId: id } })
-    await tx.packageGallery.deleteMany({ where: { packageId: id } })
-    // Flight segments are removed by the package_flights FK ON DELETE CASCADE.
-    await tx.packageFlight.deleteMany({ where: { packageId: id } })
+      await tx.packageHotel.deleteMany({ where: { packageId: id } })
+      await tx.packageSchedule.deleteMany({
+        where: { packageId: id, id: { notIn: [...bookedIds] } },
+      })
+      await tx.packageFacility.deleteMany({ where: { packageId: id } })
+      await tx.packageItinerary.deleteMany({ where: { packageId: id } })
+      await tx.packageGallery.deleteMany({ where: { packageId: id } })
+      // Flight segments are removed by the package_flights FK ON DELETE CASCADE.
+      await tx.packageFlight.deleteMany({ where: { packageId: id } })
 
-    // Keep locked schedules untouched and only create new ones (avoid duplicating
-    // the departure labels of schedules that had to be preserved).
+      // Keep locked schedules untouched and only create new ones (avoid duplicating
+      // the departure labels of schedules that had to be preserved).
     const schedulesToCreate = parsed.schedules.filter(
       (s) => !lockedLabels.has(s.departureLabel)
     )
 
+    // Update scalar columns only (no nested relations) so child rows can be
+    // recreated with bulk createMany below.
     await tx.package.update({
       where: { id },
       data: {
@@ -555,46 +582,70 @@ export async function updatePackage(id: string, formData: FormData) {
         keywords: parsed.keywords,
         publishedAt: parsed.status === "PUBLISHED" ? new Date() : null,
         publicContent: JSON.parse(JSON.stringify(publicContent)),
-
-        hotels: {
-          create: parsed.hotels,
-        },
-        schedules: {
-          create: schedulesToCreate.map((s) => ({
-            departureLabel: s.departureLabel,
-            departureDate: departureDateFromLabel(s.departureLabel),
-            returnDate: s.returnDate ? new Date(s.returnDate) : null,
-            meetingPoint: s.meetingPoint,
-            seat: s.seat,
-            seatFilled: s.seatFilled,
-          })),
-        },
-        facilities: {
-          create: parsed.facilities.map((f) => ({
-            facilityId: f.facilityId ?? null,
-            name: f.name,
-            icon: f.icon,
-          })),
-        },
-        itineraries: {
-          create: parsed.itineraries,
-        },
-        galleries: {
-          create: parsed.galleries,
-        },
-        flights: {
-          create: parsed.flights.map((f) => ({
-            // Direction grouping: the leg home is RETURN; every other leg
-            // (outbound, transit, side trips) belongs to the DEPARTURE group.
-            direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
-            label: f.label,
-            segments: {
-              create: flightSegments(f.segments ?? []),
-            },
-          })),
-        },
       },
     })
+
+    // Bulk-create child collections with createMany instead of nested creates to
+    // cut round-trips (each nested create used to run its own INSERT).
+    if (parsed.hotels.length > 0) {
+      await tx.packageHotel.createMany({
+        data: parsed.hotels.map((h) => ({ packageId: id, ...h })),
+      })
+    }
+    if (schedulesToCreate.length > 0) {
+      await tx.packageSchedule.createMany({
+        data: schedulesToCreate.map((s) => ({
+          packageId: id,
+          departureLabel: s.departureLabel,
+          departureDate: departureDateFromLabel(s.departureLabel),
+          returnDate: s.returnDate ? new Date(s.returnDate) : null,
+          meetingPoint: s.meetingPoint,
+          seat: s.seat,
+          seatFilled: s.seatFilled,
+        })),
+      })
+    }
+    if (parsed.facilities.length > 0) {
+      await tx.packageFacility.createMany({
+        data: parsed.facilities.map((f) => ({
+          packageId: id,
+          facilityId: f.facilityId ?? null,
+          name: f.name,
+          icon: f.icon,
+        })),
+      })
+    }
+    if (parsed.itineraries.length > 0) {
+      await tx.packageItinerary.createMany({
+        data: parsed.itineraries.map((i) => ({ packageId: id, ...i })),
+      })
+    }
+    if (parsed.galleries.length > 0) {
+      await tx.packageGallery.createMany({
+        data: parsed.galleries.map((g) => ({ packageId: id, ...g })),
+      })
+    }
+    if (parsed.flights.length > 0) {
+      const createdFlights = await tx.packageFlight.createManyAndReturn({
+        data: parsed.flights.map((f) => ({
+          packageId: id,
+          // Direction grouping: the leg home is RETURN; every other leg
+          // (outbound, transit, side trips) belongs to the DEPARTURE group.
+          direction: f.label === "Kepulangan" ? "RETURN" : "DEPARTURE",
+          label: f.label,
+        })),
+        select: { id: true },
+      })
+      const segmentRows = createdFlights.flatMap((f, i) =>
+        flightSegments(parsed.flights[i].segments ?? []).map((s) => ({
+          flightId: f.id,
+          ...s,
+        }))
+      )
+      if (segmentRows.length > 0) {
+        await tx.packageFlightSegment.createMany({ data: segmentRows })
+      }
+    }
   }, { timeout: 15000 })
 
   revalidatePath("/admin/packages")

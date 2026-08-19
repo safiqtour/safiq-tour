@@ -48,3 +48,6 @@ _dev_out.txt
 
 # Photoshop / design source
 *.psd
+
+# media storage (local provider)
+/public/uploads/
