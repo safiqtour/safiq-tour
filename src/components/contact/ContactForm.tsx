@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Send, CheckCircle } from "lucide-react"
+import { Send, CheckCircle, Loader2 } from "lucide-react"
+import { submitContactLead } from "@/actions/contact-lead"
 
 type FormData = {
   name: string
@@ -24,6 +25,8 @@ export function ContactForm() {
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
 
   function validate(): boolean {
     const newErrors: FormErrors = {}
@@ -45,10 +48,27 @@ export function ContactForm() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    setSubmitted(true)
+    setSubmitting(true)
+    setSubmitError("")
+    try {
+      const fd = new FormData()
+      fd.set("name", form.name)
+      fd.set("whatsapp", form.whatsapp)
+      fd.set("email", form.email)
+      fd.set("subject", form.subject)
+      fd.set("message", form.message)
+
+      const result = await submitContactLead(fd)
+      if (result.success) setSubmitted(true)
+      else setSubmitError(result.error)
+    } catch {
+      setSubmitError("Pesan belum berhasil dikirim. Silakan coba lagi atau hubungi kami melalui WhatsApp.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputClass = (field: keyof FormData) =>
@@ -177,12 +197,19 @@ export function ContactForm() {
               </div>
             </div>
 
+            {submitError && (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
+
             <div className="mt-6 text-center">
               <button
                 type="submit"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-[#D4AF37] px-8 text-sm font-semibold text-[#0F2343] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25"
+                disabled={submitting}
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-[#D4AF37] px-8 text-sm font-semibold text-[#0F2343] transition-all duration-300 hover:bg-[#C49A2E] hover:shadow-lg hover:shadow-[#D4AF37]/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Send className="size-4" />
+                {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 Kirim Pesan
               </button>
             </div>
