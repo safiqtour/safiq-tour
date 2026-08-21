@@ -32,8 +32,8 @@ const socials = [
   {
     icon: Globe,
     title: "Website",
-    username: "www.safiqtour.com",
-    href: "https://www.safiqtour.com",
+    username: "safiqtour.id",
+    href: "https://safiqtour.id",
     color: "hover:shadow-[#D4AF37]/20 hover:border-[#D4AF37]/30",
     iconColor: "text-[#D4AF37]",
   },

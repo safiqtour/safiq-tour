@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     title: "Kontak Safiq Tour | Konsultasi Umroh",
     description:
       "Hubungi Safiq Tour untuk konsultasi paket umroh, jadwal keberangkatan, dan informasi perjalanan ibadah menuju Baitullah.",
-    url: "https://www.safiqtour.com/contact",
+    url: "https://safiqtour.id/contact",
     siteName: "Safiq Tour",
     locale: "id_ID",
     type: "website",
@@ -26,15 +26,15 @@ export const metadata: Metadata = {
       "Hubungi Safiq Tour untuk konsultasi paket umroh, jadwal keberangkatan, dan informasi perjalanan ibadah menuju Baitullah.",
   },
   alternates: {
-    canonical: "https://www.safiqtour.com/contact",
+    canonical: "https://safiqtour.id/contact",
   },
   other: {
     "application/ld+json": JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Safiq Tour",
-      url: "https://www.safiqtour.com",
-      logo: "https://www.safiqtour.com/images/logo-safiq.png",
+      url: "https://safiqtour.id",
+      logo: "https://safiqtour.id/images/logo-safiq.png",
       contactPoint: {
         "@type": "ContactPoint",
         telephone: "+62-822-1162-4747",

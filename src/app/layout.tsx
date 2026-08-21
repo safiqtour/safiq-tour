@@ -28,11 +28,31 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://safiqtour.id"),
   title: {
-    default: "Safiq Tour",
+    default: "Safiq Tour | Travel Umroh Resmi & Terpercaya",
     template: "%s | Safiq Tour",
   },
-  description: "Your trusted partner for Umrah travel.",
+  description:
+    "Safiq Tour adalah travel umroh resmi & terpercaya dengan paket umroh lengkap, hotel nyaman, pembimbing ibadah berpengalaman, dan pelayanan amanah.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Safiq Tour | Travel Umroh Resmi & Terpercaya",
+    description:
+      "Travel umroh resmi & terpercaya dengan paket umroh lengkap, hotel nyaman, pembimbing ibadah berpengalaman, dan pelayanan amanah.",
+    url: "https://safiqtour.id/",
+    siteName: "Safiq Tour",
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Safiq Tour | Travel Umroh Resmi & Terpercaya",
+    description:
+      "Travel umroh resmi & terpercaya dengan paket umroh lengkap, hotel nyaman, pembimbing ibadah berpengalaman, dan pelayanan amanah.",
+  },
   icons: {
     icon: "/images/logo-safiq.png",
     apple: "/images/logo-safiq.png",
@@ -46,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${playfair.variable} ${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >

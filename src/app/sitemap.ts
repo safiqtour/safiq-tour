@@ -4,7 +4,7 @@ import { getAllPosts } from "@/lib/mdx"
 export const dynamic = "force-dynamic"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://safiq-tour.com"
+  const baseUrl = "https://safiqtour.id"
 
   const posts = await getAllPosts()
 

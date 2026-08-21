@@ -67,11 +67,11 @@ async function ArticlePage({ params }: Props) {
     publisher: {
       "@type": "Organization",
       name: "Safiq Tour",
-      logo: { "@type": "ImageObject", url: "https://safiq-tour.com/logo.png" },
+      logo: { "@type": "ImageObject", url: "https://safiqtour.id/images/logo-safiq.png" },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://safiq-tour.com/blog/${post.slug}`,
+      "@id": `https://safiqtour.id/blog/${post.slug}`,
     },
     keywords: post.frontmatter.keywords.join(", "),
   }
@@ -80,13 +80,13 @@ async function ArticlePage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Beranda", item: "https://safiq-tour.com/" },
-      { "@type": "ListItem", position: 2, name: "Blog", item: "https://safiq-tour.com/blog" },
+      { "@type": "ListItem", position: 1, name: "Beranda", item: "https://safiqtour.id/" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: "https://safiqtour.id/blog" },
       {
         "@type": "ListItem",
         position: 3,
         name: post.frontmatter.title,
-        item: `https://safiq-tour.com/blog/${post.slug}`,
+        item: `https://safiqtour.id/blog/${post.slug}`,
       },
     ],
   }

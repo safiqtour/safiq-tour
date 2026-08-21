@@ -50,10 +50,10 @@ const cards = [
   {
     icon: Globe,
     title: "Website",
-    content: ["www.safiqtour.com"],
+    content: ["safiqtour.id"],
     action: {
       label: "Kunjungi Website",
-      href: "https://www.safiqtour.com",
+      href: "https://safiqtour.id",
       external: true,
     },
   },

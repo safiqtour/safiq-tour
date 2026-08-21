@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     title: "Galeri Safiq Tour | Dokumentasi Perjalanan Umroh",
     description:
       "Lihat dokumentasi perjalanan umroh jamaah Safiq Tour mulai dari keberangkatan, ibadah di Masjidil Haram dan Masjid Nabawi hingga kepulangan.",
-    url: "https://www.safiqtour.com/gallery",
+    url: "https://safiqtour.id/gallery",
     siteName: "Safiq Tour",
     locale: "id_ID",
     type: "website",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
       "Lihat dokumentasi perjalanan umroh jamaah Safiq Tour mulai dari keberangkatan, ibadah di Masjidil Haram dan Masjid Nabawi hingga kepulangan.",
   },
   alternates: {
-    canonical: "https://www.safiqtour.com/gallery",
+    canonical: "https://safiqtour.id/gallery",
   },
   other: {
     "application/ld+json": JSON.stringify({
@@ -36,12 +36,12 @@ export const metadata: Metadata = {
       "@type": "CollectionPage",
       name: "Galeri Safiq Tour",
       description: "Dokumentasi perjalanan umroh jamaah Safiq Tour",
-      url: "https://www.safiqtour.com/gallery",
+      url: "https://safiqtour.id/gallery",
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Beranda", item: "https://www.safiqtour.com" },
-          { "@type": "ListItem", position: 2, name: "Galeri", item: "https://www.safiqtour.com/gallery" },
+          { "@type": "ListItem", position: 1, name: "Beranda", item: "https://safiqtour.id" },
+          { "@type": "ListItem", position: 2, name: "Galeri", item: "https://safiqtour.id/gallery" },
         ],
       },
     }),
