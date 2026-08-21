@@ -31,24 +31,10 @@ export const metadata: Metadata = {
   other: {
     "application/ld+json": JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "Safiq Tour",
-      url: "https://safiqtour.id",
-      logo: "https://safiqtour.id/images/logo-safiq.png",
-      contactPoint: {
-        "@type": "ContactPoint",
-        telephone: "+62-822-1162-4747",
-        contactType: "customer service",
-        availableLanguage: ["Indonesian", "English"],
-      },
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: "Perumahan Cimareme Indah Blok A5 No.01",
-        addressLocality: "Bandung Barat",
-        addressRegion: "Jawa Barat",
-        postalCode: "40552",
-        addressCountry: "ID",
-      },
+      "@type": "ContactPage",
+      name: "Kontak Safiq Tour | Konsultasi Umroh",
+      url: "https://safiqtour.id/contact",
+      about: { "@id": "https://safiqtour.id/#organization" },
     }),
   },
 }

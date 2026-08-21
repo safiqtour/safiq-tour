@@ -66,7 +66,10 @@ async function ArticlePage({ params }: Props) {
     author: { "@type": "Person", name: post.frontmatter.author },
     publisher: {
       "@type": "Organization",
-      name: "Safiq Tour",
+      "@id": "https://safiqtour.id/#organization",
+      name: "PT. Safiq Oto Mandiri",
+      alternateName: "Safiq Tour",
+      url: "https://safiqtour.id",
       logo: { "@type": "ImageObject", url: "https://safiqtour.id/images/logo-safiq.png" },
     },
     mainEntityOfPage: {

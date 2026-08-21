@@ -37,6 +37,7 @@ export const metadata: Metadata = {
       name: "Galeri Safiq Tour",
       description: "Dokumentasi perjalanan umroh jamaah Safiq Tour",
       url: "https://safiqtour.id/gallery",
+      publisher: { "@id": "https://safiqtour.id/#organization" },
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
