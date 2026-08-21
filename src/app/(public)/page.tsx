@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Image from "next/image"
 import { Section } from "@/components/ui/section"
 import { Container } from "@/components/ui/container"
@@ -12,6 +13,11 @@ import { Hero } from "@/components/home/Hero"
 import { getPublicPackages } from "@/modules/public/packages"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  description:
+    "Safiq Tour adalah travel umroh resmi & terpercaya dari Bandung Barat, melayani jamaah di Bandung dan sekitarnya dengan paket umroh lengkap, hotel nyaman, dan pembimbing ibadah berpengalaman.",
+}
 
 export default async function Home() {
   const allPackages = await getPublicPackages()

@@ -41,7 +41,7 @@ const cards = [
       "08.00 – 17.00 WIB",
       "",
       "Sabtu",
-      "08.00 – 15.00 WIB",
+      "08.00 – 17.00 WIB",
       "",
       "Minggu",
       "By Appointment",

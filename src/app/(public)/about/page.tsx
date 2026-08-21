@@ -93,6 +93,11 @@ export default function AboutPage() {
               Indonesia dengan Nomor Izin PPIU: 91202132200280002, kami memberikan rasa aman dan kepastian kepada setiap
               jamaah sejak proses pendaftaran hingga kembali ke Tanah Air.
             </p>
+
+            <p className="text-base leading-relaxed text-foreground/80 md:text-lg">
+              Dari kantor kami di Kabupaten Bandung Barat, Safiq Tour melayani jamaah dari Bandung, Bandung Barat, dan
+              sekitarnya dengan pelayanan ibadah yang amanah dan profesional.
+            </p>
           </div>
         </Container>
       </Section>
