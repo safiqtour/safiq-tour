@@ -54,6 +54,9 @@ export const metadata: Metadata = {
     description:
       "Travel umroh resmi & terpercaya dengan paket umroh lengkap, hotel nyaman, pembimbing ibadah berpengalaman, dan pelayanan amanah.",
   },
+  verification: {
+    google: "S8gn6r229Qk-as_TTPfdXPJJhE06fqatXy_cBZzGBRw",
+  },
   icons: {
     icon: "/images/logo-safiq.png",
     apple: "/images/logo-safiq.png",
