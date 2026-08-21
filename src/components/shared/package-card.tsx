@@ -214,6 +214,7 @@ function PackageCard({ pkg, className }: PackageCardProps) {
             className="inline-flex h-[54px] shrink-0 items-center justify-center rounded-xl bg-[#0F2D5C] px-5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#1a3d7a] active:scale-[0.98]"
           >
             Lihat Detail
+            <span className="sr-only">: {pkg.title}</span>
           </Link>
         </div>
       </div>

@@ -18,6 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `Daftar ${pkg.title} | Safiq Tour`,
     description: `Daftar paket umroh ${pkg.title} — isi formulir pendaftaran dan tim Safiq Tour akan menghubungi Anda.`,
+    robots: {
+      index: false,
+      follow: true,
+    },
   }
 }
 
