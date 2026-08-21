@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getPublicPackageBySlug } from "@/modules/public/packages"
 import { getWhatsAppNumber } from "@/lib/whatsapp.server"
+import { SITE_URL } from "@/lib/jsonld"
 import { Hero } from "@/components/packages/Hero"
 import { QuickInfo } from "@/components/packages/QuickInfo"
 import { Highlights } from "@/components/packages/Highlights"
@@ -34,12 +35,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? ` Penerbangan ${[leg.airlineName, leg.flightNumber].filter(Boolean).join(" ")} rute ${leg.departureCity} (${leg.departureAirport}) menuju ${leg.arrivalCity} (${leg.arrivalAirport}).`
     : ""
 
+  const title = `${pkg.title} | Safiq Tour`
+  const description = `Paket Umroh ${pkg.title} dengan ${pkg.duration}, ${pkg.hotelMekah} dan ${pkg.hotelMadinah}, maskapai ${pkg.maskapai}.${flightInfo}`
+  const url = `${SITE_URL}/packages/${pkg.slug}`
+
   return {
-    title: `${pkg.title} | Safiq Tour`,
-    description: `Paket Umroh ${pkg.title} dengan hotel pilihan, maskapai terbaik, pembimbing ibadah berpengalaman, harga kompetitif dan pelayanan amanah.${flightInfo}`,
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
-      title: `${pkg.title} | Safiq Tour`,
-      description: `Paket Umroh ${pkg.title} dengan ${pkg.duration}, ${pkg.hotelMekah} dan ${pkg.hotelMadinah}.${flightInfo}`,
+      title,
+      description,
+      url,
+      siteName: "Safiq Tour",
+      locale: "id_ID",
+      type: "website",
+      images: pkg.image ? [pkg.image] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
       images: pkg.image ? [pkg.image] : [],
     },
   }
@@ -56,6 +74,37 @@ export default async function PackageDetailPage({ params }: Props) {
 
   const cat = pkg.category
   const whatsappNumber = await getWhatsAppNumber()
+
+  const packageUrl = `${SITE_URL}/packages/${pkg.slug}`
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Paket Umroh", item: `${SITE_URL}/packages` },
+      { "@type": "ListItem", position: 3, name: pkg.title, item: packageUrl },
+    ],
+  }
+
+  const productJsonLd =
+    pkg.price > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: pkg.title,
+          description: detail.description,
+          ...(pkg.image ? { image: [pkg.image] } : {}),
+          category: "Paket Umroh",
+          brand: { "@type": "Brand", name: "Safiq Tour" },
+          offers: {
+            "@type": "Offer",
+            url: packageUrl,
+            price: pkg.price,
+            priceCurrency: "IDR",
+          },
+        }
+      : null
 
   const hotelStarMap: Record<string, number> = {
     zamzam: 3,
@@ -75,6 +124,16 @@ export default async function PackageDetailPage({ params }: Props) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {productJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        />
+      )}
       <Hero
         pkg={pkg}
         heroImage={detail.heroImage}
