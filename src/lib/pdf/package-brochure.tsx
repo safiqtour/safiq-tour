@@ -417,15 +417,43 @@ const styles = StyleSheet.create({
   ovHotelMeta: { fontSize: 7, color: GRAY, lineHeight: 1.2 },
   ovFlightRow: { flexDirection: "row" },
   ovFlightCol: { flexDirection: "column" },
-  ovFlightCard: { flex: 1, borderWidth: 1, borderColor: BORDER, backgroundColor: LIGHT, borderTopWidth: 2, borderTopColor: NAVY, padding: 7, marginRight: 6, marginBottom: 6 },
-  ovFlightLabel: { alignSelf: "flex-start", backgroundColor: NAVY, paddingHorizontal: 6, paddingVertical: 1.5, marginBottom: 5 },
-  ovFlightLabelText: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: GOLD, letterSpacing: 2, lineHeight: 1.2 },
-  ovFlightSeg: { flexDirection: "row", alignItems: "center" },
-  ovFlightLogo: { width: 20, height: 20, objectFit: "contain", marginRight: 6 },
-  ovFlightAirline: { fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY, lineHeight: 1.2 },
-  ovFlightRoute: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: INK, marginTop: 1.5, lineHeight: 1.2 },
-  ovFlightTimes: { fontSize: 7.5, color: GRAY, marginTop: 1.5, lineHeight: 1.2 },
-  ovFlightDate: { fontSize: 7, color: GOLD_DARK, fontFamily: "Helvetica-Bold", marginTop: 1.5, lineHeight: 1.2 },
+  ovFlightCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: LIGHT,
+    borderTopWidth: 2,
+    borderTopColor: NAVY,
+    padding: 8,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  ovFlightLabel: { alignSelf: "flex-start", backgroundColor: NAVY, paddingHorizontal: 7, paddingVertical: 2, marginBottom: 6 },
+  ovFlightLabelText: { fontSize: 7, fontFamily: "Helvetica-Bold", color: GOLD, letterSpacing: 2, lineHeight: 1.2 },
+  ovFlightSegLogoCol: { width: 28, flexShrink: 0, alignItems: "center", paddingTop: 2, marginRight: 8 },
+  ovFlightLogo: { width: 22, height: 22, objectFit: "contain" },
+  ovFlightSegInfo: { flex: 1, flexGrow: 1 },
+  /* ---- simple vertical normal-flow block for multi-segment legs ---- */
+  ovFlightMultiBlock: { marginBottom: 6 },
+  ovFlightMultiLabel: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: GOLD_DARK, letterSpacing: 2, lineHeight: 1.2, marginBottom: 3 },
+  ovFlightMultiSeg: { marginBottom: 5 },
+  ovFlightMultiRow: { flexDirection: "row", alignItems: "center" },
+  ovFlightMultiLogoCol: { width: 20, flexShrink: 0, marginRight: 6 },
+  ovFlightMultiLogo: { width: 18, height: 18, objectFit: "contain" },
+  ovFlightMultiName: { fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY, lineHeight: 1.25 },
+  ovFlightMultiRoute: { fontSize: 8, fontFamily: "Helvetica-Bold", color: INK, lineHeight: 1.3, marginTop: 1.5 },
+  ovFlightMultiDate: { fontSize: 7.5, color: GRAY, lineHeight: 1.2, marginTop: 0.5 },
+  /* ---- compact variants (only applied when some leg is multi-segment) ---- */
+  ovSectionTight: { marginTop: 6 },
+  ovSectionLabelTight: { marginBottom: 3 },
+  ovHotelCardTight: { padding: 5 },
+  ovHotelImageTight: { width: 52, height: 40 },
+  ovRoomRowTight: { marginTop: 5 },
+  ovFlightMultiBlockTight: { marginBottom: 4 },
+  ovFlightMultiLabelTight: { marginBottom: 2 },
+  ovFlightMultiSegTight: { marginBottom: 3 },
+  ovFlightMultiRouteTight: { marginTop: 1 },
+  routeStripTight: { marginTop: 6, padding: 6 },
   ovRoomRow: { flexDirection: "row", marginTop: 8 },
   ovRoomCard: { flex: 1, borderWidth: 1, borderColor: BORDER, backgroundColor: LIGHT, borderTopWidth: 2, borderTopColor: GOLD, padding: 6, marginRight: 6 },
   ovRoomLabel: { fontSize: 6.5, fontFamily: "Helvetica-Bold", color: GOLD_DARK, letterSpacing: 1.5, marginBottom: 2, lineHeight: 1.2 },
@@ -523,10 +551,18 @@ function SectionTitle({ children, compact }: { children: string; compact?: boole
 /* ------------------------------- PAGE 1 ------------------------------- */
 
 /** Compact hotel card for the overview row (photo + name + stars + distance). */
-function OverviewHotelCard({ hotel }: { hotel: HotelView }) {
+function OverviewHotelCard({ hotel, tight }: { hotel: HotelView; tight?: boolean }) {
   return (
-    <View style={styles.ovHotelCard} wrap={false}>
-      {hotel.image ? <Image style={styles.ovHotelImage} src={hotel.image} /> : null}
+    <View
+      style={tight ? [styles.ovHotelCard, styles.ovHotelCardTight] : styles.ovHotelCard}
+      wrap={false}
+    >
+      {hotel.image ? (
+        <Image
+          style={tight ? [styles.ovHotelImage, styles.ovHotelImageTight] : styles.ovHotelImage}
+          src={hotel.image}
+        />
+      ) : null}
       <View style={{ flex: 1, justifyContent: "center" }}>
         {hotel.city ? <Text style={styles.ovHotelCity}>{hotel.city.toUpperCase()}</Text> : null}
         <Text style={styles.ovHotelName}>{hotel.name}</Text>
@@ -538,43 +574,139 @@ function OverviewHotelCard({ hotel }: { hotel: HotelView }) {
   )
 }
 
-/** Compact flight card: label pill + one row per segment (logo, route, times). */
-function FlightLegCard({ leg }: { leg: FlightLegView }) {
+/**
+ * Simple vertical normal-flow block for legs with multiple segments.
+ * No ticket-card nesting, no flexGrow, no fixed heights — every segment is a
+ * standalone block whose height follows its own content, so nothing can
+ * overlap regardless of how many segments a leg carries.
+ */
+function MultiSegmentFlightBlock({ leg, tight }: { leg: FlightLegView; tight?: boolean }) {
+  const block = tight ? [styles.ovFlightMultiBlock, styles.ovFlightMultiBlockTight] : styles.ovFlightMultiBlock
+  const label = tight ? [styles.ovFlightMultiLabel, styles.ovFlightMultiLabelTight] : styles.ovFlightMultiLabel
+  const seg = tight ? [styles.ovFlightMultiSeg, styles.ovFlightMultiSegTight] : styles.ovFlightMultiSeg
+  const route = tight ? [styles.ovFlightMultiRoute, styles.ovFlightMultiRouteTight] : styles.ovFlightMultiRoute
   return (
-    <View style={styles.ovFlightCard} wrap={false}>
+    <View style={block}>
+      {leg.label ? <Text style={label}>{leg.label.toUpperCase()}</Text> : null}
+      {leg.segments.map((seg0, j) => {
+        const dep = [seg0.depAirport, seg0.depTime].filter(Boolean).join(" ")
+        const arr = [seg0.arrAirport, seg0.arrTime].filter(Boolean).join(" ")
+        return (
+          <View key={j} wrap={false} style={seg}>
+            <View style={styles.ovFlightMultiRow}>
+              <View style={styles.ovFlightMultiLogoCol}>
+                {seg0.logo ? <Image style={styles.ovFlightMultiLogo} src={seg0.logo} /> : null}
+              </View>
+              <Text style={styles.ovFlightMultiName}>
+                {[seg0.airline.toUpperCase(), seg0.flightNumber].filter(Boolean).join(" · ")}
+              </Text>
+            </View>
+            <Text style={route}>{[dep, arr].filter(Boolean).join("  →  ")}</Text>
+            {seg0.depDate || seg0.arrDate ? (
+              <Text style={styles.ovFlightMultiDate}>{seg0.depDate || seg0.arrDate}</Text>
+            ) : null}
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+/**
+ * Flight ticket card for single-segment legs (side-by-side simple pairs).
+ * Height follows content, wrap={false} so it never splits across pages.
+ */
+function FlightLegCard({ leg, grow }: { leg: FlightLegView; grow?: boolean }) {
+  const n = leg.segments.length
+  const tight = n >= 5
+  const compact = n >= 3
+  const nameSize = tight ? 7.5 : compact ? 8 : 8.5
+  const routeSize = tight ? 7.5 : compact ? 8 : 8.5
+  const timesSize = 7.5
+  const segGap = tight ? 3 : compact ? 4 : 6
+
+  return (
+    <View style={grow ? styles.ovFlightCard : [styles.ovFlightCard, { flexGrow: 0 }]} wrap={false}>
       {leg.label ? (
         <View style={styles.ovFlightLabel}>
           <Text style={styles.ovFlightLabelText}>{leg.label.toUpperCase()}</Text>
         </View>
       ) : null}
-      {leg.segments.map((seg, j) => (
-        <View key={j} style={j > 0 ? [styles.ovFlightSeg, { marginTop: 5 }] : styles.ovFlightSeg}>
-          {seg.logo ? <Image style={styles.ovFlightLogo} src={seg.logo} /> : null}
-          <View style={{ flex: 1 }}>
-            {seg.airline || seg.flightNumber ? (
-              <Text style={styles.ovFlightAirline}>
-                {[seg.airline.toUpperCase(), seg.flightNumber].filter(Boolean).join("  ·  ")}
-              </Text>
-            ) : null}
-            {seg.depCity || seg.arrCity ? (
-              <Text style={styles.ovFlightRoute}>
-                {[seg.depCity.toUpperCase(), seg.arrCity.toUpperCase()].filter(Boolean).join("  »  ")}
-              </Text>
-            ) : null}
-            {[seg.depAirport || seg.depTime, seg.arrAirport || seg.arrTime].filter(Boolean).length > 0 ? (
-              <Text style={styles.ovFlightTimes}>
-                {[
-                  seg.depTime ? `${seg.depAirport} ${seg.depTime}` : seg.depAirport,
-                  seg.arrTime ? `${seg.arrAirport} ${seg.arrTime}` : seg.arrAirport,
-                ]
-                  .filter(Boolean)
-                  .join("  –  ")}
-              </Text>
-            ) : null}
-            {seg.depDate || seg.arrDate ? <Text style={styles.ovFlightDate}>{seg.depDate || seg.arrDate}</Text> : null}
+      {leg.segments.map((seg, j) => {
+        const dep = seg.depAirport
+          ? seg.depTime
+            ? `${seg.depAirport} ${seg.depTime}`
+            : seg.depAirport
+          : seg.depTime || ""
+        const arr = seg.arrAirport
+          ? seg.arrTime
+            ? `${seg.arrAirport} ${seg.arrTime}`
+            : seg.arrAirport
+          : seg.arrTime || ""
+        return (
+          <View
+            key={j}
+            wrap={false}
+            style={{ flexDirection: "row", alignItems: "flex-start", marginTop: j > 0 ? segGap : 0 }}
+          >
+            <View style={styles.ovFlightSegLogoCol}>
+              {seg.logo ? <Image style={styles.ovFlightLogo} src={seg.logo} /> : null}
+            </View>
+            <View style={styles.ovFlightSegInfo}>
+              {seg.airline || seg.flightNumber ? (
+                <Text
+                  style={{
+                    fontSize: nameSize,
+                    fontFamily: "Helvetica-Bold",
+                    color: NAVY,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {[seg.airline.toUpperCase(), seg.flightNumber].filter(Boolean).join("  ·  ")}
+                </Text>
+              ) : null}
+              {seg.depCity || seg.arrCity ? (
+                <Text
+                  style={{
+                    fontSize: routeSize,
+                    fontFamily: "Helvetica-Bold",
+                    color: INK,
+                    lineHeight: 1.25,
+                    marginTop: 1,
+                  }}
+                >
+                  {[seg.depCity.toUpperCase(), seg.arrCity.toUpperCase()].filter(Boolean).join("  »  ")}
+                </Text>
+              ) : null}
+              {[dep, arr].filter(Boolean).length > 0 ? (
+                <Text
+                  style={{
+                    fontSize: timesSize,
+                    color: GRAY,
+                    lineHeight: 1.3,
+                    marginTop: 1,
+                  }}
+                >
+                  {[dep, arr].filter(Boolean).join("  –  ")}
+                </Text>
+              ) : null}
+              {seg.depDate || seg.arrDate ? (
+                <Text
+                  style={{
+                    fontSize: 7.5,
+                    color: GOLD_DARK,
+                    fontFamily: "Helvetica-Bold",
+                    lineHeight: 1.2,
+                    marginTop: 1.5,
+                  }}
+                >
+                  {seg.depDate || seg.arrDate}
+                </Text>
+              ) : null}
+            </View>
           </View>
-        </View>
-      ))}
+        )
+      })}
     </View>
   )
 }
@@ -597,7 +729,18 @@ function PackageOverviewPage({ data }: { data: BrochureViewData }) {
     return v.length > 0 && v !== "-" && v !== "Maskapai Mitra"
   })
 
-  const twoFlights = data.flightLegs.length === 2
+  // Side-by-side layout is safe only for a simple pair (2 legs, 1 segment each).
+  // Any leg with multiple segments stacks its card full-width so rows never
+  // collide or overflow the half-width column.
+  const simplePair =
+    data.flightLegs.length === 2 && data.flightLegs.every((leg) => leg.segments.length === 1)
+  // Compact overview: when any leg is multi-segment the flight area grows, so
+  // tighten spacing everywhere on page 1 to keep the journey route on page 1.
+  const tight = data.flightLegs.some((leg) => leg.segments.length > 1)
+  const sectionStyle = tight ? [styles.ovSection, styles.ovSectionTight] : styles.ovSection
+  const sectionLabelStyle = tight
+    ? [styles.ovSectionLabel, styles.ovSectionLabelTight]
+    : styles.ovSectionLabel
 
   return (
     <Page size="A4" style={styles.ovPage}>
@@ -651,7 +794,7 @@ function PackageOverviewPage({ data }: { data: BrochureViewData }) {
         ) : null}
 
         {data.roomPrices.length > 0 ? (
-          <View style={styles.ovRoomRow} wrap={false}>
+          <View style={tight ? [styles.ovRoomRow, styles.ovRoomRowTight] : styles.ovRoomRow} wrap={false}>
             {data.roomPrices.map((room) => (
               <View key={room.label} style={styles.ovRoomCard}>
                 <Text style={styles.ovRoomLabel}>{`${room.label.toUpperCase()} — ${room.desc}`}</Text>
@@ -662,30 +805,34 @@ function PackageOverviewPage({ data }: { data: BrochureViewData }) {
         ) : null}
 
         {data.hotels.length > 0 ? (
-          <View style={styles.ovSection}>
-            <Text style={styles.ovSectionLabel}>HOTEL</Text>
+          <View style={sectionStyle}>
+            <Text style={sectionLabelStyle}>HOTEL</Text>
             <View style={styles.ovHotelRow}>
               {data.hotels.map((hotel, i) => (
-                <OverviewHotelCard key={i} hotel={hotel} />
+                <OverviewHotelCard key={i} hotel={hotel} tight={tight} />
               ))}
             </View>
           </View>
         ) : null}
 
         {data.flightLegs.length > 0 ? (
-          <View style={styles.ovSection}>
-            <Text style={styles.ovSectionLabel}>PENERBANGAN</Text>
-            <View style={twoFlights ? styles.ovFlightRow : styles.ovFlightCol}>
-              {data.flightLegs.map((leg, i) => (
-                <FlightLegCard key={i} leg={leg} />
-              ))}
+          <View style={sectionStyle}>
+            <Text style={sectionLabelStyle}>PENERBANGAN</Text>
+            <View style={simplePair ? styles.ovFlightRow : styles.ovFlightCol}>
+              {data.flightLegs.map((leg, i) =>
+                simplePair ? (
+                  <FlightLegCard key={i} leg={leg} grow />
+                ) : (
+                  <MultiSegmentFlightBlock key={i} leg={leg} tight={tight} />
+                ),
+              )}
             </View>
           </View>
         ) : null}
 
         {data.flightLegs.length === 0 && data.airlinesFallback.length > 0 ? (
-          <View style={styles.ovSection}>
-            <Text style={styles.ovSectionLabel}>PENERBANGAN</Text>
+          <View style={sectionStyle}>
+            <Text style={sectionLabelStyle}>PENERBANGAN</Text>
             {data.airlinesFallback.map((airline, i) => (
               <View key={i} style={styles.airlineCard} wrap={false}>
                 <Text style={styles.airlineName}>{airline.name}</Text>
@@ -707,7 +854,7 @@ function PackageOverviewPage({ data }: { data: BrochureViewData }) {
           </View>
         ) : null}
 
-        {data.journeyCities.length >= 2 ? <JourneyRoute cities={data.journeyCities} /> : null}
+        {data.journeyCities.length >= 2 ? <JourneyRoute cities={data.journeyCities} tight={tight} /> : null}
       </View>
 
       <PageFooter label={`${WEBSITE}  •  ${data.title}`} />
@@ -769,9 +916,9 @@ function ItineraryPage({ data }: { data: BrochureViewData }) {
 /* ------------------------------- PAGE 4 ------------------------------- */
 
 /** Compact journey map built only from cities actually named in the itinerary. */
-function JourneyRoute({ cities }: { cities: string[] }) {
+function JourneyRoute({ cities, tight }: { cities: string[]; tight?: boolean }) {
   return (
-    <View style={styles.routeStrip} wrap={false}>
+    <View style={tight ? [styles.routeStrip, styles.routeStripTight] : styles.routeStrip} wrap={false}>
       <Text style={styles.routeLabel}>RUTE PERJALANAN</Text>
       <View style={styles.routeRow}>
         {cities.map((city, i) => (
