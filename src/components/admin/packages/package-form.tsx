@@ -13,7 +13,6 @@ import {
   Calendar,
   ListChecks,
   FileText,
-  ImageIcon,
   Search,
   Send,
   Eye,
@@ -51,7 +50,6 @@ const tabs = [
   { id: "penerbangan", label: "Penerbangan", icon: Plane },
   { id: "facilities", label: "Fasilitas", icon: ListChecks },
   { id: "itinerary", label: "Itinerary", icon: FileText },
-  { id: "gallery", label: "Gallery", icon: ImageIcon },
   { id: "seo", label: "SEO", icon: Search },
   { id: "publish", label: "Publish", icon: Send },
 ] as const
@@ -481,9 +479,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
       icon: f.icon ?? "",
     }))
   )
-  const [galleries, setGalleries] = useState(
-    initialData?.galleries ?? []
-  )
   const [hotels, setHotels] = useState<HotelRow[]>(
     initialData?.hotels?.map((h) => ({
       type: h.type === "MADINAH" ? "MADINAH" : "MEKKAH",
@@ -650,7 +645,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
           schedules: normalizedSchedules.filter((s) => (s.departureLabel ?? "").trim()),
           facilities: initialData.facilities ?? [],
           itineraries: initialData.itineraries ?? [],
-          galleries: initialData.galleries ?? [],
         }
       : {
           title: "",
@@ -724,7 +718,7 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
     try {
       const fd = new FormData()
       Object.entries(data).forEach(([key, val]) => {
-        if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "galleries" || key === "flights") {
+        if (key === "hotels" || key === "schedules" || key === "facilities" || key === "itineraries" || key === "flights") {
           if (key === "facilities") {
             fd.append(key, JSON.stringify(facilities.map((f) => ({
               facilityId: f.facilityId ?? null,
@@ -735,8 +729,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
             // Only submit rows with a title; skip empty placeholder rows so Zod
             // doesn't reject the payload (title is required in the schema).
             fd.append(key, JSON.stringify(itineraries.filter((it) => (it.title ?? "").trim())))
-          } else if (key === "galleries") {
-            fd.append(key, JSON.stringify(galleries))
           } else if (key === "flights") {
             // Flight legs live in local state (not RHF-registered inputs); always
             // submit the current local list. `id` (flight + segment) is client-only
@@ -1444,49 +1436,6 @@ export function PackageForm({ initialData, action }: PackageFormProps) {
             <button type="button" onClick={addItinerary} className="flex items-center gap-2 text-sm text-[#C89B3C] hover:text-[#B88A2E] transition-colors">
               <Plus className="size-4" /> Tambah Hari {itineraries.length + 1}
             </button>
-          </div>
-        )
-
-      case "gallery":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              <AnimatePresence>
-                {galleries.map((g, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative aspect-square rounded-xl overflow-hidden border border-[#E5E7EB] group"
-                  >
-                    <Image src={g.url} alt={g.alt} fill className="object-cover" sizes="200px" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                      <button type="button" onClick={() => {
-                        const updated = galleries.filter((_, j) => j !== i)
-                        setGalleries(updated)
-                      }} className="flex size-8 items-center justify-center rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              <label className="flex cursor-pointer flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-[#E5E7EB] bg-[#F8FAFC] hover:border-[#C89B3C] hover:bg-[#C89B3C]/5 transition-all">
-                <Plus className="size-6 text-[#9CA3AF]" />
-                <p className="mt-1 text-xs text-[#9CA3AF]">Tambah</p>
-                <input type="file" accept="image/*" className="hidden" multiple onChange={(e) => {
-                  const files = Array.from(e.target.files ?? [])
-                  files.forEach((file) => {
-                    const reader = new FileReader()
-                    reader.onload = (ev) => {
-                      setGalleries((prev) => [...prev, { url: ev.target?.result as string, alt: "", sortOrder: prev.length }])
-                    }
-                    reader.readAsDataURL(file)
-                  })
-                }} />
-              </label>
-            </div>
           </div>
         )
 
