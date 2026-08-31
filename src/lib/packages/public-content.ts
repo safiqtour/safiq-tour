@@ -150,7 +150,12 @@ function makeItinerary(days: number): DayItinerary[] {
 function toHotels(hotels: PublicContentHotel[] | undefined): HotelInfo[] {
   const seeded = (hotels ?? []).filter((h) => (h.name ?? "").trim())
   return seeded.map((h) => ({
-    city: h.type === "MEKKAH" ? "Mekkah" : h.type === "MADINAH" ? "Madinah" : "Arab Saudi",
+    city:
+      h.type === "MEKKAH"
+        ? "Mekkah"
+        : h.type === "MADINAH"
+          ? "Madinah"
+          : (h.type || "Arab Saudi"),
     name: h.name as string,
     stars: h.stars ?? 0,
     distance: h.distance ?? "",

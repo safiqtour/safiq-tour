@@ -152,7 +152,7 @@ export function Hotels({ hotels }: HotelsProps) {
         <div className="grid gap-6 md:grid-cols-2">
           {sortedHotels.map((hotel, i) => (
             <motion.div
-              key={hotel.city}
+              key={`${hotel.city}-${hotel.name}-${i}`}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}

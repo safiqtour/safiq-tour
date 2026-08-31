@@ -1,19 +1,34 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Clock, Plane, Building2, Users } from "lucide-react"
+import { Clock, Plane, Building2, Users, MapPin } from "lucide-react"
+import type { HotelInfo } from "@/data/packages-detail"
+
+type QuickInfoItem = {
+  icon: typeof Clock
+  label: string
+  value: string
+  desc: string
+}
 
 type QuickInfoProps = {
   duration: string
   maskapai: string
-  hotelLabel: string
+  hotels: HotelInfo[]
 }
 
-export function QuickInfo({ duration, maskapai, hotelLabel }: QuickInfoProps) {
-  const items = [
+/** Display name for a hotel city ("Mekkah" → "Makkah", others kept as-is). */
+function cityDisplayName(city: string): string {
+  const c = city.toLowerCase()
+  if (c.includes("mekkah") || c.includes("makkah")) return "Makkah"
+  if (c.includes("madin")) return "Madinah"
+  return city
+}
+
+export function QuickInfo({ duration, maskapai, hotels }: QuickInfoProps) {
+  const items: QuickInfoItem[] = [
     { icon: Clock, label: "Durasi", value: duration, desc: "Perjalanan ibadah optimal" },
     { icon: Plane, label: "Maskapai", value: maskapai, desc: "Penerbangan Premium" },
-    { icon: Building2, label: "Hotel", value: hotelLabel, desc: "Dekat Masjidil Haram" },
     { icon: Users, label: "Pembimbing", value: "Berpengalaman", desc: "Ijazah & Sertifikasi" },
   ]
 
@@ -56,12 +71,53 @@ export function QuickInfo({ duration, maskapai, hotelLabel }: QuickInfoProps) {
               <p className="text-xs font-medium tracking-wider text-[#0B2D5C]/50 uppercase">
                 {item.label}
               </p>
-              <p className="mt-0.5 font-playfair text-lg font-bold text-[#0B2D5C]" style={{ fontFamily: "var(--font-playfair)" }}>
+              <p className="mt-0.5 line-clamp-2 font-playfair text-lg font-bold break-words text-[#0B2D5C]" style={{ fontFamily: "var(--font-playfair)" }}>
                 {item.value}
               </p>
-              <p className="mt-0.5 text-xs text-[#0B2D5C]/60">{item.desc}</p>
+              <p className="mt-0.5 line-clamp-2 text-xs break-words text-[#0B2D5C]/60">{item.desc}</p>
             </motion.div>
           ))}
+
+          {/* Hotel card — daftar hotel dari data aktual */}
+          <motion.div
+            variants={itemVariants}
+            className="group rounded-3xl border border-[#0B2D5C]/10 bg-white p-5 shadow transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/30 hover:shadow-lg hover:shadow-[#D4AF37]/5"
+          >
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-[#0B2D5C]/5 text-[#0B2D5C] transition-colors duration-300 group-hover:bg-[#D4AF37]/10 group-hover:text-[#D4AF37]">
+              <Building2 className="size-5" />
+            </div>
+            <p className="text-xs font-medium tracking-wider text-[#0B2D5C]/50 uppercase">
+              Hotel
+            </p>
+
+            {hotels.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {hotels.map((hotel, i) => (
+                  <div key={i}>
+                    {i > 0 && <div className="my-1.5 border-t border-[#0B2D5C]/8" />}
+                    <div className="flex items-start gap-1.5">
+                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-[#D4AF37]" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold tracking-wider text-[#0B2D5C]/60 uppercase">
+                          {cityDisplayName(hotel.city)}
+                        </p>
+                        <p className={`mt-px line-clamp-2 break-words text-[#0B2D5C] ${hotels.length > 2 ? "text-xs font-semibold" : "text-sm font-bold"}`}>
+                          {hotel.name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                <p className="mt-0.5 font-playfair text-lg font-bold text-[#0B2D5C]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Info Hotel
+                </p>
+                <p className="mt-0.5 text-xs text-[#0B2D5C]/60">Akomodasi tersedia</p>
+              </>
+            )}
+          </motion.div>
         </motion.div>
       </div>
     </section>

@@ -12,8 +12,6 @@ import { Flights } from "@/components/packages/Flights"
 import { Airlines } from "@/components/packages/Airlines"
 import { TermsConditions } from "@/components/packages/TermsConditions"
 import { IncludeExclude } from "@/components/packages/IncludeExclude"
-import { Gallery } from "@/components/packages/Gallery"
-import { Testimonials } from "@/components/packages/Testimonials"
 import { FAQ } from "@/components/packages/FAQ"
 
 export const dynamic = "force-dynamic"
@@ -72,7 +70,6 @@ export default async function PackageDetailPage({ params }: Props) {
   const detail = pub.detail
   if (!detail) notFound()
 
-  const cat = pkg.category
   const whatsappNumber = await getWhatsAppNumber()
 
   const packageUrl = `${SITE_URL}/packages/${pkg.slug}`
@@ -106,21 +103,7 @@ export default async function PackageDetailPage({ params }: Props) {
         }
       : null
 
-  const hotelStarMap: Record<string, number> = {
-    zamzam: 3,
-    thaibah: 4,
-    rawdah: 5,
-    firdaus: 5,
-    ramadhan: 4,
-  }
-
-  const hotelLabelMap: Record<string, string> = {
-    zamzam: "Bintang 3",
-    thaibah: "Bintang 4",
-    rawdah: "Bintang 5",
-    firdaus: "Bintang 5",
-    ramadhan: "Bintang 4",
-  }
+  const maxHotelStars = detail.hotels.reduce((max, h) => Math.max(max, h.stars), 0) || 4
 
   return (
     <>
@@ -138,13 +121,13 @@ export default async function PackageDetailPage({ params }: Props) {
         pkg={pkg}
         heroImage={detail.heroImage}
         description={detail.description}
-        hotelStars={hotelStarMap[cat] || 3}
+        hotelStars={maxHotelStars}
         whatsappNumber={whatsappNumber}
       />
       <QuickInfo
         duration={pkg.duration}
         maskapai={pkg.maskapai}
-        hotelLabel={hotelLabelMap[cat] || "Bintang 3"}
+        hotels={detail.hotels}
       />
       <Highlights items={detail.highlights} />
       <Timeline days={detail.itinerary} durationLabel={pkg.duration} />
@@ -158,8 +141,6 @@ export default async function PackageDetailPage({ params }: Props) {
       {/* Static terms & conditions below the flight itinerary */}
       <TermsConditions />
       <IncludeExclude included={detail.included} excluded={detail.excluded} />
-      <Gallery />
-      <Testimonials />
       <FAQ />
     </>
   )
