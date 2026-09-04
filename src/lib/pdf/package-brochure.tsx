@@ -203,12 +203,54 @@ function pad2(n: number): string {
 
 /* ---------------------------- image handling --------------------------- */
 
+/**
+ * SSRF protection: check whether a URL is safe to fetch server-side.
+ * Blocks private IPs, loopback, link-local, and internal hostnames.
+ */
+function isSafeUrl(url: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+
+  const protocol = parsed.protocol
+  if (protocol !== "http:" && protocol !== "https:") return false
+
+  const host = parsed.hostname
+
+  // Loopback
+  if (host === "localhost" || host === "[::1]") return false
+  if (/^127\./.test(host)) return false
+
+  // Private / reserved IPv4 ranges
+  if (/^10\./.test(host)) return false
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return false
+  if (/^192\.168\./.test(host)) return false
+
+  // Link-local
+  if (/^169\.254\./.test(host)) return false
+
+  // Other internal ranges
+  if (/^0\./.test(host)) return false
+  if (/^100\.(6[4-9]|[7-9]\d|1[0-2][0-7])\./.test(host)) return false
+  if (/^192\.0\.[02]\./.test(host)) return false
+  if (/^198\.(1[89])\./.test(host)) return false
+
+  // IPv6 private/link-local
+  if (/^f[cd]/i.test(host)) return false
+  if (/^fe[89ab]/i.test(host)) return false
+
+  return true
+}
+
 /** Resolve any stored image reference into fetchable absolute URL candidates. */
 function candidateUrls(src: string): string[] {
   const s = (src ?? "").trim()
   if (!s) return []
   if (/^data:image\//i.test(s)) return [s]
-  if (/^https?:\/\//i.test(s)) return [s]
+  if (/^https?:\/\//i.test(s)) return isSafeUrl(s) ? [s] : []
   if (s.startsWith("/")) return [`${SITE_URL}${s}`, `${DEV_ORIGIN}${s}`]
   return []
 }
@@ -241,7 +283,24 @@ async function loadImage(src: string | null | undefined, maxWidth: number): Prom
         if (!match) continue
         return await toDataUrl(Buffer.from(match[2], "base64"), match[1].toLowerCase(), maxWidth)
       }
-      const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), redirect: "follow" })
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        redirect: "manual",
+      })
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("location")
+        if (!location || !isSafeUrl(location)) continue
+        const redirected = await fetch(location, {
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          redirect: "manual",
+        })
+        if (!redirected.ok) continue
+        const mime = (redirected.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase()
+        if (!mime.startsWith("image/")) continue
+        const buf = Buffer.from(await redirected.arrayBuffer())
+        if (buf.byteLength === 0 || buf.byteLength > MAX_IMAGE_BYTES) continue
+        return await toDataUrl(buf, mime, maxWidth)
+      }
       if (!res.ok) continue
       const mime = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase()
       if (!mime.startsWith("image/")) continue

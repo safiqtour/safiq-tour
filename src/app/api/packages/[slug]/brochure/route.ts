@@ -30,16 +30,16 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const { slug } = await params
-
-  const pub = await getPublicPackageBySlug(slug)
-  if (!pub) {
-    return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 404 })
-  }
-
-  const whatsapp = await getWhatsAppNumber()
-
   try {
+    const { slug } = await params
+
+    const pub = await getPublicPackageBySlug(slug)
+    if (!pub) {
+      return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 404 })
+    }
+
+    const whatsapp = await getWhatsAppNumber()
+
     const pdf = await generatePackageBrochurePdf(pub, whatsapp)
     const fileName = brochureFileName(pub.card.slug || slug)
     return new NextResponse(new Uint8Array(pdf), {
@@ -51,6 +51,6 @@ export async function GET(
     })
   } catch (error) {
     console.error("[brochure] gagal generate PDF:", error)
-    return NextResponse.json({ error: "Gagal membuat brosur. Silakan coba lagi." }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
