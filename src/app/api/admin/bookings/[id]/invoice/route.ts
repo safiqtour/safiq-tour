@@ -11,18 +11,32 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requirePermission("invoice:read")
+  try {
+    await requirePermission("invoice:read")
 
-  const { id } = await params
-  const booking = await bookingRepository.findByIdWithRelations(id)
-  if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 })
+    const { id } = await params
+    const booking = await bookingRepository.findByIdWithRelations(id)
+    if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 })
 
-  const pdf = await generateBookingInvoicePdf(booking)
+    const pdf = await generateBookingInvoicePdf(booking)
 
-  return new NextResponse(new Uint8Array(pdf), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${booking.bookingNumber}-invoice.pdf"`,
-    },
-  })
+    return new NextResponse(new Uint8Array(pdf), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${booking.bookingNumber}-invoice.pdf"`,
+      },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error"
+
+    if (message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    if (message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    console.error("[api/admin/bookings/invoice] error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
 }
