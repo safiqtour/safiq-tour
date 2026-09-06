@@ -46,7 +46,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Cache-Control": "no-store",
+        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=60",
       },
     })
   } catch (error) {
