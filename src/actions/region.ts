@@ -27,6 +27,10 @@ export async function getRegion(id: string) {
 }
 
 export async function getRegionsByCountry(countryId: string) {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.region:view")) throw new Error("Forbidden")
+
   return regionService.getByCountry(countryId)
 }
 

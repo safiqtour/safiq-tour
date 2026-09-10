@@ -22,19 +22,11 @@ export async function loginAction(formData: FormData) {
       password,
     })
 
-    console.log("========== LOGIN SUCCESS ==========")
-    console.log("Email :", session.user.email)
-    console.log("Role  :", session.user.role)
-    console.log("User  :", session.user)
-    console.log("===================================")
-
     if (!session.user.role) {
-      console.error("LOGIN FAILED: User ditemukan tetapi role = null")
-
+      console.error("[loginAction] User authenticated but has no application role")
       await signOut()
-
       return {
-        error: "User berhasil login ke Supabase tetapi tidak memiliki role aplikasi.",
+        error: "User berhasil login tetapi tidak memiliki role aplikasi.",
       }
     }
 
@@ -42,15 +34,10 @@ export async function loginAction(formData: FormData) {
       success: true,
     }
   } catch (error) {
-    console.error("========== LOGIN ERROR ==========")
-    console.error(error)
-    console.error("=================================")
+    console.error("[loginAction] Login failed:", error instanceof Error ? error.message : "unknown error")
 
     return {
-      error:
-        error instanceof Error
-          ? error.message
-          : JSON.stringify(error),
+      error: "Email atau password salah",
     }
   }
 }

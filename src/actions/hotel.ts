@@ -21,10 +21,18 @@ export async function getHotel(id: string) {
 }
 
 export async function getActiveHotels() {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.hotel:read")) throw new Error("Forbidden")
+
   return hotelService.getActiveHotels()
 }
 
 export async function getAllHotelAmenities() {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.hotel:read")) throw new Error("Forbidden")
+
   return hotelService.getAllAmenities()
 }
 

@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/prisma/db"
 import { getWritableSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { packageFormSchema } from "@/lib/packages/schema"
@@ -18,6 +19,7 @@ export async function getPackages(params: {
 }) {
   const session = await getWritableSession()
   if (!session?.user?.id) return { data: [], total: 0, page: 1, totalPages: 1 }
+  if (!can(session.user.role, "package:read")) return { data: [], total: 0, page: 1, totalPages: 1 }
 
   const { search = "", category = "", status = "", page = 1, pageSize = 10 } = params
 
@@ -73,6 +75,7 @@ export async function getPackages(params: {
 export async function getPackageById(id: string) {
   const session = await getWritableSession()
   if (!session?.user?.id) return null
+  if (!can(session.user.role, "package:read")) return null
 
   const pkg = await db.package.findUnique({
     where: { id },
@@ -103,6 +106,7 @@ export async function getPackageById(id: string) {
 export async function getPackageSchedules(packageId: string) {
   const session = await getWritableSession()
   if (!session?.user?.id || !packageId) return []
+  if (!can(session.user.role, "package:read")) return []
 
   const now = new Date()
   const schedules = await db.packageSchedule.findMany({
@@ -194,6 +198,7 @@ async function resolveUniqueSlug(base: string, excludeId?: string): Promise<stri
 export async function createPackage(formData: FormData) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:create")) throw new Error("Forbidden")
 
   const raw: Record<string, unknown> = {
     title: formData.get("title"),
@@ -401,6 +406,7 @@ export async function createPackage(formData: FormData) {
 export async function updatePackage(id: string, formData: FormData) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:update")) throw new Error("Forbidden")
 
   const raw: Record<string, unknown> = {
     title: formData.get("title"),
@@ -655,6 +661,7 @@ export async function updatePackage(id: string, formData: FormData) {
 export async function deletePackage(id: string) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:delete")) throw new Error("Forbidden")
 
   // Booking.packageId uses onDelete: Restrict, so deleting a package that still
   // has bookings violates the FK (500). Fail fast with a clear message instead.
@@ -684,6 +691,7 @@ export async function deletePackage(id: string) {
 export async function duplicatePackage(id: string) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:create")) throw new Error("Forbidden")
 
   const original = await db.package.findUnique({
     where: { id },
@@ -764,6 +772,7 @@ export async function duplicatePackage(id: string) {
 export async function updatePackageStatus(id: string, status: PackageStatus) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:update")) throw new Error("Forbidden")
 
   await db.package.update({
     where: { id },
@@ -779,6 +788,7 @@ export async function updatePackageStatus(id: string, status: PackageStatus) {
 export async function toggleFeatured(id: string, featured: boolean) {
   const session = await getWritableSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!can(session.user.role, "package:update")) throw new Error("Forbidden")
 
   await db.package.update({ where: { id }, data: { featured } })
   revalidatePath("/admin/packages")

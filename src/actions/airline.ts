@@ -21,6 +21,10 @@ export async function getAirline(id: string) {
 }
 
 export async function getActiveAirlines() {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.airline:read")) throw new Error("Forbidden")
+
   return airlineService.getActiveAirlines()
 }
 

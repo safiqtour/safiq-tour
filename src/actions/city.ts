@@ -27,10 +27,18 @@ export async function getCity(id: string) {
 }
 
 export async function getCitiesByCountry(countryId: string) {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.city:view")) throw new Error("Forbidden")
+
   return cityService.getByCountry(countryId)
 }
 
 export async function getCitiesByRegion(regionId: string) {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "master.city:view")) throw new Error("Forbidden")
+
   return cityService.getByRegion(regionId)
 }
 

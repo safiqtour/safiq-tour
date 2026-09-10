@@ -1,9 +1,15 @@
 "use server"
 
 import { db } from "@/lib/prisma/db"
+import { getWritableSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { getRecentActivityLogs } from "@/services/audit.service"
 
 export async function getDashboardStats() {
+  const session = await getWritableSession()
+  if (!session?.user?.role) throw new Error("Unauthorized")
+  if (!can(session.user.role, "dashboard:read")) throw new Error("Forbidden")
+
   const [
     totalPackages,
     draftPackages,
