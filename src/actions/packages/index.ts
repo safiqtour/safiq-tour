@@ -247,7 +247,7 @@ export async function createPackage(formData: FormData) {
   if (!createResult.success) {
     // Log the complete failing field paths so legacy-data incompatibilities are debuggable.
     console.error("[createPackage] validation failed:", JSON.stringify(createResult.error.issues, null, 2))
-    throw new Error(`Validasi gagal: ${createResult.error.issues.map((i) => `${i.path.join(".") || "(form)"}: ${i.message}`).join("; ")}`)
+    throw new Error("Validasi gagal")
   }
   const parsed = createResult.data
 
@@ -459,7 +459,7 @@ export async function updatePackage(id: string, formData: FormData) {
   if (!updateResult.success) {
     // Log the complete failing field paths so legacy-data incompatibilities are debuggable.
     console.error(`[updatePackage] validation failed for id=${id}:`, JSON.stringify(updateResult.error.issues, null, 2))
-    throw new Error(`Validasi gagal: ${updateResult.error.issues.map((i) => `${i.path.join(".") || "(form)"}: ${i.message}`).join("; ")}`)
+    throw new Error("Validasi gagal")
   }
   const parsed = updateResult.data
 

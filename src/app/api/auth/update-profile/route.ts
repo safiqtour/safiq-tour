@@ -15,7 +15,12 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 })
   }
 
-  await updateUserProfile(session.user.id, { name, image: image || undefined })
+  try {
+    await updateUserProfile(session.user.id, { name, image: image || undefined })
+  } catch (error) {
+    console.error("[api/auth/update-profile] Update failed:", error instanceof Error ? error.message : "unknown error")
+    return NextResponse.json({ error: "Gagal memperbarui profil" }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

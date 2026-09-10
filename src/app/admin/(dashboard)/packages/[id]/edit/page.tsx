@@ -1,13 +1,15 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { PackageForm } from "@/components/admin/packages/package-form"
 import { updatePackage } from "@/actions/packages"
 import { db } from "@/lib/prisma/db"
-import { getSession } from "@/services/auth.integration.service"
+import { getWritableSession } from "@/services/auth.integration.service"
+import { can } from "@/services/authorization.service"
 import { dateToWallClock } from "@/lib/packages/utils"
 
 export default async function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
+  const session = await getWritableSession()
   if (!session?.user?.id) return null
+  if (!can(session.user.role, "package:update")) redirect("/admin/packages")
 
   const { id } = await params
 
