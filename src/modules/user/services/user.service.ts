@@ -61,6 +61,11 @@ export class UserService extends BaseService<UserSafe, CreateUserInput, UpdateUs
   }
 
   async create(data: CreateUserInput) {
+    if (data.roleId) {
+      const role = await db.role.findUnique({ where: { id: data.roleId } })
+      if (!role) throw new Error("Role tidak ditemukan")
+    }
+
     const hashed = await hashPassword(data.password)
 
     const user = await db.user.create({
@@ -91,6 +96,11 @@ export class UserService extends BaseService<UserSafe, CreateUserInput, UpdateUs
       select: { ...userSafeSelect, role: true },
     })
     if (!existing) throw new Error("User not found")
+
+    if (data.roleId !== undefined && data.roleId !== null && data.roleId !== existing.roleId) {
+      const role = await db.role.findUnique({ where: { id: data.roleId } })
+      if (!role) throw new Error("Role tidak ditemukan")
+    }
 
     if (data.isActive === false && existing.isActive) {
       if (existing.role?.slug === ROLE_SLUGS.SUPER_ADMIN) {
