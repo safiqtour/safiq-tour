@@ -72,7 +72,10 @@ export async function updateUser(id: string, data: unknown) {
 }
 
 export async function deleteUser(id: string) {
-  await requirePermission("user:delete")
+  const sessionUser = await requirePermission("user:delete")
+  if (id === sessionUser.id) {
+    throw new Error("Anda tidak dapat menonaktifkan akun sendiri")
+  }
   await userService.softDelete(id)
 }
 
