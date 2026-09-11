@@ -7,7 +7,7 @@ import type {
   StorageUploadResult,
 } from "./types"
 
-const DEFAULT_ROOT = path.join(process.cwd(), "public", "uploads")
+const DEFAULT_ROOT = path.join(process.cwd(), "private", "uploads")
 
 export type LocalStorageProviderOptions = {
   root?: string
@@ -41,7 +41,7 @@ export function createLocalStorageProvider(
   options: LocalStorageProviderOptions = {}
 ): StorageProvider {
   const root = path.resolve(options.root ?? DEFAULT_ROOT)
-  const publicBasePath = options.publicBasePath ?? "/uploads"
+  const publicBasePath = options.publicBasePath ?? "/api/media/file"
 
   async function walk(
     dir: string,

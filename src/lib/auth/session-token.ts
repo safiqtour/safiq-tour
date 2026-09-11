@@ -34,7 +34,14 @@ function decodeB64url(input: string): Uint8Array<ArrayBuffer> {
 }
 
 function signingKeySecret(): string {
-  return process.env.AUTH_SECRET ?? "stms-dev-session-secret"
+  const secret = process.env.AUTH_SECRET
+  if (!secret) {
+    throw new Error(
+      "AUTH_SECRET environment variable is required but not set. " +
+      "Set it to a strong random string (at least 32 characters) in your environment."
+    )
+  }
+  return secret
 }
 
 async function signingKey(): Promise<CryptoKey> {

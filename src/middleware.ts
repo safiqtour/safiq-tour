@@ -39,6 +39,14 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // Reject expired sessions — 30s skew matches server-side isExpired()
+  const SKEW_MS = 30_000
+  if (payload.session.expiresAt && payload.session.expiresAt - SKEW_MS <= Date.now()) {
+    const response = NextResponse.redirect(new URL("/admin/login", request.url))
+    response.cookies.delete(SESSION_COOKIE)
+    return response
+  }
+
   const appRole = payload.appRole
 
   if (

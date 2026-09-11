@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import { AdminShell } from "@/components/admin/admin-shell"
 import { getSession } from "@/services/auth.integration.service"
 
@@ -7,6 +8,7 @@ export default async function AdminDashboardLayout({
   children: React.ReactNode
 }) {
   const session = await getSession()
+  if (!session?.user?.id) redirect("/admin/login")
 
-  return <AdminShell user={session?.user ?? null}>{children}</AdminShell>
+  return <AdminShell user={session.user}>{children}</AdminShell>
 }
