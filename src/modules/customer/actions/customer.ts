@@ -93,13 +93,61 @@ interface CustomerDocumentListItem {
   createdAt: string
 }
 
-interface CustomerDetail extends CustomerListItem {
+interface CustomerDetail {
+  id: string
+  code: string
+  name: string
+  nickName: string
   email: string | null
   phone: string | null
+  gender: string
+  birthPlace: string
+  birthDate: string | null
+  address: string
+  nationality: string
+  nik: string
+  passportNumber: string | null
+  passportExpiry: string | null
+  photoMediaId: string | null
+  status: string
+  notes: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
   documents: CustomerDocumentListItem[]
 }
 
+function maskPassport(value: string | null): string | null {
+  if (!value || value.length === 0) return null
+  if (value.length <= 4) return "****"
+  return "****" + value.slice(-4)
+}
+
 function toListItem(row: Record<string, unknown>): CustomerListItem {
+  return {
+    id: row.id as string,
+    code: row.code as string,
+    name: row.name as string,
+    nickName: row.nickName as string,
+    email: row.email as string | null,
+    phone: row.phone as string | null,
+    gender: row.gender as string,
+    birthPlace: row.birthPlace as string,
+    birthDate: row.birthDate ? new Date(row.birthDate as string).toISOString() : null,
+    address: row.address as string,
+    nationality: row.nationality as string,
+    passportNumber: maskPassport(row.passportNumber as string | null),
+    photoMediaId: row.photoMediaId as string | null,
+    status: row.status as string,
+    notes: row.notes as string,
+    createdAt: new Date(row.createdAt as string).toISOString(),
+    updatedAt: new Date(row.updatedAt as string).toISOString(),
+    deletedAt: row.deletedAt ? new Date(row.deletedAt as string).toISOString() : null,
+  }
+}
+
+function toDetail(row: Record<string, unknown>): CustomerDetail {
+  const documents = (Array.isArray(row.documents) ? row.documents : []) as Record<string, unknown>[]
   return {
     id: row.id as string,
     code: row.code as string,
@@ -121,14 +169,6 @@ function toListItem(row: Record<string, unknown>): CustomerListItem {
     createdAt: new Date(row.createdAt as string).toISOString(),
     updatedAt: new Date(row.updatedAt as string).toISOString(),
     deletedAt: row.deletedAt ? new Date(row.deletedAt as string).toISOString() : null,
-  }
-}
-
-function toDetail(row: Record<string, unknown>): CustomerDetail {
-  const base = toListItem(row)
-  const documents = (Array.isArray(row.documents) ? row.documents : []) as Record<string, unknown>[]
-  return {
-    ...base,
     documents: documents.map((doc) => ({
       id: doc.id as string,
       type: doc.type as string,

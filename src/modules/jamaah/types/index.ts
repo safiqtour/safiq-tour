@@ -11,8 +11,9 @@ export const JAMAHAH_DOCUMENT_STATUSES = ["PENDING", "COLLECTED", "VERIFIED", "R
 export type JamaahDocumentStatus = (typeof JAMAHAH_DOCUMENT_STATUSES)[number]
 
 /**
- * Serialized view of a Jamaah row used by the UI. Date fields are kept as
- * `string | null` (ISO) so client components can render them directly.
+ * Serialized view of a Jamaah row used by the UI list. Sensitive fields
+ * (nik, passportIssueDate, passportExpiry) are excluded and passportNumber
+ * is masked.
  */
 export interface JamaahListItem {
   id: string
@@ -22,10 +23,7 @@ export interface JamaahListItem {
   gender: string
   birthPlace: string
   birthDate: string | null
-  nik: string
   passportNumber: string | null
-  passportIssueDate: string | null
-  passportExpiry: string | null
   province: string
   city: string
   district: string

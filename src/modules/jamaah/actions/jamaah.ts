@@ -87,11 +87,68 @@ interface JamaahDocumentListItem {
   createdAt: string
 }
 
-interface JamaahDetail extends JamaahListItem {
+interface JamaahDetail {
+  id: string
+  bookingId: string
+  fullName: string
+  passportName: string
+  gender: string
+  birthPlace: string
+  birthDate: string | null
+  nik: string
+  passportNumber: string | null
+  passportIssueDate: string | null
+  passportExpiry: string | null
+  province: string
+  city: string
+  district: string
+  village: string
+  address: string
+  phone: string | null
+  whatsapp: string | null
+  photoMediaId: string | null
+  status: string
+  notes: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
   documents: JamaahDocumentListItem[]
 }
 
+function maskPassport(value: string | null): string | null {
+  if (!value || value.length === 0) return null
+  if (value.length <= 4) return "****"
+  return "****" + value.slice(-4)
+}
+
 function toListItem(row: Record<string, unknown>): JamaahListItem {
+  return {
+    id: row.id as string,
+    bookingId: row.bookingId as string,
+    fullName: row.fullName as string,
+    passportName: row.passportName as string,
+    gender: row.gender as string,
+    birthPlace: row.birthPlace as string,
+    birthDate: row.birthDate ? new Date(row.birthDate as string).toISOString() : null,
+    passportNumber: maskPassport(row.passportNumber as string | null),
+    province: row.province as string,
+    city: row.city as string,
+    district: row.district as string,
+    village: row.village as string,
+    address: row.address as string,
+    phone: row.phone as string | null,
+    whatsapp: row.whatsapp as string | null,
+    photoMediaId: row.photoMediaId as string | null,
+    status: row.status as string,
+    notes: row.notes as string,
+    createdAt: new Date(row.createdAt as string).toISOString(),
+    updatedAt: new Date(row.updatedAt as string).toISOString(),
+    deletedAt: row.deletedAt ? new Date(row.deletedAt as string).toISOString() : null,
+  }
+}
+
+function toDetail(row: Record<string, unknown>): JamaahDetail {
+  const documents = (Array.isArray(row.documents) ? row.documents : []) as Record<string, unknown>[]
   return {
     id: row.id as string,
     bookingId: row.bookingId as string,
@@ -117,14 +174,6 @@ function toListItem(row: Record<string, unknown>): JamaahListItem {
     createdAt: new Date(row.createdAt as string).toISOString(),
     updatedAt: new Date(row.updatedAt as string).toISOString(),
     deletedAt: row.deletedAt ? new Date(row.deletedAt as string).toISOString() : null,
-  }
-}
-
-function toDetail(row: Record<string, unknown>): JamaahDetail {
-  const base = toListItem(row)
-  const documents = (Array.isArray(row.documents) ? row.documents : []) as Record<string, unknown>[]
-  return {
-    ...base,
     documents: documents.map((doc) => ({
       id: doc.id as string,
       type: doc.type as string,
