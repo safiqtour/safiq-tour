@@ -3,8 +3,11 @@ import type { Prisma, User } from "@prisma/client"
 import { BaseService } from "@/modules/business/services/base.service"
 import { audit } from "@/modules/business/lib/audit"
 import { hashPassword } from "@/services/auth.service"
+import { ROLE_SLUGS } from "@/constants/permissions"
 import { userRepository } from "../repositories/user.repository"
 import type { CreateUserInput, UpdateUserInput } from "../validations/user.schema"
+
+const ADMIN_ROLE_SLUGS = [ROLE_SLUGS.SUPER_ADMIN, ROLE_SLUGS.ADMIN]
 
 export class UserService extends BaseService<User, CreateUserInput, UpdateUserInput> {
   constructor() {
@@ -69,8 +72,29 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
   }
 
   async update(id: string, data: UpdateUserInput) {
-    const existing = await db.user.findUnique({ where: { id } })
+    const existing = await db.user.findUnique({
+      where: { id },
+      include: { role: true },
+    })
     if (!existing) throw new Error("User not found")
+
+    if (data.isActive === false && existing.isActive) {
+      if (existing.role?.slug === ROLE_SLUGS.SUPER_ADMIN) {
+        throw new Error("Super admin tidak dapat dinonaktifkan")
+      }
+
+      const activeAdminCount = await db.user.count({
+        where: {
+          isActive: true,
+          role: { slug: { in: ADMIN_ROLE_SLUGS } },
+        },
+      })
+
+      const targetIsAdmin = existing.role && ADMIN_ROLE_SLUGS.includes(existing.role.slug as typeof ADMIN_ROLE_SLUGS[number])
+      if (targetIsAdmin && activeAdminCount <= 1) {
+        throw new Error("Tidak dapat menonaktifkan admin terakhir")
+      }
+    }
 
     const { password, ...fields } = data
 
@@ -105,8 +129,28 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
   }
 
   async softDelete(id: string) {
-    const existing = await db.user.findUnique({ where: { id } })
+    const existing = await db.user.findUnique({
+      where: { id },
+      include: { role: true },
+    })
     if (!existing) throw new Error("User not found")
+
+    if (existing.role?.slug === ROLE_SLUGS.SUPER_ADMIN) {
+      throw new Error("Super admin tidak dapat dinonaktifkan")
+    }
+
+    const activeAdminCount = await db.user.count({
+      where: {
+        isActive: true,
+        role: { slug: { in: ADMIN_ROLE_SLUGS } },
+      },
+    })
+
+    const targetIsAdmin = existing.role && ADMIN_ROLE_SLUGS.includes(existing.role.slug as typeof ADMIN_ROLE_SLUGS[number])
+    if (targetIsAdmin && activeAdminCount <= 1) {
+      throw new Error("Tidak dapat menonaktifkan admin terakhir")
+    }
+
     await db.user.update({ where: { id }, data: { isActive: false } })
     await audit({
       action: "DELETE",
