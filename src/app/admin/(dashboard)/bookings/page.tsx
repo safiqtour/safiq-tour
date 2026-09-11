@@ -19,8 +19,9 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
 }
 
-function formatCurrency(value: number): string {
-  return `Rp ${(value ?? 0).toLocaleString("id-ID")}`
+function formatCurrency(value: number | null): string {
+  if (value === null || value === undefined) return "—"
+  return `Rp ${value.toLocaleString("id-ID")}`
 }
 
 export default function BookingsPage() {
@@ -34,6 +35,7 @@ export default function BookingsPage() {
   const [order, setOrder] = useState<"asc" | "desc">("desc")
   const [statusFilter, setStatusFilter] = useState("")
   const [canCreate, setCanCreate] = useState(false)
+  const [canViewFinancials, setCanViewFinancials] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -59,6 +61,7 @@ export default function BookingsPage() {
   useEffect(() => { fetchData() }, [fetchData])
   useEffect(() => { setPage(1) }, [search, statusFilter])
   useEffect(() => { canUser("booking:create").then(setCanCreate) }, [])
+  useEffect(() => { canUser("payment:read").then(setCanViewFinancials) }, [])
 
   const handleSort = (key: string) => {
     if (sort === key) setOrder(order === "asc" ? "desc" : "asc")
@@ -78,15 +81,17 @@ export default function BookingsPage() {
     { key: "departureDate", header: "Departure Date", sortable: true, hideOnMobile: true, render: (item) => (
       <span className="text-sm text-[#6B7280]">{formatDate(item.departureDate)}</span>
     )},
-    { key: "totalPrice", header: "Total Price", render: (item) => (
-      <span className="text-sm text-[#0B3C6D]">{formatCurrency(item.totalPrice)}</span>
-    )},
-    { key: "downPayment", header: "Down Payment", hideOnMobile: true, render: (item) => (
-      <span className="text-sm text-[#6B7280]">{formatCurrency(item.downPayment)}</span>
-    )},
-    { key: "remainingBalance", header: "Remaining Balance", hideOnMobile: true, render: (item) => (
-      <span className="text-sm font-medium text-[#0B3C6D]">{formatCurrency(item.remainingBalance)}</span>
-    )},
+    ...(canViewFinancials ? [
+      { key: "totalPrice", header: "Total Price", render: (item: BookingListItem) => (
+        <span className="text-sm text-[#0B3C6D]">{formatCurrency(item.totalPrice)}</span>
+      )},
+      { key: "downPayment", header: "Down Payment", hideOnMobile: true, render: (item: BookingListItem) => (
+        <span className="text-sm text-[#6B7280]">{formatCurrency(item.downPayment)}</span>
+      )},
+      { key: "remainingBalance", header: "Remaining Balance", hideOnMobile: true, render: (item: BookingListItem) => (
+        <span className="text-sm font-medium text-[#0B3C6D]">{formatCurrency(item.remainingBalance)}</span>
+      )},
+    ] : []),
     { key: "status", header: "Status", sortable: true, render: (item) => (
       <BookingStatusBadge status={item.status} />
     )},

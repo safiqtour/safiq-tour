@@ -1,6 +1,7 @@
 "use server"
 
 import { requirePermission } from "@/modules/business/lib/permission"
+import { ROLE_SLUGS } from "@/constants/permissions"
 import { bookingService } from "../services/booking.service"
 import { bookingInclude } from "../repositories/booking.repository"
 import {
@@ -21,8 +22,15 @@ import {
   type BookingListItem,
 } from "../types"
 
+const FINANCIAL_ROLES: ReadonlySet<string> = new Set([
+  ROLE_SLUGS.SUPER_ADMIN,
+  ROLE_SLUGS.ADMIN,
+  ROLE_SLUGS.FINANCE,
+  ROLE_SLUGS.OWNER,
+])
+
 export async function getBookings(params: unknown) {
-  await requirePermission("booking:read")
+  const user = await requirePermission("booking:read")
 
   const query = bookingQuerySchema.parse(params) as BookingQueryInput
 
@@ -37,16 +45,20 @@ export async function getBookings(params: unknown) {
     include: bookingInclude,
   })
 
+  const canViewFinancials = FINANCIAL_ROLES.has(user.role?.slug ?? "")
+
   return {
-    data: result.data.map(toListItem),
+    data: result.data.map((row) => toListItem(row, canViewFinancials)),
     pagination: result.pagination,
   }
 }
 
 export async function getBooking(id: string) {
-  await requirePermission("booking:read")
+  const user = await requirePermission("booking:read")
   const detail = await bookingService.getDetail(id)
-  return detail ? toDetail(detail) : null
+  if (!detail) return null
+  const canViewFinancials = FINANCIAL_ROLES.has(user.role?.slug ?? "")
+  return toDetail(detail, canViewFinancials)
 }
 
 export async function createBooking(data: unknown) {
@@ -100,9 +112,9 @@ export async function restoreBooking(id: string) {
 /* Serialization helpers (Date -> ISO string) for strong-typed clients */
 /* ------------------------------------------------------------------ */
 
-function toListItem(row: Record<string, unknown>): BookingListItem {
-  const totalPrice = row.totalPrice as number
-  const downPayment = (row.downPayment as number) ?? 0
+function toListItem(row: Record<string, unknown>, canViewFinancials: boolean): BookingListItem {
+  const rawTotal = row.totalPrice as number
+  const rawDown = (row.downPayment as number) ?? 0
   const customer = row.customer as Record<string, unknown> | undefined
   const pkg = row.package as Record<string, unknown> | undefined
   const schedule = row.schedule as Record<string, unknown> | undefined
@@ -119,9 +131,9 @@ function toListItem(row: Record<string, unknown>): BookingListItem {
     packageTitle: (pkg?.title as string) ?? "",
     departureDate,
     status: row.status as string,
-    totalPrice,
-    downPayment,
-    remainingBalance: remainingBalance(totalPrice, downPayment),
+    totalPrice: canViewFinancials ? rawTotal : null,
+    downPayment: canViewFinancials ? rawDown : null,
+    remainingBalance: canViewFinancials ? remainingBalance(rawTotal, rawDown) : null,
     notes: row.notes as string,
     createdAt: new Date(row.createdAt as string).toISOString(),
     updatedAt: new Date(row.updatedAt as string).toISOString(),
@@ -129,8 +141,8 @@ function toListItem(row: Record<string, unknown>): BookingListItem {
   }
 }
 
-function toDetail(row: Record<string, unknown>): BookingDetail {
-  const base = toListItem(row)
+function toDetail(row: Record<string, unknown>, canViewFinancials: boolean): BookingDetail {
+  const base = toListItem(row, canViewFinancials)
   const customer = row.customer as Record<string, unknown>
   const pkg = row.package as Record<string, unknown>
   const schedule = row.schedule as Record<string, unknown>

@@ -32,8 +32,9 @@ function formatDateTime(iso: string | null | undefined): string {
     " " + d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
 }
 
-function formatCurrency(value: number): string {
-  return `Rp ${(value ?? 0).toLocaleString("id-ID")}`
+function formatCurrency(value: number | null): string {
+  if (value === null || value === undefined) return "—"
+  return `Rp ${value.toLocaleString("id-ID")}`
 }
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -67,9 +68,11 @@ export default function BookingDetailPage() {
   const [jamaah, setJamaah] = useState<JamaahListItem[]>([])
   const [canReadJamaah, setCanReadJamaah] = useState(false)
   const [canCreateJamaah, setCanCreateJamaah] = useState(false)
+  const [canViewFinancials, setCanViewFinancials] = useState(false)
 
   useEffect(() => { canUser("jamaah:read").then(setCanReadJamaah) }, [])
   useEffect(() => { canUser("jamaah:create").then(setCanCreateJamaah) }, [])
+  useEffect(() => { canUser("payment:read").then(setCanViewFinancials) }, [])
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -215,11 +218,13 @@ export default function BookingDetailPage() {
         <Field label="Meeting Point" value={booking.schedule?.meetingPoint || "—"} />
       </Section>
 
-      <Section title="Keuangan">
-        <Field label="Total Harga" value={formatCurrency(booking.totalPrice)} />
-        <Field label="Uang Muka" value={formatCurrency(booking.downPayment)} />
-        <Field label="Sisa Tagihan" value={formatCurrency(booking.remainingBalance)} />
-      </Section>
+      {canViewFinancials && (
+        <Section title="Keuangan">
+          <Field label="Total Harga" value={formatCurrency(booking.totalPrice)} />
+          <Field label="Uang Muka" value={formatCurrency(booking.downPayment)} />
+          <Field label="Sisa Tagihan" value={formatCurrency(booking.remainingBalance)} />
+        </Section>
+      )}
 
       <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6">
         <h2 className="mb-4 font-heading text-sm font-semibold text-[#0B3C6D]">Aksi</h2>

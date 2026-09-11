@@ -12,6 +12,11 @@ export function remainingBalance(totalPrice: number, downPayment: number): numbe
 /**
  * Serialized view of a Booking row used by the UI. Dates are ISO strings so
  * client components can render them directly.
+ *
+ * Financial fields (totalPrice, downPayment, remainingBalance) are `number | null`.
+ * `null` means the authenticated role is not authorized to view financial data
+ * (cs, muthowif). Authorized roles (super-admin, admin, finance, owner) receive
+ * the actual numeric values.
  */
 export interface BookingListItem {
   id: string
@@ -23,9 +28,9 @@ export interface BookingListItem {
   packageTitle: string
   departureDate: string | null
   status: string
-  totalPrice: number
-  downPayment: number
-  remainingBalance: number
+  totalPrice: number | null
+  downPayment: number | null
+  remainingBalance: number | null
   notes: string
   createdAt: string
   updatedAt: string
