@@ -3,11 +3,22 @@ import type { Prisma, User } from "@prisma/client"
 import { BaseRepository } from "@/modules/business/repositories/base.repository"
 import type { CreateUserInput, UpdateUserInput } from "../validations/user.schema"
 
-export const userInclude = {
-  role: true,
-} satisfies Prisma.UserInclude
+export const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  roleId: true,
+  image: true,
+  isActive: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect
 
-export type UserWithRelations = Prisma.UserGetPayload<{ include: typeof userInclude }>
+export type UserWithRelations = Prisma.UserGetPayload<{
+  select: typeof userSelect
+  include: { role: true }
+}>
 
 /**
  * Strongly-typed repository for the User entity.
@@ -34,7 +45,7 @@ export class UserRepository extends BaseRepository<
   findByIdWithRelations(id: string): Promise<UserWithRelations | null> {
     return this.delegate.findUnique({
       where: { id },
-      include: userInclude,
+      select: { ...userSelect, role: true },
     }) as Promise<UserWithRelations | null>
   }
 }

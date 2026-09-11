@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma/db"
-import type { Prisma, User } from "@prisma/client"
+import type { Prisma } from "@prisma/client"
 import { BaseService } from "@/modules/business/services/base.service"
 import { audit } from "@/modules/business/lib/audit"
 import { hashPassword } from "@/services/auth.service"
@@ -9,7 +9,21 @@ import type { CreateUserInput, UpdateUserInput } from "../validations/user.schem
 
 const ADMIN_ROLE_SLUGS = [ROLE_SLUGS.SUPER_ADMIN, ROLE_SLUGS.ADMIN]
 
-export class UserService extends BaseService<User, CreateUserInput, UpdateUserInput> {
+const userSafeSelect = {
+  id: true,
+  name: true,
+  email: true,
+  roleId: true,
+  image: true,
+  isActive: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect
+
+export type UserSafe = Prisma.UserGetPayload<{ select: typeof userSafeSelect }>
+
+export class UserService extends BaseService<UserSafe, CreateUserInput, UpdateUserInput> {
   constructor() {
     super(userRepository, "user")
   }
@@ -35,7 +49,7 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { [sort]: order } as Prisma.UserOrderByWithRelationInput,
-        include: { role: true },
+        select: { ...userSafeSelect, role: true },
       }),
       db.user.count({ where }),
     ])
@@ -58,7 +72,7 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
         image: data.image ?? null,
         isActive: data.isActive ?? true,
       },
-      include: { role: true },
+      select: { ...userSafeSelect, role: true },
     })
 
     await audit({
@@ -74,7 +88,7 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
   async update(id: string, data: UpdateUserInput) {
     const existing = await db.user.findUnique({
       where: { id },
-      include: { role: true },
+      select: { ...userSafeSelect, role: true },
     })
     if (!existing) throw new Error("User not found")
 
@@ -111,7 +125,7 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
     const user = await db.user.update({
       where: { id },
       data: updateData,
-      include: { role: true },
+      select: { ...userSafeSelect, role: true },
     })
 
     await audit({
@@ -131,7 +145,7 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
   async softDelete(id: string) {
     const existing = await db.user.findUnique({
       where: { id },
-      include: { role: true },
+      select: { ...userSafeSelect, role: true },
     })
     if (!existing) throw new Error("User not found")
 
@@ -161,7 +175,10 @@ export class UserService extends BaseService<User, CreateUserInput, UpdateUserIn
   }
 
   async restore(id: string) {
-    const existing = await db.user.findUnique({ where: { id } })
+    const existing = await db.user.findUnique({
+      where: { id },
+      select: { ...userSafeSelect },
+    })
     if (!existing) throw new Error("User not found")
     await db.user.update({ where: { id }, data: { isActive: true } })
     await audit({
