@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ImageIcon, FileText, Video, Trash2, Undo, Tag, FolderOpen, ExternalLink } from "lucide-react"
+import { useMediaUrls } from "@/hooks/use-media-urls"
 
 interface MediaDetailItem {
   id: string
@@ -42,9 +43,12 @@ function formatSize(bytes: number) {
 }
 
 export function MediaDetail({ item, open, onClose, onDelete, onRestore }: MediaDetailProps) {
+  const urls = useMediaUrls(item ? [item] : [])
+
   if (!item) return null
 
   const isImage = item.mimeType.startsWith("image/")
+  const resolvedUrl = item.url !== "" ? item.url : urls.get(item.id)
 
   return (
     <AnimatePresence>
@@ -74,7 +78,13 @@ export function MediaDetail({ item, open, onClose, onDelete, onRestore }: MediaD
             <div className="p-5 space-y-5">
               {isImage ? (
                 <div className="rounded-xl overflow-hidden bg-gray-100">
-                  <img src={item.url} alt={item.alt || ""} className="w-full object-contain max-h-80" />
+                  {resolvedUrl ? (
+                    <img src={resolvedUrl} alt={item.alt || ""} className="w-full object-contain max-h-80" />
+                  ) : (
+                    <div className="flex items-center justify-center h-48">
+                      <ImageIcon className="size-16 text-gray-300 animate-pulse" />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-48 rounded-xl bg-gray-100">
@@ -99,9 +109,11 @@ export function MediaDetail({ item, open, onClose, onDelete, onRestore }: MediaD
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">File Info</span>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                    Open <ExternalLink className="size-3" />
-                  </a>
+                  {resolvedUrl && (
+                    <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                      Open <ExternalLink className="size-3" />
+                    </a>
+                  )}
                 </div>
                 <InfoRow label="Filename" value={item.filename} />
                 <InfoRow label="Size" value={formatSize(item.size)} />

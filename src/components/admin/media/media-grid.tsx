@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ImageIcon, FileText, Video, Trash2, Undo } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useMediaUrls } from "@/hooks/use-media-urls"
 
 interface MediaGridItem {
   id: string
@@ -52,6 +53,7 @@ function getFileIcon(mimeType: string) {
 
 export function MediaGrid({ items, selectedIds, onSelect, onSelectAll, onDelete, onRestore, onPreview }: MediaGridProps) {
   const allSelected = items.length > 0 && selectedIds.length === items.length && !items.some((i) => i.deletedAt)
+  const urls = useMediaUrls(items)
 
   return (
     <div>
@@ -93,12 +95,19 @@ export function MediaGrid({ items, selectedIds, onSelect, onSelectAll, onDelete,
 
               <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
                 {isImage ? (
-                  <img
-                    src={item.thumbnailUrl || item.url}
-                    alt={item.alt || item.filename}
-                    className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+                  (() => {
+                    const imgSrc = item.url !== "" ? item.url : urls.get(item.id)
+                    return imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={item.alt || item.filename}
+                        className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <ImageIcon className="size-8 text-gray-300 animate-pulse" />
+                    )
+                  })()
                 ) : (
                   <div className="flex flex-col items-center gap-1">
                     {getFileIcon(item.mimeType)}

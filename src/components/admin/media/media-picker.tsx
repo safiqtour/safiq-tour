@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { X, Search, ImageIcon, Check } from "lucide-react"
 import { getMediaList } from "@/actions/media"
 import { cn } from "@/lib/utils"
+import { useMediaUrls } from "@/hooks/use-media-urls"
 
 type MediaPickerItem = {
   id: string
@@ -29,6 +30,7 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, folderI
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const urls = useMediaUrls(items)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -125,7 +127,16 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, folderI
                         )}
                       >
                         {item.mimeType?.startsWith("image/") ? (
-                          <img src={item.thumbnailUrl || item.url} alt={item.alt || ""} className="size-full object-cover" loading="lazy" />
+                          (() => {
+                            const imgSrc = item.url !== "" ? item.url : urls.get(item.id)
+                            return imgSrc ? (
+                              <img src={imgSrc} alt={item.alt || ""} className="size-full object-cover" loading="lazy" />
+                            ) : (
+                              <div className="size-full bg-gray-100 flex items-center justify-center">
+                                <ImageIcon className="size-8 text-gray-300 animate-pulse" />
+                              </div>
+                            )
+                          })()
                         ) : (
                           <div className="size-full bg-gray-100 flex items-center justify-center">
                             <ImageIcon className="size-8 text-gray-300" />

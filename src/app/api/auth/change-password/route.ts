@@ -38,7 +38,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 
-    console.error("[api/auth/change-password] error:", error)
+    console.error("[api/auth/change-password] unexpected error")
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getWritableSession } from "@/services/auth.integration.service"
 import { can } from "@/services/authorization.service"
 import { mediaService } from "@/services/media.service"
+import { UPLOAD_PURPOSES, type UploadPurpose } from "@/providers/storage/types"
 
 export async function POST(request: Request) {
   const session = await getWritableSession()
@@ -17,6 +18,15 @@ export async function POST(request: Request) {
 
     const folderId = formData.get("folderId") as string | null
     const caption = formData.get("caption") as string | null
+    const purposeRaw = formData.get("purpose") as string | null
+
+    let purpose: UploadPurpose = "public"
+    if (purposeRaw !== null && purposeRaw !== "") {
+      if (!UPLOAD_PURPOSES.includes(purposeRaw as UploadPurpose)) {
+        return NextResponse.json({ error: "Invalid upload purpose" }, { status: 400 })
+      }
+      purpose = purposeRaw as UploadPurpose
+    }
 
     const maxSize = file.type.startsWith("video/") ? 20 * 1024 * 1024 : 5 * 1024 * 1024
     if (file.size > maxSize) {
@@ -28,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File type not allowed" }, { status: 400 })
     }
 
-    const media = await mediaService.upload(file, folderId ?? undefined, caption ?? undefined)
+    const media = await mediaService.upload(file, folderId ?? undefined, caption ?? undefined, purpose)
 
     return NextResponse.json({ success: true, data: media }, { status: 201 })
   } catch (error) {

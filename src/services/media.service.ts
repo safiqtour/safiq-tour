@@ -3,7 +3,24 @@ import { mediaFolderRepository } from "@/repositories/media-folder.repository"
 import { mediaTagRepository } from "@/repositories/media-tag.repository"
 import { logActivity } from "@/services/audit.service"
 import { storageService } from "@/services/storage.service"
+import type { UploadPurpose } from "@/providers/storage/types"
+import { isPrivatePurpose } from "@/providers/storage/types"
 import slugify from "slugify"
+
+const PRIVATE_BUCKET = process.env.SUPABASE_PRIVATE_STORAGE_BUCKET ?? ""
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER ?? "local"
+
+function bucketForPurpose(purpose?: UploadPurpose): string | undefined {
+  if (!purpose || purpose === "public") return undefined
+  if (isPrivatePurpose(purpose)) {
+    if (!PRIVATE_BUCKET) {
+      console.warn(`[media.service] Private purpose "${purpose}" used but SUPABASE_PRIVATE_STORAGE_BUCKET is not set`)
+      return undefined
+    }
+    return PRIVATE_BUCKET
+  }
+  return undefined
+}
 
 export const mediaService = {
   async findAll(params: Parameters<typeof mediaRepository.findAll>[0]) {
@@ -14,11 +31,22 @@ export const mediaService = {
     return mediaRepository.findById(id)
   },
 
-  async upload(file: File, folderId?: string, caption?: string) {
+  async getPrivateMediaSignedUrl(mediaId: string, expiresIn = 3600): Promise<string> {
+    const media = await mediaRepository.findById(mediaId)
+    if (!media || media.deletedAt) throw new Error("Media not found")
+    if (media.url !== "" || media.storageProvider !== STORAGE_PROVIDER) {
+      throw new Error("Media is not private")
+    }
+    if (!PRIVATE_BUCKET) throw new Error("Private storage not configured")
+    return storageService.createSignedUrl(media.storagePath, expiresIn, PRIVATE_BUCKET)
+  },
+
+  async upload(file: File, folderId?: string, caption?: string, purpose?: UploadPurpose) {
     const ext = file.name.split(".").pop() ?? ""
     const baseName = file.name.replace(/\.[^.]+$/, "")
     const storagePath = `${folderId ?? "root"}/${Date.now()}_${slugify(baseName, { lower: true, strict: true })}`
-    const result = await storageService.upload(file, storagePath)
+    const bucket = bucketForPurpose(purpose)
+    const result = await storageService.upload(file, storagePath, bucket)
 
     const media = await mediaRepository.create({
       filename: file.name,
