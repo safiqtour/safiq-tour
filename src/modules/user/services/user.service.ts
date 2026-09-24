@@ -152,6 +152,10 @@ export class UserService extends BaseService<UserSafe, CreateUserInput, UpdateUs
     return userRepository.findByIdWithRelations(id)
   }
 
+  async findByAuthUserId(authUserId: string) {
+    return userRepository.findByAuthUserId(authUserId)
+  }
+
   async softDelete(id: string) {
     const existing = await db.user.findUnique({
       where: { id },

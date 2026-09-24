@@ -6,10 +6,23 @@ export async function resolveUserFromIdentity(
   identity: ProviderUser
 ): Promise<ResolvedUser> {
   const { findUserByEmail } = await import("@/services/auth.service")
+  const { userService } = await import("@/modules/user/services/user.service")
 
-  const appUser = identity.email
-    ? await findUserByEmail(identity.email)
+  // Canonical lookup first: the Supabase Auth user id is our authUserId.
+  const linked = identity.id
+    ? await userService.findByAuthUserId(identity.id)
     : null
+
+  // Temporary legacy fallback: match by email ONLY for accounts that are not
+  // yet canonically linked (authUserId IS NULL). An account already linked to
+  // a different Auth identity must never be resolvable through this path.
+  const appUser =
+    linked ??
+    (identity.email
+      ? (await findUserByEmail(identity.email).then((u) =>
+          u && !u.authUserId ? u : null
+        ))
+      : null)
 
   if (!appUser || !appUser.isActive) {
     return {

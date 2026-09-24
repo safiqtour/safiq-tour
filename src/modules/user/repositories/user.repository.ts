@@ -48,6 +48,13 @@ export class UserRepository extends BaseRepository<
       select: { ...userSelect, role: true },
     }) as Promise<UserWithRelations | null>
   }
+
+  findByAuthUserId(authUserId: string): Promise<UserWithRelations | null> {
+    return this.delegate.findUnique({
+      where: { authUserId },
+      select: { ...userSelect, role: true },
+    }) as Promise<UserWithRelations | null>
+  }
 }
 
 export const userRepository = new UserRepository()
