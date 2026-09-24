@@ -10,6 +10,7 @@ export type SupabaseStorageProviderOptions = {
   url?: string
   serviceRoleKey?: string
   bucket?: string
+  privateBucket?: string
 }
 
 function normalizePath(storagePath: string): string {
@@ -52,6 +53,7 @@ export function createSupabaseStorageProvider(
     "SUPABASE_STORAGE_BUCKET",
     options.bucket ?? process.env.SUPABASE_STORAGE_BUCKET
   )
+  const privateBucket = options.privateBucket ?? process.env.SUPABASE_PRIVATE_STORAGE_BUCKET ?? ""
 
   const supabase: SupabaseClient = createClient(url, serviceRoleKey, {
     auth: { persistSession: false },
@@ -87,18 +89,20 @@ export function createSupabaseStorageProvider(
   }
 
   return {
-    async upload(file: StorageFileInput, storagePath: string): Promise<StorageUploadResult> {
+    async upload(file: StorageFileInput, storagePath: string, targetBucket?: string): Promise<StorageUploadResult> {
       const normalized = normalizePath(storagePath)
+      const resolvedBucket = targetBucket || bucket
       const body = file instanceof Blob ? file : file instanceof Uint8Array ? file : file
-      const { error } = await supabase.storage.from(bucket).upload(normalized, body, {
+      const { error } = await supabase.storage.from(resolvedBucket).upload(normalized, body, {
         contentType: contentTypeOf(file),
         upsert: true,
       })
       if (error) throw new Error(`Storage upload failed: ${error.message}`)
-      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(normalized)
+      const isPrivate = resolvedBucket === privateBucket && privateBucket !== ""
+      const url = isPrivate ? "" : supabase.storage.from(resolvedBucket).getPublicUrl(normalized).data.publicUrl
       return {
         path: normalized,
-        url: publicUrlData.publicUrl,
+        url,
         size: file instanceof Blob ? file.size : file.length,
       }
     },
@@ -143,9 +147,10 @@ export function createSupabaseStorageProvider(
       return supabase.storage.from(bucket).getPublicUrl(normalizePath(storagePath)).data.publicUrl
     },
 
-    async createSignedUrl(storagePath: string, expiresIn: number): Promise<string> {
+    async createSignedUrl(storagePath: string, expiresIn: number, targetBucket?: string): Promise<string> {
+      const resolvedBucket = targetBucket || bucket
       const { data, error } = await supabase.storage
-        .from(bucket)
+        .from(resolvedBucket)
         .createSignedUrl(normalizePath(storagePath), expiresIn)
       if (error) throw new Error(`Storage signed URL failed: ${error.message}`)
       return data.signedUrl

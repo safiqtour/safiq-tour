@@ -10,10 +10,10 @@ export type StorageUploadResult = {
 }
 
 export type StorageService = {
-  upload(file: File, basePath: string): Promise<StorageUploadResult>
+  upload(file: File, basePath: string, bucket?: string): Promise<StorageUploadResult>
   delete(path: string): Promise<void>
   getPublicUrl(path: string): string
-  createSignedUrl(path: string, expiresIn: number): Promise<string>
+  createSignedUrl(path: string, expiresIn: number, bucket?: string): Promise<string>
   exists(path: string): Promise<boolean>
 }
 
@@ -57,10 +57,10 @@ export function createStorageService(
   provider: StorageProvider = storage
 ): StorageService {
   return {
-    async upload(file: File, basePath: string): Promise<StorageUploadResult> {
+    async upload(file: File, basePath: string, bucket?: string): Promise<StorageUploadResult> {
       const storagePath = `${basePath}${extensionFor(file)}`
-      const result = await provider.upload(file, storagePath)
-      const url = provider.getPublicUrl(storagePath)
+      const result = await provider.upload(file, storagePath, bucket)
+      const url = result.url
 
       let width: number | undefined
       let height: number | undefined
@@ -88,11 +88,12 @@ export function createStorageService(
           ) as ArrayBuffer
 
           const thumbPath = thumbnailPathFor(storagePath)
-          await provider.upload(
+          const thumbResult = await provider.upload(
             new Blob([new Uint8Array(thumbnailArrayBuffer)], { type: "image/webp" }),
-            thumbPath
+            thumbPath,
+            bucket
           )
-          thumbnailUrl = provider.getPublicUrl(thumbPath)
+          thumbnailUrl = thumbResult.url || provider.getPublicUrl(thumbPath)
         } catch {
           // metadata and thumbnail generation are best-effort
         }
@@ -114,8 +115,8 @@ export function createStorageService(
       return provider.getPublicUrl(path)
     },
 
-    async createSignedUrl(path: string, expiresIn: number): Promise<string> {
-      return provider.createSignedUrl(path, expiresIn)
+    async createSignedUrl(path: string, expiresIn: number, bucket?: string): Promise<string> {
+      return provider.createSignedUrl(path, expiresIn, bucket)
     },
 
     async exists(path: string): Promise<boolean> {

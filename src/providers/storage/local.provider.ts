@@ -75,7 +75,7 @@ export function createLocalStorageProvider(
   }
 
   return {
-    async upload(file: StorageFileInput, storagePath: string): Promise<StorageUploadResult> {
+    async upload(file: StorageFileInput, storagePath: string, _targetBucket?: string): Promise<StorageUploadResult> {
       const normalized = normalizePath(storagePath)
       const fullPath = resolveSafe(root, normalized)
       await ensureDir(path.dirname(fullPath))
@@ -132,7 +132,7 @@ export function createLocalStorageProvider(
       return `${publicBasePath}/${normalizePath(storagePath)}`
     },
 
-    async createSignedUrl(storagePath: string, _expiresIn: number): Promise<string> {
+    async createSignedUrl(storagePath: string, _expiresIn: number, _targetBucket?: string): Promise<string> {
       return `${publicBasePath}/${normalizePath(storagePath)}`
     },
 
