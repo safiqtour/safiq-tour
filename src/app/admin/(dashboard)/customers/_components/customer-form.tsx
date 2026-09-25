@@ -91,11 +91,24 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
     try {
       const fd = new FormData()
       fd.append("file", file)
+      fd.append("purpose", "customer_photo")
       const res = await fetch("/api/admin/media/upload", { method: "POST", body: fd })
       const json = await res.json()
       if (!json.success || !json.data?.id) throw new Error(json.error ?? "Upload gagal")
       set("photoMediaId", json.data.id)
-      setPhotoUrl(json.data.url)
+      if (json.data.url) {
+        setPhotoUrl(json.data.url)
+      } else {
+        try {
+          const signedRes = await fetch(`/api/media/private/${json.data.id}`)
+          const signedJson = await signedRes.json()
+          if (signedJson.success && signedJson.data?.signedUrl) {
+            setPhotoUrl(signedJson.data.signedUrl)
+          }
+        } catch {
+          // private URL unavailable — leave photoUrl empty
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengunggah foto")
     } finally {
@@ -116,6 +129,7 @@ export function CustomerForm({ mode, initial }: CustomerFormProps) {
     try {
       const fd = new FormData()
       fd.append("file", file)
+      fd.append("purpose", "customer_document")
       const res = await fetch("/api/admin/media/upload", { method: "POST", body: fd })
       const json = await res.json()
       if (!json.success || !json.data?.id) throw new Error(json.error ?? "Upload gagal")

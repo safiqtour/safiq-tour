@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ImageIcon, FileText, Video, Trash2, Undo, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useMediaUrls } from "@/hooks/use-media-urls"
 
 interface MediaListItem {
   id: string
@@ -74,6 +75,7 @@ function SortHeader({ label, sortKey, currentSort, order, onSort }: { label: str
 
 export function MediaList({ items, selectedIds, sort, order, onSelect, onSelectAll, onSort, onDelete, onRestore, onPreview }: MediaListProps) {
   const allSelected = items.length > 0 && selectedIds.length === items.length
+  const urls = useMediaUrls(items)
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -120,7 +122,14 @@ export function MediaList({ items, selectedIds, sort, order, onSelect, onSelectA
                 <td className="px-4 py-3">
                   <div className="size-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
                     {isImage ? (
-                      <img src={item.thumbnailUrl || item.url} alt="" className="size-full object-cover" loading="lazy" />
+                      (() => {
+                        const imgSrc = item.url !== "" ? item.url : urls.get(item.id)
+                        return imgSrc ? (
+                          <img src={imgSrc} alt="" className="size-full object-cover" loading="lazy" />
+                        ) : (
+                          <ImageIcon className="size-4 text-gray-300 animate-pulse" />
+                        )
+                      })()
                     ) : (
                       getIcon(item.mimeType)
                     )}
